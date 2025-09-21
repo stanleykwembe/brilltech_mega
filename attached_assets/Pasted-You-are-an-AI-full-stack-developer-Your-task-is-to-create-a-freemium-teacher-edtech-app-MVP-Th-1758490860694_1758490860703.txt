@@ -1,0 +1,135 @@
+You are an AI full-stack developer. Your task is to create a **freemium teacher edtech app MVP**. The app is hosted on Replit and should include the following features:
+
+1. **User Types**
+   - **Teacher:** Can generate lesson plans, homework, and questions; upload their own documents; share assignments with students.
+   - **Admin:** Can upload master lesson plans, past exam papers, and manage subscription content.
+
+2. **Lesson Plan Management**
+   - Teachers can upload their own lesson plans.
+   - Admin can upload subject- and grade-specific lesson plans.
+   - AI can generate lesson plans based on templates:
+     - Input: subject, grade, topic
+     - Output: objectives, activities, assessments, resources
+   - Store lesson plans in a structured database (SQLite or Supabase/PostgreSQL).
+
+3. **Homework / Assignment Generation**
+   - Teachers and admin can upload homework or generate new assignments.
+   - Each assignment includes:
+     - Title, due date, subject, grade, exam board, instructions
+     - Downloadable link (PDF or DOCX)
+     - Optional share buttons (WhatsApp, Google Classroom, Email)
+   - Metadata stored in database for easy retrieval.
+
+4. **Question Generation (Multi-Format)**
+   - AI generates questions in multiple formats:
+     - **Multiple Choice (MCQ)**
+     - **Structured / Short Answer**
+     - **Free Response / Essay**
+     - **Cambridge-style structured questions** (multi-part questions with sub-questions)
+   - Teacher chooses **question type** before generation
+   - AI uses **uploaded past papers or teacher sample documents** as reference
+   - Output structured JSON:
+```json
+{
+  "question_type": "MCQ|Structured|Free Response|Cambridge-style",
+  "question": "...",
+  "options": ["...","...","...","..."], // only for MCQ
+  "answer": "...",
+  "sub_questions": [ // only for Cambridge-style
+    {"question": "...", "answer": "..."}
+  ],
+  "difficulty": "easy|medium|hard"
+}
+Database Design
+
+Users: user_id, name, email, role ("teacher"/"admin"), subscription
+
+Subjects: subject_id, name
+
+Grades: grade_id, number
+
+ExamBoards: board_id, name_full (e.g., "Cambridge International"), abbreviation (e.g., "CIE")
+
+UploadedDocuments: doc_id, uploaded_by, title, subject_id, grade_id, board_id, type ("lesson_plan","homework","past_paper","sample_questions"), file_url, created_at, tags
+
+GeneratedAssignments: assignment_id, teacher_id, title, subject_id, grade_id, board_id, question_type, due_date, file_url, shared_link, created_at
+
+Freemium Subscription Model
+
+Free Tier:
+
+5 lesson plans per subject
+
+5 homework/assignments per subject
+
+Paid Tier:
+
+Unlimited access
+
+Integrate payments via PayPal, Stripe, or PayFast for payouts to FNB bank account or PayPal.
+
+Homework Sharing
+
+Generate unique downloadable link per assignment
+
+Include metadata: title, due_date, subject, grade, exam board
+
+Teachers can copy link to share on WhatsApp, Google Classroom, or email
+
+Frontend
+
+Use Streamlit or Gradio for MVP
+
+Dashboard for teachers showing:
+
+Free vs. paid quotas
+
+Uploaded/generated lesson plans and homework
+
+Generate new content and choose question type
+
+Filter documents by subject, grade, and exam board (full name or abbreviation)
+
+Backend
+
+Python + FastAPI/Flask
+
+SQLite or Supabase/PostgreSQL
+
+AI model: T5-small or Flan-T5 for question generation
+
+Document parsing: python-docx for DOCX, PyPDF2/pdfplumber for PDFs
+
+AI prompt engineering uses document metadata (subject, grade, exam board full name & abbreviation) for curriculum-specific question generation
+
+MVP Deliverables
+
+Teachers/admin can upload lesson plans and homework
+
+AI generates lesson plans & multi-format questions
+
+Homework includes due date and shareable link
+
+Freemium quota tracking
+
+Payments integrated for subscription upgrades
+
+Export as PDF/DOCX
+
+Metadata-aware search and AI prompt generation based on subject, grade, and exam board
+
+Multi-format questions (MCQ, structured, free response, Cambridge-style)
+
+Instructions: Create a Replit project scaffold with backend, frontend, database, and AI modules ready to implement the above MVP. Include code stubs for:
+
+User login & roles
+
+Lesson plan upload/generation
+
+Homework generation & shareable link
+
+Multi-format AI question generation using metadata (exam board full name & abbreviation)
+
+Subscription and payment integration
+
+Dashboard with quota tracking, document filtering, and question type selection

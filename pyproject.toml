@@ -6,6 +6,15 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 Django = "^5.0"
 python = "^3.10"
+streamlit = "^1.49.1"
+psycopg2-binary = "^2.9.10"
+python-docx = "^1.2.0"
+reportlab = "^4.4.4"
+stripe = "^12.5.1"
+pypdf2 = "^3.0.1"
+python-dotenv = "^1.1.1"
+pillow = "^11.3.0"
+requests = "^2.32.5"
 [tool.poetry.dev-dependencies]
 
 [tool.pyright]
