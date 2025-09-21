@@ -1,0 +1,278 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Question Generator - EduTech Platform{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">AI Question Generator</h1>
+    <p class="mt-1 text-sm text-gray-600">Generate questions in multiple formats using AI</p>
+</div>
+
+<!-- Question Generator -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Generate Questions</h3>
+    </div>
+    <div class="px-6 py-6">
+        <form id="questionForm" class="space-y-6">
+            <!-- Question Type Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-3">Question Type</label>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="relative">
+                        <input type="radio" id="mcq" name="question_type" value="MCQ" class="sr-only" checked>
+                        <label for="mcq" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 peer-checked:border-indigo-600 peer-checked:bg-indigo-50">
+                            <i class="fas fa-list-ul text-2xl text-indigo-600 mb-2"></i>
+                            <span class="font-medium text-gray-900">Multiple Choice</span>
+                            <span class="text-sm text-gray-600">MCQ format</span>
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="radio" id="structured" name="question_type" value="Structured" class="sr-only">
+                        <label for="structured" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 peer-checked:border-indigo-600 peer-checked:bg-indigo-50">
+                            <i class="fas fa-align-left text-2xl text-green-600 mb-2"></i>
+                            <span class="font-medium text-gray-900">Structured</span>
+                            <span class="text-sm text-gray-600">Short answers</span>
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="radio" id="essay" name="question_type" value="Free Response" class="sr-only">
+                        <label for="essay" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 peer-checked:border-indigo-600 peer-checked:bg-indigo-50">
+                            <i class="fas fa-pen-fancy text-2xl text-purple-600 mb-2"></i>
+                            <span class="font-medium text-gray-900">Free Response</span>
+                            <span class="text-sm text-gray-600">Essay format</span>
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="radio" id="cambridge" name="question_type" value="Cambridge-style" class="sr-only">
+                        <label for="cambridge" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 peer-checked:border-indigo-600 peer-checked:bg-indigo-50">
+                            <i class="fas fa-graduation-cap text-2xl text-orange-600 mb-2"></i>
+                            <span class="font-medium text-gray-900">Cambridge-style</span>
+                            <span class="text-sm text-gray-600">Multi-part</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Subject and Grade Selection -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                    <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                    <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select grade</option>
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                    <select name="difficulty" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Topic and Exam Board -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                    <input type="text" name="topic" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Quadratic Equations">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
+                    <select name="exam_board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select exam board</option>
+                        {% for board in exam_boards %}
+                        <option value="{{ board.id }}">{{ board.name_full }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Additional Instructions -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Additional Instructions (Optional)</label>
+                <textarea name="instructions" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Any specific requirements or context for the questions..."></textarea>
+            </div>
+            
+            <!-- Generate Button -->
+            <div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md font-medium text-lg transition duration-150">
+                    <i class="fas fa-magic mr-2"></i>Generate Questions
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Generated Questions Display -->
+<div id="questionsOutput" class="hidden mt-8 bg-white shadow rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="text-lg font-medium text-gray-900">Generated Questions</h3>
+        <div class="flex space-x-2">
+            <button onclick="downloadQuestions()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-download mr-1"></i>Download PDF
+            </button>
+            <button onclick="downloadQuestions('docx')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-file-word mr-1"></i>Download DOCX
+            </button>
+        </div>
+    </div>
+    <div id="questionsContent" class="px-6 py-6">
+        <!-- Generated questions will be displayed here -->
+    </div>
+</div>
+
+<script>
+// Handle radio button styling
+document.querySelectorAll('input[name="question_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('label[for^="mcq"], label[for^="structured"], label[for^="essay"], label[for^="cambridge"]').forEach(label => {
+            label.classList.remove('border-indigo-600', 'bg-indigo-50');
+            label.classList.add('border-gray-300');
+        });
+        
+        const selectedLabel = document.querySelector(`label[for="${this.id}"]`);
+        selectedLabel.classList.remove('border-gray-300');
+        selectedLabel.classList.add('border-indigo-600', 'bg-indigo-50');
+    });
+});
+
+// Initialize first radio button styling
+document.querySelector('input[name="question_type"]:checked').dispatchEvent(new Event('change'));
+
+// Handle form submission
+document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating Questions...';
+    submitBtn.disabled = true;
+    
+    // Get form data
+    const formData = new FormData(this);
+    const questionType = formData.get('question_type');
+    const topic = formData.get('topic');
+    
+    // Simulate AI generation
+    setTimeout(() => {
+        generateMockQuestions(questionType, topic);
+        
+        // Show output section
+        document.getElementById('questionsOutput').classList.remove('hidden');
+        
+        // Scroll to output
+        document.getElementById('questionsOutput').scrollIntoView({ behavior: 'smooth' });
+        
+        // Reset button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 3000);
+});
+
+function generateMockQuestions(type, topic) {
+    const content = document.getElementById('questionsContent');
+    let html = '';
+    
+    if (type === 'MCQ') {
+        html = `
+            <div class="space-y-6">
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Question 1</h4>
+                    <p class="text-gray-700 mb-3">What is the main concept related to ${topic}?</p>
+                    <div class="space-y-2 text-sm">
+                        <div>A) Option 1</div>
+                        <div>B) Option 2</div>
+                        <div>C) Option 3</div>
+                        <div>D) Option 4</div>
+                    </div>
+                    <p class="text-sm text-green-600 mt-2 font-medium">Answer: B</p>
+                </div>
+                
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Question 2</h4>
+                    <p class="text-gray-700 mb-3">Which statement best describes ${topic}?</p>
+                    <div class="space-y-2 text-sm">
+                        <div>A) First statement</div>
+                        <div>B) Second statement</div>
+                        <div>C) Third statement</div>
+                        <div>D) Fourth statement</div>
+                    </div>
+                    <p class="text-sm text-green-600 mt-2 font-medium">Answer: C</p>
+                </div>
+            </div>
+        `;
+    } else if (type === 'Cambridge-style') {
+        html = `
+            <div class="space-y-6">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Question 1: ${topic} Analysis</h4>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-gray-700"><strong>a)</strong> Define the key terms related to ${topic}. <span class="text-sm text-gray-500">(2 marks)</span></p>
+                            <p class="text-sm text-green-600 ml-4 mt-1">Answer: Definition focusing on core concepts and terminology.</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-gray-700"><strong>b)</strong> Explain the main principles of ${topic} with examples. <span class="text-sm text-gray-500">(4 marks)</span></p>
+                            <p class="text-sm text-green-600 ml-4 mt-1">Answer: Detailed explanation with relevant examples and applications.</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-gray-700"><strong>c)</strong> Evaluate the importance of ${topic} in real-world applications. <span class="text-sm text-gray-500">(6 marks)</span></p>
+                            <p class="text-sm text-green-600 ml-4 mt-1">Answer: Critical analysis with pros/cons and real-world examples.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        html = `
+            <div class="space-y-6">
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Question 1</h4>
+                    <p class="text-gray-700 mb-3">Discuss the significance of ${topic} and its applications.</p>
+                    <div class="bg-green-50 p-3 rounded">
+                        <p class="text-sm text-green-800"><strong>Answer Guidelines:</strong> Students should mention key concepts, provide examples, and discuss real-world applications.</p>
+                    </div>
+                </div>
+                
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Question 2</h4>
+                    <p class="text-gray-700 mb-3">Explain how ${topic} relates to other concepts in this subject area.</p>
+                    <div class="bg-green-50 p-3 rounded">
+                        <p class="text-sm text-green-800"><strong>Answer Guidelines:</strong> Look for connections, comparisons, and integration with other topics.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+}
+
+function downloadQuestions(format = 'pdf') {
+    alert(`Downloading questions as ${format.toUpperCase()}... (Export functionality coming soon)`);
+}
+</script>
+{% endblock %}

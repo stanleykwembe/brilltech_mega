@@ -31,7 +31,7 @@ class UserProfile(models.Model):
     subscription = models.CharField(max_length=20, default='free')
     
     def __str__(self):
-        return f"{self.user.username} ({self.role})"
+        return f"{self.user.username} ({self.role})" if self.user else f"Profile ({self.role})"
 
 class UploadedDocument(models.Model):
     DOC_TYPES = [
@@ -83,4 +83,4 @@ class UsageQuota(models.Model):
     assignments_used = models.JSONField(default=dict)  # {"subject_id": count}
     
     def __str__(self):
-        return f"Quota for {self.user.username}"
+        return f"Quota for {self.user.username}" if self.user else "Quota"

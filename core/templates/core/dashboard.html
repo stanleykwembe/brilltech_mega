@@ -1,0 +1,161 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Dashboard - EduTech Platform{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-600">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clipboard-list text-indigo-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Lesson Plans</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_documents }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-tasks text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Assignments</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_assignments }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-crown text-yellow-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Plan</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ user_profile.subscription|title }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-chart-bar text-purple-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Usage</dt>
+                        <dd class="text-lg font-medium text-gray-900">Active</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-white shadow rounded-lg mb-8">
+    <div class="px-6 py-5 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
+    </div>
+    <div class="px-6 py-5">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <a href="{% url 'lesson_plans' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-indigo-300 transition-all duration-200">
+                <div>
+                    <span class="rounded-lg inline-flex p-3 bg-indigo-50 text-indigo-600 ring-4 ring-white">
+                        <i class="fas fa-clipboard-list text-xl"></i>
+                    </span>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600">
+                        Create Lesson Plan
+                    </h3>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Generate AI-powered lesson plans with objectives, activities, and assessments.
+                    </p>
+                </div>
+                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-indigo-400">
+                    <i class="fas fa-arrow-right"></i>
+                </span>
+            </a>
+
+            <a href="{% url 'questions' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-green-300 transition-all duration-200">
+                <div>
+                    <span class="rounded-lg inline-flex p-3 bg-green-50 text-green-600 ring-4 ring-white">
+                        <i class="fas fa-question-circle text-xl"></i>
+                    </span>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-green-600">
+                        Generate Questions
+                    </h3>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Create MCQ, structured, or Cambridge-style questions with AI assistance.
+                    </p>
+                </div>
+                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-green-400">
+                    <i class="fas fa-arrow-right"></i>
+                </span>
+            </a>
+
+            <a href="{% url 'documents' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-purple-300 transition-all duration-200">
+                <div>
+                    <span class="rounded-lg inline-flex p-3 bg-purple-50 text-purple-600 ring-4 ring-white">
+                        <i class="fas fa-upload text-xl"></i>
+                    </span>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-purple-600">
+                        Upload Documents
+                    </h3>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Upload and manage your teaching materials, past papers, and resources.
+                    </p>
+                </div>
+                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-purple-400">
+                    <i class="fas fa-arrow-right"></i>
+                </span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Status -->
+{% if user_profile.subscription == 'free' %}
+<div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg">
+    <div class="px-6 py-5 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold">Unlock Premium Features</h3>
+                <p class="mt-1 text-indigo-100">Upgrade to access unlimited lesson plans, advanced AI features, and priority support.</p>
+            </div>
+            <a href="{% url 'subscription' %}" class="bg-white text-indigo-600 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition duration-150">
+                Upgrade Now
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

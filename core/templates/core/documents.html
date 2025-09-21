@@ -1,0 +1,249 @@
+{% extends 'core/base.html' %}
+
+{% block title %}My Documents - EduTech Platform{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">My Documents</h1>
+            <p class="mt-1 text-sm text-gray-600">Upload and manage your teaching materials</p>
+        </div>
+        <button onclick="openModal('uploadModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
+            <i class="fas fa-upload mr-2"></i>Upload Document
+        </button>
+    </div>
+</div>
+
+<!-- Upload Area -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-8">
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors duration-200" onclick="openModal('uploadModal')">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Upload your documents</h3>
+            <p class="text-gray-600 mb-4">Drag and drop files here, or click to select</p>
+            <p class="text-sm text-gray-500">Supports PDF, DOCX files up to 10MB</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="text-lg font-medium text-gray-900">Your Documents</h3>
+        <div class="flex items-center space-x-3">
+            <div class="relative">
+                <input type="text" placeholder="Search documents..." class="border border-gray-300 rounded-md px-4 py-2 pl-10 focus:ring-indigo-500 focus:border-indigo-500">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="p-2 text-gray-400 hover:text-gray-600" title="Grid View">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="p-2 text-gray-600 hover:text-gray-800" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="px-6 py-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <select class="border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">All Types</option>
+                <option value="lesson_plan">Lesson Plans</option>
+                <option value="homework">Homework</option>
+                <option value="past_paper">Past Papers</option>
+                <option value="sample_questions">Sample Questions</option>
+            </select>
+            <select class="border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">All Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+            <select class="border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">All Grades</option>
+                {% for grade in grades %}
+                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                {% endfor %}
+            </select>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium transition duration-150">
+                Apply Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Documents Grid -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {% for document in documents %}
+    <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200 group">
+        <div class="px-4 py-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-file-pdf text-red-500"></i>
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ document.get_type_display }}</span>
+                </div>
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-eye mr-2"></i>Preview
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-download mr-2"></i>Download
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-edit mr-2"></i>Edit
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-trash mr-2"></i>Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-sm font-medium text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors duration-200">{{ document.title }}</h3>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <span>{{ document.subject.name }}</span>
+                <span>Grade {{ document.grade.number }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {{ document.board.abbreviation }}
+                </span>
+                <span class="text-xs text-gray-500">{{ document.created_at|date:"M d, Y" }}</span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+        <div class="text-center py-12">
+            <i class="fas fa-folder-open text-gray-400 text-4xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No documents uploaded</h3>
+            <p class="text-gray-600 mb-4">Start building your teaching resource library.</p>
+            <button onclick="openModal('uploadModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium">
+                Upload Your First Document
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form id="uploadForm">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Upload Document</h3>
+                        <p class="mt-1 text-sm text-gray-600">Add a new document to your library</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
+                            <input type="file" accept=".pdf,.docx" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                            <input type="text" name="title" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Document title">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <select name="type" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">Select type</option>
+                                <option value="lesson_plan">Lesson Plan</option>
+                                <option value="homework">Homework</option>
+                                <option value="past_paper">Past Paper</option>
+                                <option value="sample_questions">Sample Questions</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                                <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select subject</option>
+                                    {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                                <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select grade</option>
+                                    {% for grade in grades %}
+                                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
+                            <select name="exam_board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">Select exam board</option>
+                                {% for board in exam_boards %}
+                                <option value="{{ board.id }}">{{ board.name_full }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tags (optional)</label>
+                            <input type="text" name="tags" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Add tags separated by commas">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Upload Document
+                    </button>
+                    <button type="button" onclick="closeModal('uploadModal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// Handle upload form submission
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+    submitBtn.disabled = true;
+    
+    // Simulate file upload (replace with actual upload logic)
+    setTimeout(() => {
+        alert('Document uploaded successfully!');
+        closeModal('uploadModal');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        this.reset();
+    }, 2000);
+});
+</script>
+{% endblock %}
