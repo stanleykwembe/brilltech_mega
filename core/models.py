@@ -47,7 +47,9 @@ class UploadedDocument(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
     board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
     type = models.CharField(max_length=20, choices=DOC_TYPES)
-    file_url = models.URLField()
+    file_url = models.URLField(blank=True)
+    file = models.FileField(upload_to='documents/%Y/%m/', null=True, blank=True)
+    ai_content = models.JSONField(null=True, blank=True)  # Store AI-generated content
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.TextField(blank=True)
     
@@ -70,6 +72,7 @@ class GeneratedAssignment(models.Model):
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
     due_date = models.DateTimeField()
     file_url = models.URLField(blank=True)
+    instructions = models.TextField(blank=True)
     shared_link = models.CharField(max_length=500, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     content = models.JSONField()  # Store the generated questions

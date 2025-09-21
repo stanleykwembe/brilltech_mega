@@ -1,0 +1,155 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ document.title }}</h1>
+                <p class="text-gray-600 mt-2">
+                    {{ document.subject }} • Grade {{ document.grade.number }} • {{ document.board.abbreviation }}
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                {% if document.file %}
+                <a href="{% url 'download_document' document.id %}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download
+                </a>
+                {% endif %}
+                <button onclick="history.back()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                    Back
+                </button>
+            </div>
+        </div>
+
+        {% if ai_content %}
+        <div class="bg-blue-50 rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-blue-900 mb-4">AI Generated Content</h2>
+            
+            {% if ai_content.title %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Title:</h3>
+                <p class="text-gray-700">{{ ai_content.title }}</p>
+            </div>
+            {% endif %}
+
+            {% if ai_content.objectives %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Learning Objectives:</h3>
+                <ul class="list-disc list-inside text-gray-700 mt-2">
+                    {% for objective in ai_content.objectives %}
+                    <li>{{ objective }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if ai_content.materials %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Materials Needed:</h3>
+                <ul class="list-disc list-inside text-gray-700 mt-2">
+                    {% for material in ai_content.materials %}
+                    <li>{{ material }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if ai_content.activities %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Activities:</h3>
+                <div class="space-y-3 mt-2">
+                    {% for activity in ai_content.activities %}
+                    <div class="bg-white p-4 rounded-md border">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-medium text-gray-900">{{ activity.name }}</h4>
+                            <span class="text-sm text-gray-500">{{ activity.duration }}</span>
+                        </div>
+                        <p class="text-gray-700 text-sm">{{ activity.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if ai_content.assessment %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Assessment:</h3>
+                <p class="text-gray-700">{{ ai_content.assessment }}</p>
+            </div>
+            {% endif %}
+
+            {% if ai_content.homework %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Homework:</h3>
+                <p class="text-gray-700">{{ ai_content.homework }}</p>
+            </div>
+            {% endif %}
+
+            {% if ai_content.questions %}
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-900">Questions:</h3>
+                <div class="space-y-3 mt-2">
+                    {% for question in ai_content.questions %}
+                    <div class="bg-white p-4 rounded-md border">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-medium text-gray-900">Question {{ question.question_number }}</h4>
+                            {% if question.marks %}
+                            <span class="text-sm text-gray-500">{{ question.marks }} marks</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-gray-700 mb-3">{{ question.question_text }}</p>
+                        
+                        {% if question.options %}
+                        <div class="space-y-1">
+                            {% for option in question.options %}
+                            <p class="text-sm text-gray-600">{{ option }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if question.correct_answer %}
+                        <div class="mt-2 p-2 bg-green-50 rounded">
+                            <p class="text-sm text-green-800"><strong>Answer:</strong> {{ question.correct_answer }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if question.explanation %}
+                        <div class="mt-2 p-2 bg-gray-50 rounded">
+                            <p class="text-sm text-gray-700"><strong>Explanation:</strong> {{ question.explanation }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if question.answer_guidance %}
+                        <div class="mt-2 p-2 bg-yellow-50 rounded">
+                            <p class="text-sm text-yellow-800"><strong>Marking Guidance:</strong> {{ question.answer_guidance }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if ai_content.total_marks %}
+            <div class="text-right text-sm text-gray-600 mt-4">
+                <strong>Total Marks: {{ ai_content.total_marks }}</strong>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p>No preview available for this document.</p>
+            {% if document.file %}
+            <p class="mt-2">Please download the file to view its contents.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
