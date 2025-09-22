@@ -9,17 +9,118 @@
             <h1 class="text-2xl font-bold text-gray-900">Assignments</h1>
             <p class="mt-1 text-sm text-gray-600">Generate and manage homework assignments</p>
         </div>
-        <button onclick="openModal('generateModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
-            <i class="fas fa-plus mr-2"></i>Generate Assignment
-        </button>
     </div>
 </div>
 
-<!-- Assignments List -->
-<div class="bg-white shadow rounded-lg overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">Your Assignments</h3>
+<!-- Tab Navigation -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+            <button onclick="showTab('admin-library')" id="admin-library-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600">
+                Admin Library
+            </button>
+            <button onclick="showTab('ai-generate')" id="ai-generate-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                AI Generate
+            </button>
+            <button onclick="showTab('my-uploads')" id="my-uploads-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                My Uploads
+            </button>
+        </nav>
     </div>
+</div>
+
+<!-- Admin Library Tab -->
+<div id="admin-library" class="tab-content">
+    <div class="text-center py-12 bg-white rounded-lg shadow">
+        <i class="fas fa-building text-gray-400 text-4xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Admin Content Library</h3>
+        <p class="text-gray-600">Coming soon - Pre-approved assignments from your institution</p>
+    </div>
+</div>
+
+<!-- AI Generate Tab -->
+<div id="ai-generate" class="tab-content hidden">
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Generate AI Assignment</h3>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="generate_ai" value="1">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                    <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                    <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select grade</option>
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
+                    <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select board</option>
+                        {% for board in exam_boards %}
+                        <option value="{{ board.id }}">{{ board.name_full }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Question Type</label>
+                    <select name="question_type" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select type</option>
+                        <option value="mcq">Multiple Choice Questions</option>
+                        <option value="structured">Structured Questions</option>
+                        <option value="free_response">Free Response</option>
+                        <option value="cambridge">Cambridge Style</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                <input type="text" name="topic" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Quadratic Equations">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Questions</label>
+                    <input type="number" name="num_questions" value="5" min="1" max="20" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                    <input type="date" name="due_date" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                    <i class="fas fa-robot mr-2"></i>Generate Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- My Uploads Tab -->
+<div id="my-uploads" class="tab-content hidden">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Your Assignments</h3>
+        </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -69,7 +170,7 @@
                         <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">No assignments yet</h3>
                         <p class="text-gray-600 mb-4">Generate your first assignment to get started.</p>
-                        <button onclick="openModal('generateModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium">
+                        <button onclick="showTab('ai-generate')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium">
                             Generate Assignment
                         </button>
                     </td>
@@ -78,81 +179,84 @@
             </tbody>
         </table>
     </div>
-</div>
-
-<!-- Generate Assignment Modal -->
-<div id="generateModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form id="generateForm">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">Generate Assignment</h3>
-                        <p class="mt-1 text-sm text-gray-600">Create a new homework assignment with AI</p>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Title</label>
-                            <input type="text" name="title" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Chapter 5 Practice Problems">
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                                <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Select subject</option>
-                                    {% for subject in subjects %}
-                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
-                                <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Select grade</option>
-                                    {% for grade in grades %}
-                                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                            <input type="date" name="due_date" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
-                            <textarea name="instructions" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Additional instructions for students..."></textarea>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
-                            <select name="exam_board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">Select exam board</option>
-                                {% for board in exam_boards %}
-                                <option value="{{ board.id }}">{{ board.name_full }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Generate Assignment
-                    </button>
-                    <button type="button" onclick="closeModal('generateModal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
+
+<script>
+// Tab switching functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active styles from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('border-indigo-500', 'text-indigo-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName).classList.remove('hidden');
+    
+    // Add active styles to selected tab button
+    const activeButton = document.getElementById(tabName + '-tab');
+    activeButton.classList.remove('border-transparent', 'text-gray-500');
+    activeButton.classList.add('border-indigo-500', 'text-indigo-600');
+}
+
+// Initialize first tab as active
+document.addEventListener('DOMContentLoaded', function() {
+    showTab('admin-library');
+});
+
+// Share assignment functionality (keeping for My Uploads tab)
+function shareAssignment(link) {
+    document.getElementById('shareLink').value = link;
+    openModal('shareModal');
+}
+
+function copyLink() {
+    const linkInput = document.getElementById('shareLink');
+    linkInput.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalText;
+    }, 2000);
+}
+
+function shareViaWhatsApp() {
+    const link = document.getElementById('shareLink').value;
+    const text = `Check out this assignment: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function shareViaEmail() {
+    const link = document.getElementById('shareLink').value;
+    const subject = 'New Assignment';
+    const body = `Here's your assignment link: ${link}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+}
+
+function shareViaClassroom() {
+    alert('Google Classroom integration coming soon!');
+}
+
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+</script>
 
 <!-- Share Modal -->
 <div id="shareModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -197,68 +301,4 @@
     </div>
 </div>
 
-<script>
-function openModal(modalId) {
-    document.getElementById(modalId).classList.remove('hidden');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.add('hidden');
-}
-
-function shareAssignment(link) {
-    document.getElementById('shareLink').value = link;
-    openModal('shareModal');
-}
-
-function copyLink() {
-    const linkInput = document.getElementById('shareLink');
-    linkInput.select();
-    document.execCommand('copy');
-    
-    // Show feedback
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-check"></i>';
-    setTimeout(() => {
-        button.innerHTML = originalText;
-    }, 2000);
-}
-
-function shareViaWhatsApp() {
-    const link = document.getElementById('shareLink').value;
-    const text = `Check out this assignment: ${link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-}
-
-function shareViaEmail() {
-    const link = document.getElementById('shareLink').value;
-    const subject = 'New Assignment';
-    const body = `Here's your assignment link: ${link}`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
-}
-
-function shareViaClassroom() {
-    alert('Google Classroom integration coming soon!');
-}
-
-// Handle generate form submission
-document.getElementById('generateForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
-    submitBtn.disabled = true;
-    
-    // Simulate assignment generation (replace with actual API call)
-    setTimeout(() => {
-        alert('Assignment generated successfully!');
-        closeModal('generateModal');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        this.reset();
-    }, 3000);
-});
-</script>
 {% endblock %}
