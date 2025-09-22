@@ -29,6 +29,9 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='teacher')
     subscription = models.CharField(max_length=20, default='free')
+    email_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, blank=True)
+    verification_token_created = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.user.username} ({self.role})" if self.user else f"Profile ({self.role})"

@@ -7,11 +7,16 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.conf import settings
+from django.urls import reverse
+from django.utils import timezone
 import json
 import uuid
 import os
 import mimetypes
+import secrets
+from datetime import timedelta
 from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 
@@ -21,6 +26,9 @@ def login_view(request):
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            if not user.is_active:
+                messages.error(request, 'Please verify your email address before signing in.')
+                return render(request, 'core/login.html')
             login(request, user)
             return redirect('dashboard')
         else:
@@ -314,3 +322,160 @@ def generate_questions_ai(request):
             })
     
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+def signup_view(request):
+    """Teacher signup with email verification"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        
+        # Validation
+        if not all([username, email, password, password_confirm, first_name, last_name]):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'core/signup.html')
+        
+        if password != password_confirm:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'core/signup.html')
+        
+        if len(password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long.')
+            return render(request, 'core/signup.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'core/signup.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already registered.')
+            return render(request, 'core/signup.html')
+        
+        try:
+            # Create user (inactive until email verified)
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=False  # Deactivate until email verification
+            )
+            
+            # Create profile with verification token
+            verification_token = secrets.token_urlsafe(50)
+            profile = UserProfile.objects.create(
+                user=user,
+                role='teacher',
+                verification_token=verification_token,
+                verification_token_created=timezone.now()
+            )
+            
+            # Send verification email
+            verification_url = request.build_absolute_uri(
+                reverse('verify_email', kwargs={'token': verification_token})
+            )
+            
+            send_mail(
+                subject='Welcome to EduTech Platform - Verify Your Email',
+                message=f'''Hi {first_name},
+
+Welcome to EduTech Platform! Please click the link below to verify your email address:
+
+{verification_url}
+
+This link will expire in 24 hours.
+
+Best regards,
+EduTech Team''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, f'Account created! Please check your email ({email}) and click the verification link to activate your account.')
+            return redirect('login')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating account: {str(e)}')
+            return render(request, 'core/signup.html')
+    
+    return render(request, 'core/signup.html')
+
+def verify_email(request, token):
+    """Verify email address with token"""
+    try:
+        # Find profile with matching token
+        profile = UserProfile.objects.get(verification_token=token)
+        
+        # Check if token is expired (24 hours)
+        if profile.verification_token_created and timezone.now() > profile.verification_token_created + timedelta(hours=24):
+            messages.error(request, 'Verification link has expired. Please request a new one.')
+            return redirect('login')
+        
+        # Activate user and clear token
+        user = profile.user
+        user.is_active = True
+        user.save()
+        
+        profile.email_verified = True
+        profile.verification_token = ''
+        profile.verification_token_created = None
+        profile.save()
+        
+        # Create usage quota
+        UsageQuota.objects.get_or_create(user=user)
+        
+        messages.success(request, 'Email verified successfully! You can now sign in.')
+        return redirect('login')
+        
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'Invalid verification link.')
+        return redirect('login')
+
+def resend_verification(request):
+    """Resend verification email"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        try:
+            user = User.objects.get(email=email, is_active=False)
+            profile = user.userprofile
+            
+            # Generate new token
+            verification_token = secrets.token_urlsafe(50)
+            profile.verification_token = verification_token
+            profile.verification_token_created = timezone.now()
+            profile.save()
+            
+            # Send verification email
+            verification_url = request.build_absolute_uri(
+                reverse('verify_email', kwargs={'token': verification_token})
+            )
+            
+            send_mail(
+                subject='EduTech Platform - New Verification Link',
+                message=f'''Hi {user.first_name},
+
+Here is your new verification link:
+
+{verification_url}
+
+This link will expire in 24 hours.
+
+Best regards,
+EduTech Team''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 'Verification email sent! Please check your inbox.')
+            
+        except User.DoesNotExist:
+            messages.error(request, 'No unverified account found with this email address.')
+    
+    return render(request, 'core/resend_verification.html')
