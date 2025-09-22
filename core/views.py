@@ -239,16 +239,49 @@ def download_document(request, doc_id):
         raise Http404("File not found")
 
 @login_required
+def view_document_inline(request, doc_id):
+    """Serve document file inline for browser preview (mainly PDFs)"""
+    document = get_object_or_404(UploadedDocument, id=doc_id, uploaded_by=request.user)
+    
+    if document.file and os.path.exists(document.file.path):
+        # Get proper content type
+        content_type, _ = mimetypes.guess_type(document.file.name)
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        # For PDFs, serve inline
+        file_extension = os.path.splitext(document.file.name)[1].lower()
+        if file_extension == '.pdf':
+            content_type = 'application/pdf'
+        
+        # Serve file inline for browser preview
+        with open(document.file.path, 'rb') as f:
+            response = HttpResponse(f.read(), content_type=content_type)
+            filename = f"{document.title}{os.path.splitext(document.file.name)[1]}"
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            response['Content-Security-Policy'] = "frame-ancestors 'self'"
+            return response
+    else:
+        raise Http404("File not found")
+
+@login_required
 def view_document(request, doc_id):
-    """View document content (for AI generated content)"""
+    """View document content (for AI generated content or PDF preview)"""
     document = get_object_or_404(UploadedDocument, id=doc_id, uploaded_by=request.user)
     
     # Get AI content from database
     ai_content = document.ai_content
     
+    # Check if document is a PDF for preview
+    is_pdf = False
+    if document.file:
+        file_extension = os.path.splitext(document.file.name)[1].lower()
+        is_pdf = file_extension == '.pdf'
+    
     context = {
         'document': document,
-        'ai_content': ai_content
+        'ai_content': ai_content,
+        'is_pdf': is_pdf
     }
     return render(request, 'core/view_document.html', context)
 

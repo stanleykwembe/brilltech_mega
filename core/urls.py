@@ -17,6 +17,7 @@ urlpatterns = [
     path('document/<int:doc_id>/delete/', views.delete_document, name='delete_document'),
     path('document/<int:doc_id>/download/', views.download_document, name='download_document'),
     path('document/<int:doc_id>/view/', views.view_document, name='view_document'),
+    path('document/<int:doc_id>/inline/', views.view_document_inline, name='view_document_inline'),
     # AI generation endpoints
     path('generate-assignment/', views.generate_assignment_ai, name='generate_assignment'),
     path('generate-questions/', views.generate_questions_ai, name='generate_questions'),
