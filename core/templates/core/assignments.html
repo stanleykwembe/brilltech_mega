@@ -199,7 +199,15 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
                             <div>
-                                <div class="text-sm font-medium text-gray-900">{{ assignment.title }}</div>
+                                <div class="text-sm font-medium text-gray-900 flex items-center">
+                                    {{ assignment.title }}
+                                    {% if assignment.is_shared %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+                                        <i class="fas fa-share text-green-600 mr-1" style="font-size: 10px;"></i>
+                                        Shared ({{ assignment.active_shares }})
+                                    </span>
+                                    {% endif %}
+                                </div>
                                 <div class="text-sm text-gray-500">{{ assignment.get_question_type_display }}</div>
                             </div>
                         </td>
@@ -244,7 +252,15 @@
                         </span>
                         <span class="text-xs text-gray-500">{{ document.created_at|date:"M d" }}</span>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2 truncate">{{ document.title }}</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2 truncate flex items-center">
+                        {{ document.title }}
+                        {% if document.is_shared %}
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 ml-2">
+                            <i class="fas fa-share text-green-600 mr-1" style="font-size: 9px;"></i>
+                            {{ document.active_shares }}
+                        </span>
+                        {% endif %}
+                    </h3>
                     <p class="text-sm text-gray-600 mb-3">
                         Grade {{ document.grade.number }} • {{ document.board.abbreviation }}
                     </p>

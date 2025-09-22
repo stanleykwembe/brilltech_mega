@@ -160,6 +160,21 @@ def assignments_view(request):
         type='homework'
     ).order_by('-created_at')
     
+    # Add sharing status to assignments for visual indicators
+    for assignment in assignments:
+        assignment.active_shares = AssignmentShare.objects.filter(
+            generated_assignment=assignment,
+            revoked_at__isnull=True
+        ).count()
+        assignment.is_shared = assignment.active_shares > 0
+    
+    for document in uploaded_assignments:
+        document.active_shares = AssignmentShare.objects.filter(
+            uploaded_document=document,
+            revoked_at__isnull=True
+        ).count()
+        document.is_shared = document.active_shares > 0
+    
     # Get shared assignments for the shared assignments tab
     shared_assignments = AssignmentShare.objects.filter(
         teacher=request.user
