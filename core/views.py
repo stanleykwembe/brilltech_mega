@@ -211,6 +211,142 @@ def subscription_view(request):
     return render(request, 'core/subscription.html', context)
 
 @login_required
+def classes_view(request):
+    """View for managing teacher's classes"""
+    classes = ClassGroup.objects.filter(teacher=request.user, is_active=True).order_by('name')
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'classes': classes,
+        'subjects': subjects,
+        'grades': grades,
+    }
+    return render(request, 'core/classes.html', context)
+
+@login_required
+def create_class(request):
+    """Create a new class"""
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name', '').strip()
+            description = request.POST.get('description', '').strip()
+            subject_id = request.POST.get('subject')
+            grade_id = request.POST.get('grade')
+            
+            if not name:
+                messages.error(request, 'Class name is required.')
+                return redirect('classes')
+            
+            # Check for duplicate class name
+            if ClassGroup.objects.filter(teacher=request.user, name=name, is_active=True).exists():
+                messages.error(request, f'You already have a class named "{name}".')
+                return redirect('classes')
+            
+            # Create the class
+            class_group = ClassGroup(
+                teacher=request.user,
+                name=name,
+                description=description
+            )
+            
+            if subject_id:
+                try:
+                    class_group.subject = Subject.objects.get(id=subject_id)
+                except Subject.DoesNotExist:
+                    pass
+            
+            if grade_id:
+                try:
+                    class_group.grade = Grade.objects.get(id=grade_id)
+                except Grade.DoesNotExist:
+                    pass
+            
+            class_group.save()
+            messages.success(request, f'Class "{name}" created successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating class: {str(e)}')
+    
+    return redirect('classes')
+
+@login_required
+def edit_class(request, class_id):
+    """Edit an existing class"""
+    try:
+        class_group = ClassGroup.objects.get(id=class_id, teacher=request.user, is_active=True)
+        
+        if request.method == 'POST':
+            name = request.POST.get('name', '').strip()
+            description = request.POST.get('description', '').strip()
+            subject_id = request.POST.get('subject')
+            grade_id = request.POST.get('grade')
+            
+            if not name:
+                messages.error(request, 'Class name is required.')
+                return redirect('classes')
+            
+            # Check for duplicate class name (excluding current class)
+            if ClassGroup.objects.filter(teacher=request.user, name=name, is_active=True).exclude(id=class_id).exists():
+                messages.error(request, f'You already have a class named "{name}".')
+                return redirect('classes')
+            
+            # Update the class
+            class_group.name = name
+            class_group.description = description
+            
+            if subject_id:
+                try:
+                    class_group.subject = Subject.objects.get(id=subject_id)
+                except Subject.DoesNotExist:
+                    class_group.subject = None
+            else:
+                class_group.subject = None
+            
+            if grade_id:
+                try:
+                    class_group.grade = Grade.objects.get(id=grade_id)
+                except Grade.DoesNotExist:
+                    class_group.grade = None
+            else:
+                class_group.grade = None
+            
+            class_group.save()
+            messages.success(request, f'Class "{name}" updated successfully!')
+            
+    except ClassGroup.DoesNotExist:
+        messages.error(request, 'Class not found or you do not have permission to edit it.')
+    except Exception as e:
+        messages.error(request, f'Error updating class: {str(e)}')
+    
+    return redirect('classes')
+
+@login_required
+def delete_class(request, class_id):
+    """Delete (deactivate) a class"""
+    if request.method == 'POST':
+        try:
+            class_group = ClassGroup.objects.get(id=class_id, teacher=request.user, is_active=True)
+            
+            # Check if class has active shares
+            active_shares = AssignmentShare.objects.filter(class_group=class_group, revoked_at__isnull=True).count()
+            if active_shares > 0:
+                messages.error(request, f'Cannot delete class "{class_group.name}" because it has {active_shares} active shared assignments. Please revoke all shares first.')
+                return redirect('classes')
+            
+            # Soft delete by marking as inactive
+            class_group.is_active = False
+            class_group.save()
+            messages.success(request, f'Class "{class_group.name}" deleted successfully!')
+            
+        except ClassGroup.DoesNotExist:
+            messages.error(request, 'Class not found or you do not have permission to delete it.')
+        except Exception as e:
+            messages.error(request, f'Error deleting class: {str(e)}')
+    
+    return redirect('classes')
+
+@login_required
 def delete_document(request, doc_id):
     """Delete a document"""
     if request.method == 'POST':

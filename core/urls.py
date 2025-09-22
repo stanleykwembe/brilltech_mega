@@ -13,6 +13,10 @@ urlpatterns = [
     path('questions/', views.questions_view, name='questions'),
     path('documents/', views.documents_view, name='documents'),
     path('subscription/', views.subscription_view, name='subscription'),
+    path('classes/', views.classes_view, name='classes'),
+    path('classes/create/', views.create_class, name='create_class'),
+    path('classes/<int:class_id>/edit/', views.edit_class, name='edit_class'),
+    path('classes/<int:class_id>/delete/', views.delete_class, name='delete_class'),
     # File operations
     path('document/<int:doc_id>/delete/', views.delete_document, name='delete_document'),
     path('document/<int:doc_id>/download/', views.download_document, name='download_document'),
