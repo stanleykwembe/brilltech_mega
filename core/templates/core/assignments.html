@@ -25,6 +25,9 @@
             <button onclick="showTab('my-uploads')" id="my-uploads-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 My Uploads
             </button>
+            <button onclick="showTab('shared-assignments')" id="shared-assignments-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Shared Assignments
+            </button>
         </nav>
     </div>
 </div>
@@ -272,6 +275,94 @@
     </div>
 </div>
 
+<!-- Shared Assignments Tab -->
+<div id="shared-assignments" class="tab-content hidden">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Shared Assignments</h3>
+            <p class="text-sm text-gray-600 mt-1">Track assignments you've shared with your classes</p>
+        </div>
+        
+        {% if shared_assignments %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shared</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for share in shared_assignments %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">{{ share.assignment_title }}</div>
+                                <div class="text-sm text-gray-500">Grade {{ share.assignment_grade.number }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if share.assignment_type == 'Generated' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ share.assignment_type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ share.class_group.name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ share.assignment_subject.name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ share.shared_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4">
+                            {% if share.is_active %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Active
+                                </span>
+                            {% elif share.revoked_at %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    Revoked
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Expired
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium">
+                            <div class="flex space-x-2">
+                                {% if share.is_active %}
+                                <button onclick="copyShareLink('{{ share.token }}')" class="text-blue-600 hover:text-blue-700" title="Copy Link">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button onclick="revokeShare({{ share.id }})" class="text-red-600 hover:text-red-700" title="Revoke Access">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
+                                <button onclick="viewShareDetails({{ share.id }})" class="text-indigo-600 hover:text-indigo-700" title="View Details">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-6 py-12 text-center">
+            <i class="fas fa-share-alt text-gray-400 text-4xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No shared assignments yet</h3>
+            <p class="text-gray-600 mb-4">When you share assignments with your classes, they'll appear here for tracking.</p>
+            <button onclick="showTab('ai-generate')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium">
+                Generate Assignment
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <script>
 // Tab switching functionality
 function showTab(tabName) {
@@ -364,6 +455,54 @@ function confirmDelete(docId) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+// Shared Assignments tab functions
+function copyShareLink(token) {
+    const shareUrl = window.location.origin + '/share/a/' + token;
+    navigator.clipboard.writeText(shareUrl).then(function() {
+        // Show success feedback
+        const event = window.event;
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+        }, 2000);
+    }).catch(function() {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Link copied to clipboard: ' + shareUrl);
+    });
+}
+
+function revokeShare(shareId) {
+    if (confirm('Are you sure you want to revoke access to this shared assignment?')) {
+        // Create a form to revoke the share
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/assignments/share/' + shareId + '/revoke/';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function viewShareDetails(shareId) {
+    // For now, just show an alert - this can be enhanced later with a modal
+    alert('Share details view coming soon. Share ID: ' + shareId);
 }
 </script>
 
