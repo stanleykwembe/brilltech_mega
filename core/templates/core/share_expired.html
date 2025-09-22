@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Link Expired</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center py-12 px-4">
+        <div class="max-w-md w-full space-y-8">
+            <div class="text-center">
+                <div class="mx-auto h-24 w-24 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-clock text-yellow-600 text-3xl"></i>
+                </div>
+                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                    {% if reason == 'revoked' %}
+                    Access Revoked
+                    {% else %}
+                    Link Expired
+                    {% endif %}
+                </h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {% if reason == 'revoked' %}
+                    This assignment link has been revoked by the teacher and is no longer accessible.
+                    {% else %}
+                    This assignment link has expired and is no longer accessible.
+                    {% endif %}
+                </p>
+                
+                {% if share %}
+                <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-900">Assignment Details</h3>
+                    <p class="text-sm text-gray-600 mt-1">{{ share.assignment_title }}</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        {{ share.assignment_subject.name }} - Grade {{ share.assignment_grade.number }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-6">
+                    <p class="text-sm text-gray-600">
+                        Please contact your teacher for a new assignment link or alternative access.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -11,13 +11,14 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.db import IntegrityError
 import json
 import uuid
 import os
 import mimetypes
 import secrets
 from datetime import timedelta
-from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota
+from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 
 def login_view(request):
@@ -159,10 +160,18 @@ def assignments_view(request):
         type='homework'
     ).order_by('-created_at')
     
+    # Get shared assignments for the shared assignments tab
+    shared_assignments = AssignmentShare.objects.filter(
+        teacher=request.user
+    ).select_related(
+        'class_group', 'generated_assignment', 'uploaded_document'
+    ).order_by('-shared_at')
+    
     context = {
         'assignments': assignments,
         'uploaded_assignments': uploaded_assignments,
         'documents': uploaded_assignments,  # For backward compatibility with template
+        'shared_assignments': shared_assignments,
         'subjects': Subject.objects.all(),
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
@@ -513,3 +522,209 @@ EduTech Team''',
             messages.error(request, 'No unverified account found with this email address.')
     
     return render(request, 'core/resend_verification.html')
+
+@login_required
+def revoke_share(request, share_id):
+    """Revoke access to a shared assignment"""
+    if request.method == 'POST':
+        try:
+            share = AssignmentShare.objects.get(
+                id=share_id,
+                teacher=request.user  # Ensure teacher owns the share
+            )
+            from django.utils import timezone
+            share.revoked_at = timezone.now()
+            share.save()
+            messages.success(request, f'Access to "{share.assignment_title}" has been revoked.')
+        except AssignmentShare.DoesNotExist:
+            messages.error(request, 'Share not found or you do not have permission to revoke it.')
+        except Exception as e:
+            messages.error(request, f'Error revoking share: {str(e)}')
+    
+    return redirect('assignments')
+
+@login_required
+def create_share(request):
+    """Create a new assignment share"""
+    if request.method == 'POST':
+        try:
+            assignment_type = request.POST.get('assignment_type')  # 'generated' or 'uploaded'
+            assignment_id = request.POST.get('assignment_id')
+            class_name = request.POST.get('class_name')  # For now, just use class name directly
+            due_date_str = request.POST.get('due_date')
+            
+            # Parse due date if provided
+            due_date = None
+            if due_date_str:
+                from django.utils.dateparse import parse_datetime, parse_date
+                from django.utils import timezone
+                try:
+                    # Try to parse as date first, then datetime
+                    parsed_date = parse_date(due_date_str)
+                    if parsed_date:
+                        # Convert date to datetime at end of day
+                        from datetime import datetime, time
+                        due_date = timezone.make_aware(
+                            datetime.combine(parsed_date, time.max.replace(microsecond=0))
+                        )
+                    else:
+                        due_date = parse_datetime(due_date_str)
+                        # Make naive datetimes timezone-aware
+                        if due_date and timezone.is_naive(due_date):
+                            due_date = timezone.make_aware(due_date)
+                except (ValueError, TypeError):
+                    pass  # Leave due_date as None if parsing fails
+            
+            # Get or create class group
+            class_group, created = ClassGroup.objects.get_or_create(
+                teacher=request.user,
+                name=class_name,
+                defaults={'description': f'Class for {class_name}'}
+            )
+            
+            # Validate assignment ownership and create share
+            share = None
+            if assignment_type == 'generated':
+                assignment = GeneratedAssignment.objects.get(
+                    id=assignment_id, 
+                    teacher=request.user
+                )
+                try:
+                    share = AssignmentShare.objects.create(
+                        teacher=request.user,
+                        class_group=class_group,
+                        generated_assignment=assignment,
+                        due_date=due_date
+                    )
+                except IntegrityError:
+                    # Handle duplicate active share
+                    messages.error(request, f'Assignment "{assignment.title}" is already shared with {class_name}.')
+                    return redirect('assignments')
+                    
+            elif assignment_type == 'uploaded':
+                document = UploadedDocument.objects.get(
+                    id=assignment_id,
+                    uploaded_by=request.user
+                )
+                try:
+                    share = AssignmentShare.objects.create(
+                        teacher=request.user,
+                        class_group=class_group,
+                        uploaded_document=document,
+                        due_date=due_date
+                    )
+                except IntegrityError:
+                    # Handle duplicate active share
+                    messages.error(request, f'Assignment "{document.title}" is already shared with {class_name}.')
+                    return redirect('assignments')
+            else:
+                raise ValueError("Invalid assignment type")
+            
+            if share:
+                # Generate share URL using reverse
+                from django.urls import reverse
+                share_url = request.build_absolute_uri(reverse('public_assignment', args=[share.token]))
+                
+                messages.success(request, f'Assignment shared successfully! Share URL: {share_url}')
+                
+                # Return the share URL in response (for AJAX if needed)
+                if request.headers.get('Accept') == 'application/json':
+                    import json
+                    return HttpResponse(json.dumps({
+                        'success': True,
+                        'share_url': share_url,
+                        'token': share.token
+                    }), content_type='application/json')
+            
+        except (GeneratedAssignment.DoesNotExist, UploadedDocument.DoesNotExist):
+            messages.error(request, 'Assignment not found or you do not have permission to share it.')
+        except Exception as e:
+            messages.error(request, f'Error creating share: {str(e)}')
+    
+    return redirect('assignments')
+
+def public_assignment_view(request, token):
+    """Public view for students to access shared assignments without login"""
+    try:
+        share = AssignmentShare.objects.select_related(
+            'generated_assignment', 'uploaded_document', 'class_group'
+        ).get(token=token)
+        
+        # Check if share is still active
+        if not share.is_active:
+            return render(request, 'core/share_expired.html', {
+                'share': share,
+                'reason': 'revoked' if share.revoked_at else 'expired'
+            })
+        
+        # Update access tracking
+        from django.utils import timezone
+        share.view_count += 1
+        share.last_accessed = timezone.now()
+        share.save()
+        
+        # Determine content type and render appropriate template
+        if share.generated_assignment:
+            context = {
+                'share': share,
+                'assignment': share.generated_assignment,
+                'content': share.generated_assignment.content,
+                'assignment_type': 'generated'
+            }
+            return render(request, 'core/public_assignment.html', context)
+        else:
+            # For uploaded documents, we'll serve the file directly
+            context = {
+                'share': share,
+                'document': share.uploaded_document,
+                'assignment_type': 'uploaded'
+            }
+            return render(request, 'core/public_document.html', context)
+            
+    except AssignmentShare.DoesNotExist:
+        return render(request, 'core/share_not_found.html')
+
+def public_assignment_download(request, token):
+    """Download endpoint for public shared assignments"""
+    try:
+        share = AssignmentShare.objects.select_related(
+            'uploaded_document'
+        ).get(token=token)
+        
+        # Check if share is still active
+        if not share.is_active:
+            return HttpResponse('This share has expired or been revoked.', status=403)
+        
+        # Only uploaded documents can be downloaded
+        if not share.uploaded_document:
+            return HttpResponse('This assignment cannot be downloaded.', status=400)
+        
+        # Update access tracking
+        from django.utils import timezone
+        share.view_count += 1
+        share.last_accessed = timezone.now()
+        share.save()
+        
+        # Serve the file
+        document = share.uploaded_document
+        file_path = document.file.path
+        
+        if os.path.exists(file_path):
+            # Get the original file extension
+            file_extension = os.path.splitext(document.file.name)[1]
+            filename = f"{document.title}{file_extension}"
+            
+            # Get proper content type
+            content_type, _ = mimetypes.guess_type(document.file.name)
+            if not content_type:
+                content_type = 'application/octet-stream'
+            
+            with open(file_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type=content_type)
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                return response
+        else:
+            return HttpResponse('File not found.', status=404)
+            
+    except AssignmentShare.DoesNotExist:
+        return HttpResponse('Share not found.', status=404)

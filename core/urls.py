@@ -21,4 +21,10 @@ urlpatterns = [
     # AI generation endpoints
     path('generate-assignment/', views.generate_assignment_ai, name='generate_assignment'),
     path('generate-questions/', views.generate_questions_ai, name='generate_questions'),
+    # Assignment sharing endpoints
+    path('assignments/share/create/', views.create_share, name='create_share'),
+    path('assignments/share/<int:share_id>/revoke/', views.revoke_share, name='revoke_share'),
+    # Public access endpoints (no login required)
+    path('share/a/<str:token>/', views.public_assignment_view, name='public_assignment'),
+    path('share/a/<str:token>/download/', views.public_assignment_download, name='public_assignment_download'),
 ]

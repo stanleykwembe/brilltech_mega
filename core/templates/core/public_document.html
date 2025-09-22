@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.title }} - Assignment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-8">
+        <div class="max-w-4xl mx-auto px-4">
+            <!-- Header -->
+            <div class="bg-white shadow rounded-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ document.title }}</h1>
+                        <p class="text-gray-600 mt-1">{{ document.subject.name }} - Grade {{ document.grade.number }}</p>
+                        <p class="text-sm text-gray-500">Shared by {{ share.class_group.teacher.first_name }} {{ share.class_group.teacher.last_name }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            Uploaded Assignment
+                        </span>
+                        {% if share.due_date %}
+                        <p class="text-sm text-gray-600 mt-2">Due: {{ share.due_date|date:"M d, Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Viewer -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Assignment Document</h2>
+                    <a href="{% url 'public_assignment_download' share.token %}" 
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition duration-150">
+                        <i class="fas fa-download mr-2"></i>
+                        Download Assignment
+                    </a>
+                </div>
+
+                {% if document.file %}
+                    {% with file_extension=document.file.name|slice:"-4:"|lower %}
+                        {% if file_extension == ".pdf" %}
+                        <div class="border rounded-lg overflow-hidden" style="height: 600px;">
+                            <p class="text-center py-8 text-gray-600">
+                                PDF preview is available after download. 
+                                <a href="{% url 'public_assignment_download' share.token %}" 
+                                   class="text-indigo-600 hover:text-indigo-700 underline">
+                                    Click here to download and view the assignment.
+                                </a>
+                            </p>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12">
+                            <i class="fas fa-file-alt text-gray-400 text-4xl mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Assignment File</h3>
+                            <p class="text-gray-600 mb-4">This file type cannot be previewed in the browser.</p>
+                            <a href="{% url 'public_assignment_download' share.token %}" 
+                               class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md">
+                                <i class="fas fa-download mr-2"></i>
+                                Download Assignment
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">File Not Available</h3>
+                    <p class="text-gray-600">The assignment file is not currently available.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Instructions -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Instructions</h3>
+                        <p class="text-sm text-blue-700 mt-1">
+                            Download and complete this assignment. Write your answers clearly and show all working.
+                            {% if share.due_date %}Submit by {{ share.due_date|date:"l, M d, Y" }}.{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
