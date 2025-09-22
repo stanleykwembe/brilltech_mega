@@ -167,6 +167,9 @@ def assignments_view(request):
         'class_group', 'generated_assignment', 'uploaded_document'
     ).order_by('-shared_at')
     
+    # Get teacher's classes for sharing modal
+    teacher_classes = ClassGroup.objects.filter(teacher=request.user, is_active=True).order_by('name')
+    
     context = {
         'assignments': assignments,
         'uploaded_assignments': uploaded_assignments,
@@ -175,6 +178,7 @@ def assignments_view(request):
         'subjects': Subject.objects.all(),
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
+        'teacher_classes': teacher_classes,
     }
     return render(request, 'core/assignments.html', context)
 
