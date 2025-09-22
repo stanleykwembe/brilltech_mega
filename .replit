@@ -1,6 +1,6 @@
 run = ["python", "manage.py", "runserver", "0.0.0.0:3000"]
 entrypoint = "manage.py"
-modules = ["python-3.11"]
+modules = ["python-3.11", "postgresql-16"]
 
 hidden = [".pythonlibs"]
 
@@ -30,6 +30,10 @@ externalPort = 3001
 [[ports]]
 localPort = 37047
 externalPort = 3000
+
+[[ports]]
+localPort = 37621
+externalPort = 3002
 
 [agent]
 expertMode = true
