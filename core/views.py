@@ -162,6 +162,7 @@ def assignments_view(request):
     context = {
         'assignments': assignments,
         'uploaded_assignments': uploaded_assignments,
+        'documents': uploaded_assignments,  # For backward compatibility with template
         'subjects': Subject.objects.all(),
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
