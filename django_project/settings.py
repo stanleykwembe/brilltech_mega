@@ -158,3 +158,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# PayFast Payment Configuration
+# Get these credentials from https://www.payfast.co.za after signing up
+# For testing, use the sandbox credentials from PayFast developer portal
+PAYFAST_MERCHANT_ID = os.environ.get('PAYFAST_MERCHANT_ID', '10000100')  # Sandbox merchant ID
+PAYFAST_MERCHANT_KEY = os.environ.get('PAYFAST_MERCHANT_KEY', '46f0cd694581a')  # Sandbox merchant key
+PAYFAST_PASSPHRASE = os.environ.get('PAYFAST_PASSPHRASE', 'jt7NOE43FZPn')  # Your passphrase for signature generation
+
+# PayFast URLs
+PAYFAST_USE_SANDBOX = os.environ.get('PAYFAST_USE_SANDBOX', 'True').lower() == 'true'
+PAYFAST_URL = 'https://sandbox.payfast.co.za/eng/process' if PAYFAST_USE_SANDBOX else 'https://www.payfast.co.za/eng/process'
+PAYFAST_VALIDATE_URL = 'https://sandbox.payfast.co.za/eng/query/validate' if PAYFAST_USE_SANDBOX else 'https://www.payfast.co.za/eng/query/validate'
+
+# Site URL for PayFast callbacks
+SITE_URL = f"https://{os.environ.get('REPLIT_DEV_DOMAIN', 'localhost:5000')}"

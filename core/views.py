@@ -20,6 +20,7 @@ import secrets
 from datetime import timedelta
 from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
+from .subscription_utils import require_premium, get_user_subscription
 
 def login_view(request):
     if request.method == 'POST':
@@ -459,6 +460,7 @@ def view_document(request, doc_id):
     return render(request, 'core/view_document.html', context)
 
 @login_required
+@require_premium
 def generate_assignment_ai(request):
     """Generate homework assignment using AI"""
     if request.method == 'POST':
@@ -500,6 +502,7 @@ def generate_assignment_ai(request):
     return redirect('assignments')
 
 @login_required
+@require_premium
 def generate_questions_ai(request):
     """Generate practice questions using AI"""
     if request.method == 'POST':
@@ -902,3 +905,202 @@ def public_assignment_download(request, token):
             
     except AssignmentShare.DoesNotExist:
         return HttpResponse('Share not found.', status=404)
+
+@login_required
+def subscription_dashboard(request):
+    """View current subscription and manage upgrades"""
+    from .models import SubscriptionPlan, UserSubscription, PayFastPayment
+    from django.db.models import Q
+    
+    try:
+        user_subscription = UserSubscription.objects.select_related('plan', 'selected_subject').get(user=request.user)
+    except UserSubscription.DoesNotExist:
+        free_plan = SubscriptionPlan.objects.get(plan_type='free')
+        from django.utils import timezone
+        from datetime import timedelta
+        user_subscription = UserSubscription.objects.create(
+            user=request.user,
+            plan=free_plan,
+            status='active',
+            current_period_start=timezone.now(),
+            current_period_end=timezone.now() + timedelta(days=365)
+        )
+    
+    available_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    
+    payment_history = PayFastPayment.objects.filter(user=request.user).order_by('-created_at')[:10]
+    
+    subjects = Subject.objects.all().order_by('name')
+    
+    context = {
+        'subscription': user_subscription,
+        'available_plans': available_plans,
+        'payment_history': payment_history,
+        'subjects': subjects,
+    }
+    
+    return render(request, 'core/subscription.html', context)
+
+@login_required
+def initiate_subscription(request, plan_id):
+    """Initiate a subscription upgrade"""
+    from .models import SubscriptionPlan, UserSubscription
+    from .payfast_service import PayFastService
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
+    
+    if plan.plan_type == 'free':
+        messages.info(request, 'You are already on the free plan.')
+        return redirect('subscription_dashboard')
+    
+    try:
+        user_subscription = UserSubscription.objects.get(user=request.user)
+        user_subscription.plan = plan
+        user_subscription.status = 'pending'
+        user_subscription.save()
+    except UserSubscription.DoesNotExist:
+        user_subscription = UserSubscription.objects.create(
+            user=request.user,
+            plan=plan,
+            status='pending',
+            current_period_start=timezone.now(),
+            current_period_end=timezone.now() + timedelta(days=30)
+        )
+    
+    if request.method == 'POST':
+        selected_subject_id = request.POST.get('selected_subject')
+        if plan.plan_type == 'growth' and selected_subject_id:
+            subject = get_object_or_404(Subject, id=selected_subject_id)
+            user_subscription.selected_subject = subject
+            user_subscription.save()
+    
+    payment_data = PayFastService.generate_payment_form_data(
+        user=request.user,
+        plan=plan,
+        subscription=user_subscription
+    )
+    
+    payfast_url = PayFastService.get_payfast_url()
+    
+    context = {
+        'payment_data': payment_data,
+        'payfast_url': payfast_url,
+        'plan': plan,
+        'subscription': user_subscription,
+    }
+    
+    return render(request, 'core/initiate_payment.html', context)
+
+@csrf_exempt
+def payfast_notify(request):
+    """Handle PayFast ITN (Instant Transaction Notification)"""
+    from .models import UserSubscription, SubscriptionPlan, PayFastPayment
+    from .payfast_service import PayFastService
+    from django.utils import timezone
+    from datetime import timedelta
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed', status=405)
+    
+    logger.info(f'PayFast ITN received: {request.POST}')
+    
+    if not PayFastService.validate_itn_signature(request.POST):
+        logger.error('Invalid PayFast signature')
+        return HttpResponse('Invalid signature', status=400)
+    
+    if not PayFastService.verify_payment_with_payfast(request.POST):
+        logger.error('PayFast server validation failed')
+        return HttpResponse('Payment verification failed', status=400)
+    
+    if not PayFastService.validate_merchant_id(request.POST):
+        logger.error('Invalid merchant ID')
+        return HttpResponse('Invalid merchant', status=400)
+    
+    payment_status = request.POST.get('payment_status')
+    user_id = request.POST.get('custom_str1')
+    plan_id = request.POST.get('custom_str2')
+    subscription_id = request.POST.get('custom_str3')
+    payment_id = request.POST.get('pf_payment_id')
+    amount_gross = request.POST.get('amount_gross')
+    amount_fee = request.POST.get('amount_fee', 0)
+    amount_net = request.POST.get('amount_net')
+    merchant_id = request.POST.get('merchant_id')
+    
+    try:
+        user = User.objects.get(id=user_id)
+        plan = SubscriptionPlan.objects.get(id=plan_id)
+        
+        if not PayFastService.validate_payment_amount(request.POST, plan.price):
+            logger.error(f'Payment amount mismatch: received {amount_gross}, expected {plan.price}')
+            return HttpResponse('Payment amount mismatch', status=400)
+        
+        payment, created = PayFastPayment.objects.get_or_create(
+            payfast_payment_id=payment_id,
+            defaults={
+                'user': user,
+                'plan': plan,
+                'merchant_id': merchant_id,
+                'amount_gross': amount_gross,
+                'amount_fee': amount_fee,
+                'amount_net': amount_net,
+                'status': 'pending',
+                'payment_status_text': payment_status,
+                'itn_data': dict(request.POST)
+            }
+        )
+        
+        if subscription_id:
+            try:
+                subscription = UserSubscription.objects.get(id=subscription_id)
+                payment.subscription = subscription
+            except UserSubscription.DoesNotExist:
+                logger.warning(f'Subscription {subscription_id} not found')
+        
+        if payment_status == 'COMPLETE':
+            payment.status = 'complete'
+            payment.completed_at = timezone.now()
+            payment.save()
+            
+            subscription, created = UserSubscription.objects.get_or_create(
+                user=user,
+                defaults={
+                    'plan': plan,
+                    'status': 'active',
+                    'current_period_start': timezone.now(),
+                    'current_period_end': timezone.now() + timedelta(days=30)
+                }
+            )
+            
+            if not created:
+                subscription.plan = plan
+                subscription.status = 'active'
+                subscription.current_period_start = timezone.now()
+                subscription.current_period_end = timezone.now() + timedelta(days=30)
+                subscription.save()
+            
+            logger.info(f'Payment complete for user {user.username}, plan {plan.name}')
+        else:
+            payment.status = 'failed'
+            payment.save()
+            logger.warning(f'Payment failed with status: {payment_status}')
+        
+        return HttpResponse('OK', status=200)
+        
+    except Exception as e:
+        logger.error(f'Error processing PayFast ITN: {str(e)}')
+        return HttpResponse('Error processing payment', status=500)
+
+def payment_success(request):
+    """Redirect after successful payment"""
+    messages.success(request, 'Payment received! Your subscription is being activated.')
+    return redirect('subscription_dashboard')
+
+def payment_cancelled(request):
+    """Redirect after cancelled payment"""
+    messages.warning(request, 'Payment was cancelled. You can try again anytime.')
+    return redirect('subscription_dashboard')

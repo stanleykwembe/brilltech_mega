@@ -17,267 +17,187 @@
         <div class="flex items-center justify-between">
             <div>
                 <h4 class="text-xl font-semibold text-gray-900">
-                    {{ user_profile.subscription|title }} Tier
-                    {% if user_profile.subscription == 'free' %}
-                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            Current
-                        </span>
-                    {% else %}
-                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                        </span>
-                    {% endif %}
+                    {{ subscription.plan.name }}
+                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if subscription.status == 'active' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {{ subscription.status|title }}
+                    </span>
                 </h4>
                 <p class="mt-1 text-sm text-gray-600">
-                    {% if user_profile.subscription == 'free' %}
-                        Limited access to platform features
-                    {% else %}
-                        Full access to all premium features
-                    {% endif %}
+                    R{{ subscription.plan.price }}/month
                 </p>
+                <p class="mt-1 text-sm text-gray-500">
+                    {{ subscription.plan.description }}
+                </p>
+                {% if subscription.selected_subject %}
+                <p class="mt-2 text-sm text-indigo-600 font-medium">
+                    <i class="fas fa-book mr-1"></i> Selected Subject: {{ subscription.selected_subject.name }}
+                </p>
+                {% endif %}
+                {% if subscription.status == 'active' %}
+                <p class="mt-2 text-xs text-gray-500">
+                    Renews on: {{ subscription.current_period_end|date:"F j, Y" }}
+                </p>
+                {% endif %}
             </div>
-            {% if user_profile.subscription == 'free' %}
-                <button onclick="showUpgradeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
-                    Upgrade Now
-                </button>
-            {% else %}
-                <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-md font-medium transition duration-150">
-                    Manage Billing
-                </button>
-            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Usage Statistics -->
+<!-- Available Plans -->
 <div class="bg-white shadow rounded-lg mb-8">
-    <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">Usage This Month</h3>
-    </div>
-    <div class="px-6 py-6">
-        <div class="space-y-6">
-            <!-- Lesson Plans Usage -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-700">Lesson Plans</span>
-                    <span class="text-sm text-gray-500">
-                        {% if user_profile.subscription == 'free' %}0 / 5 per subject{% else %}Unlimited{% endif %}
-                    </span>
-                </div>
-                {% if user_profile.subscription == 'free' %}
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-                {% else %}
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
-                    </div>
-                {% endif %}
-            </div>
-            
-            <!-- Assignments Usage -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-700">Assignments</span>
-                    <span class="text-sm text-gray-500">
-                        {% if user_profile.subscription == 'free' %}0 / 5 per subject{% else %}Unlimited{% endif %}
-                    </span>
-                </div>
-                {% if user_profile.subscription == 'free' %}
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-                {% else %}
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
-                    </div>
-                {% endif %}
-            </div>
-            
-            <!-- Question Generation -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-700">Question Generation</span>
-                    <span class="text-sm text-gray-500">
-                        {% if user_profile.subscription == 'free' %}Basic{% else %}Advanced AI{% endif %}
-                    </span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="{% if user_profile.subscription == 'free' %}bg-yellow-500{% else %}bg-green-600{% endif %} h-2 rounded-full" style="width: {% if user_profile.subscription == 'free' %}40%{% else %}100%{% endif %}"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Pricing Plans -->
-<div class="bg-white shadow rounded-lg">
     <div class="px-6 py-4 border-b border-gray-200">
         <h3 class="text-lg font-medium text-gray-900">Available Plans</h3>
     </div>
     <div class="px-6 py-6">
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <!-- Free Plan -->
-            <div class="border border-gray-300 rounded-lg p-6 {% if user_profile.subscription == 'free' %}ring-2 ring-indigo-600{% endif %}">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {% for plan in available_plans %}
+            <div class="border rounded-lg p-6 {% if subscription.plan.id == plan.id %}ring-2 ring-indigo-600 bg-indigo-50{% else %}border-gray-300{% endif %}">
                 <div class="text-center">
-                    <h4 class="text-lg font-semibold text-gray-900">Free Tier</h4>
-                    <p class="mt-2 text-3xl font-bold text-gray-900">$0</p>
+                    <h4 class="text-lg font-semibold text-gray-900">{{ plan.name }}</h4>
+                    <p class="mt-2 text-3xl font-bold text-gray-900">R{{ plan.price }}</p>
                     <p class="text-sm text-gray-500">per month</p>
+                    {% if subscription.plan.id == plan.id %}
+                    <span class="mt-3 inline-block px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded">
+                        Current Plan
+                    </span>
+                    {% endif %}
                 </div>
                 
-                <ul class="mt-6 space-y-3">
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">5 lesson plans per subject</span>
+                <ul class="mt-6 space-y-3 text-sm text-gray-700">
+                    {% if plan.can_upload_documents %}
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mt-0.5 mr-2"></i>
+                        <span>Document uploads & management</span>
                     </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">5 assignments per subject</span>
+                    {% endif %}
+                    
+                    {% if plan.can_use_ai %}
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mt-0.5 mr-2"></i>
+                        <span>AI-powered content generation</span>
                     </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Basic question generation</span>
+                    {% else %}
+                    <li class="flex items-start text-gray-400">
+                        <i class="fas fa-times text-gray-300 mt-0.5 mr-2"></i>
+                        <span>No AI features</span>
                     </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-times text-red-500 mr-3"></i>
-                        <span class="text-sm text-gray-400">Advanced AI features</span>
+                    {% endif %}
+                    
+                    {% if plan.can_access_library %}
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mt-0.5 mr-2"></i>
+                        <span>Pre-generated content library</span>
+                        {% if plan.allowed_subjects_count == 1 %}
+                        <span class="block text-xs text-gray-500 ml-5">(1 subject)</span>
+                        {% elif plan.allowed_subjects_count == 0 %}
+                        <span class="block text-xs text-gray-500 ml-5">(All subjects)</span>
+                        {% endif %}
                     </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-times text-red-500 mr-3"></i>
-                        <span class="text-sm text-gray-400">Priority support</span>
+                    {% else %}
+                    <li class="flex items-start text-gray-400">
+                        <i class="fas fa-times text-gray-300 mt-0.5 mr-2"></i>
+                        <span>No content library</span>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-green-500 mt-0.5 mr-2"></i>
+                        <span>Assignment sharing</span>
                     </li>
                 </ul>
                 
-                <div class="mt-6">
-                    {% if user_profile.subscription == 'free' %}
-                        <button class="w-full bg-gray-100 text-gray-500 px-4 py-2 rounded-md font-medium cursor-not-allowed">
-                            Current Plan
-                        </button>
-                    {% else %}
-                        <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium transition duration-150">
-                            Downgrade
-                        </button>
+                {% if subscription.plan.id != plan.id and plan.plan_type != 'free' %}
+                <form method="POST" action="{% url 'initiate_subscription' plan.id %}" class="mt-6">
+                    {% csrf_token %}
+                    {% if plan.plan_type == 'growth' %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Choose Subject:</label>
+                        <select name="selected_subject" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select a subject...</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     {% endif %}
-                </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
+                        {% if plan.price > subscription.plan.price %}Upgrade{% else %}Change Plan{% endif %}
+                    </button>
+                </form>
+                {% elif plan.plan_type == 'free' and subscription.plan.id != plan.id %}
+                <a href="{% url 'initiate_subscription' plan.id %}" class="mt-6 block w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md font-medium text-center transition duration-150">
+                    Switch to Free
+                </a>
+                {% endif %}
             </div>
-            
-            <!-- Premium Plan -->
-            <div class="border border-indigo-600 rounded-lg p-6 relative {% if user_profile.subscription == 'premium' %}ring-2 ring-indigo-600{% endif %}">
-                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span class="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-medium">Most Popular</span>
-                </div>
-                
-                <div class="text-center">
-                    <h4 class="text-lg font-semibold text-gray-900">Premium</h4>
-                    <p class="mt-2 text-3xl font-bold text-gray-900">$29.99</p>
-                    <p class="text-sm text-gray-500">per month</p>
-                </div>
-                
-                <ul class="mt-6 space-y-3">
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Unlimited lesson plans</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Unlimited assignments</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Advanced AI question generation</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Priority support</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Export to multiple formats</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check text-green-500 mr-3"></i>
-                        <span class="text-sm text-gray-700">Advanced analytics</span>
-                    </li>
-                </ul>
-                
-                <div class="mt-6">
-                    {% if user_profile.subscription == 'premium' %}
-                        <button class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium cursor-not-allowed">
-                            Current Plan
-                        </button>
-                    {% else %}
-                        <button onclick="showUpgradeModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
-                            Upgrade Now
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- Upgrade Modal -->
-<div id="upgradeModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-crown text-indigo-600"></i>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Upgrade to Premium
-                        </h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">
-                                Unlock unlimited access to all features including advanced AI, priority support, and analytics.
-                            </p>
-                        </div>
-                        <div class="mt-4 p-4 bg-indigo-50 rounded-md">
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-indigo-600">$29.99/month</p>
-                                <p class="text-sm text-indigo-500">Cancel anytime</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button onclick="processPayment()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Subscribe Now
-                </button>
-                <button type="button" onclick="closeUpgradeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
-            </div>
+<!-- Payment History -->
+<div class="bg-white shadow rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Payment History</h3>
+    </div>
+    <div class="px-6 py-6">
+        {% if payment_history %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for payment in payment_history %}
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ payment.created_at|date:"M d, Y" }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ payment.plan.name }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            R{{ payment.amount_gross }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if payment.status == 'complete' %}bg-green-100 text-green-800
+                                {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif payment.status == 'failed' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ payment.status|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% else %}
+        <p class="text-sm text-gray-500 text-center py-4">No payment history yet</p>
+        {% endif %}
     </div>
 </div>
 
 <script>
-function showUpgradeModal() {
-    document.getElementById('upgradeModal').classList.remove('hidden');
-}
-
-function closeUpgradeModal() {
-    document.getElementById('upgradeModal').classList.add('hidden');
-}
-
-function processPayment() {
-    const button = document.querySelector('#upgradeModal button[onclick="processPayment()"]');
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-    button.disabled = true;
-    
-    // Simulate payment processing
-    setTimeout(() => {
-        alert('Payment integration coming soon! Stripe will be integrated for secure payments.');
-        closeUpgradeModal();
-        button.innerHTML = originalText;
-        button.disabled = false;
-    }, 3000);
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('form[action*="initiate_subscription"]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const selectSubject = form.querySelector('select[name="selected_subject"]');
+            if (selectSubject && selectSubject.required && !selectSubject.value) {
+                e.preventDefault();
+                alert('Please select a subject for the Growth plan');
+                selectSubject.focus();
+            }
+        });
+    });
+});
 </script>
+
 {% endblock %}

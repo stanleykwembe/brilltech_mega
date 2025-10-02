@@ -31,4 +31,10 @@ urlpatterns = [
     # Public access endpoints (no login required)
     path('share/a/<str:token>/', views.public_assignment_view, name='public_assignment'),
     path('share/a/<str:token>/download/', views.public_assignment_download, name='public_assignment_download'),
+    # Payment and subscription endpoints
+    path('subscription/dashboard/', views.subscription_dashboard, name='subscription_dashboard'),
+    path('subscription/initiate/<int:plan_id>/', views.initiate_subscription, name='initiate_subscription'),
+    path('payfast/notify/', views.payfast_notify, name='payfast_notify'),
+    path('payment/success/', views.payment_success, name='payment_success'),
+    path('payment/cancelled/', views.payment_cancelled, name='payment_cancelled'),
 ]

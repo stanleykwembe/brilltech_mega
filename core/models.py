@@ -215,3 +215,108 @@ class AssignmentShare(models.Model):
     def assignment_type(self):
         """Get the type of assignment being shared"""
         return 'Generated' if self.generated_assignment else 'Uploaded'
+
+class SubscriptionPlan(models.Model):
+    """Defines available subscription tiers and their features"""
+    PLAN_TYPES = [
+        ('free', 'Free'),
+        ('starter', 'Starter'),
+        ('growth', 'Growth'),
+        ('premium', 'Premium'),
+    ]
+    
+    name = models.CharField(max_length=50, unique=True)
+    plan_type = models.CharField(max_length=20, choices=PLAN_TYPES, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    billing_period = models.CharField(max_length=20, default='monthly')
+    
+    # Feature flags
+    can_upload_documents = models.BooleanField(default=True)
+    can_use_ai = models.BooleanField(default=False)
+    can_access_library = models.BooleanField(default=False)
+    allowed_subjects_count = models.IntegerField(default=0)  # 0 = unlimited
+    
+    # Quotas
+    monthly_ai_generations = models.IntegerField(default=0)  # 0 = unlimited for premium
+    
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['price']
+    
+    def __str__(self):
+        return f"{self.name} - R{self.price}/{self.billing_period}"
+
+class UserSubscription(models.Model):
+    """Tracks user subscriptions and payment status"""
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+        ('pending', 'Pending Payment'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Subscription dates
+    started_at = models.DateTimeField(auto_now_add=True)
+    current_period_start = models.DateTimeField()
+    current_period_end = models.DateTimeField()
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    
+    # PayFast subscription token (for recurring payments)
+    payfast_token = models.CharField(max_length=100, blank=True)
+    
+    # Selected subject (for Growth plan - 1 subject only)
+    selected_subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.plan.name} ({self.status})"
+    
+    @property
+    def is_active(self):
+        """Check if subscription is currently active"""
+        from django.utils import timezone
+        return self.status == 'active' and self.current_period_end > timezone.now()
+
+class PayFastPayment(models.Model):
+    """Records all PayFast payment transactions"""
+    PAYMENT_STATUS = [
+        ('pending', 'Pending'),
+        ('complete', 'Complete'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(UserSubscription, on_delete=models.SET_NULL, null=True, blank=True)
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT)
+    
+    # PayFast transaction details
+    payfast_payment_id = models.CharField(max_length=100, unique=True)
+    merchant_id = models.CharField(max_length=100)
+    amount_gross = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_net = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
+    payment_status_text = models.CharField(max_length=50, blank=True)
+    
+    # ITN data
+    itn_data = models.JSONField(null=True, blank=True)  # Store raw ITN notification
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Payment {self.payfast_payment_id} - {self.user.username} - R{self.amount_gross}"
