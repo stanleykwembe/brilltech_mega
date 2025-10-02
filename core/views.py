@@ -25,11 +25,19 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        
+        # Check if user exists and is inactive (unverified)
+        try:
+            existing_user = User.objects.get(username=username)
+            if not existing_user.is_active:
+                messages.error(request, 'Please verify your email address before signing in. Check your inbox for the verification link.')
+                return render(request, 'core/login.html')
+        except User.DoesNotExist:
+            pass
+        
+        # Authenticate active user
         user = authenticate(request, username=username, password=password)
         if user is not None:
-            if not user.is_active:
-                messages.error(request, 'Please verify your email address before signing in.')
-                return render(request, 'core/login.html')
             login(request, user)
             return redirect('dashboard')
         else:
