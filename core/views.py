@@ -876,7 +876,11 @@ def public_assignment_download(request, token):
             
             with open(file_path, 'rb') as f:
                 response = HttpResponse(f.read(), content_type=content_type)
-                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                # Use inline for PDFs so they can be previewed in the browser
+                if file_extension.lower() == '.pdf':
+                    response['Content-Disposition'] = f'inline; filename="{filename}"'
+                else:
+                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 return response
         else:
             return HttpResponse('File not found.', status=404)

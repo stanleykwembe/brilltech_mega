@@ -44,13 +44,11 @@
                     {% with file_extension=document.file.name|slice:"-4:"|lower %}
                         {% if file_extension == ".pdf" %}
                         <div class="border rounded-lg overflow-hidden" style="height: 600px;">
-                            <p class="text-center py-8 text-gray-600">
-                                PDF preview is available after download. 
-                                <a href="{% url 'public_assignment_download' share.token %}" 
-                                   class="text-indigo-600 hover:text-indigo-700 underline">
-                                    Click here to download and view the assignment.
-                                </a>
-                            </p>
+                            <iframe 
+                                src="{% url 'public_assignment_download' share.token %}"
+                                class="w-full h-full"
+                                frameborder="0"
+                            ></iframe>
                         </div>
                         {% else %}
                         <div class="text-center py-12">
