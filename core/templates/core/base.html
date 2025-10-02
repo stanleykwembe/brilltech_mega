@@ -44,7 +44,7 @@
                             <i class="fas fa-folder mr-3 text-gray-400 group-hover:text-gray-300"></i>
                             My Documents
                         </a>
-                        <a href="{% url 'subscription' %}" class="{% if request.resolver_match.url_name == 'subscription' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <a href="{% url 'subscription_dashboard' %}" class="{% if request.resolver_match.url_name == 'subscription_dashboard' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-crown mr-3 text-gray-400 group-hover:text-gray-300"></i>
                             Subscription
                         </a>
