@@ -34,6 +34,9 @@ class UserProfile(models.Model):
     email_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=100, blank=True)
     verification_token_created = models.DateTimeField(null=True, blank=True)
+    bio = models.TextField(blank=True)
+    institution = models.CharField(max_length=200, blank=True)
+    email_notifications = models.BooleanField(default=True)
     
     def __str__(self):
         return f"{self.user.username} ({self.role})" if self.user else f"Profile ({self.role})"

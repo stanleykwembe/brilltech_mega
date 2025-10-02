@@ -1,0 +1,294 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Account Settings - EduTech Platform{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Account Settings</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage your profile, security, and preferences</p>
+</div>
+
+<div x-data="{ activeTab: 'profile' }">
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8">
+            <button @click="activeTab = 'profile'" :class="activeTab === 'profile' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-user mr-2"></i>Profile & Personal Info
+            </button>
+            <button @click="activeTab = 'security'" :class="activeTab === 'security' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-lock mr-2"></i>Security
+            </button>
+            <button @click="activeTab = 'notifications'" :class="activeTab === 'notifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-envelope mr-2"></i>Email & Notifications
+            </button>
+            <button @click="activeTab = 'usage'" :class="activeTab === 'usage' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-chart-bar mr-2"></i>Usage Statistics
+            </button>
+        </nav>
+    </div>
+
+    <div x-show="activeTab === 'profile'" x-cloak>
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Profile & Personal Information</h3>
+                <p class="mt-1 text-sm text-gray-600">Update your personal details and profile information</p>
+            </div>
+            <div class="px-6 py-6">
+                <form method="POST" action="{% url 'account_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" value="{{ user.email }}" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        {% if not user_profile.email_verified %}
+                        <p class="mt-1 text-sm text-yellow-600">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Email not verified
+                        </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700">Institution/School</label>
+                        <input type="text" name="institution" value="{{ user_profile.institution }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Springfield High School">
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700">Bio</label>
+                        <textarea name="bio" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tell us a bit about yourself...">{{ user_profile.bio }}</textarea>
+                        <p class="mt-1 text-sm text-gray-500">Brief description for your profile</p>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700">Role</label>
+                        <input type="text" value="{{ user_profile.role|title }}" disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500">
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="activeTab === 'security'" x-cloak>
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Change Password</h3>
+                <p class="mt-1 text-sm text-gray-600">Update your password to keep your account secure</p>
+            </div>
+            <div class="px-6 py-6">
+                <form method="POST" action="{% url 'account_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+                    
+                    <div class="max-w-md">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Current Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="current_password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700">New Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="new_password" required minlength="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="mt-1 text-sm text-gray-500">Must be at least 8 characters</p>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700">Confirm New Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="confirm_password" required minlength="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        
+                        <div class="mt-8">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                                Update Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="activeTab === 'notifications'" x-cloak>
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Email Verification</h3>
+                <p class="mt-1 text-sm text-gray-600">Verify your email address to access all features</p>
+            </div>
+            <div class="px-6 py-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        {% if user_profile.email_verified %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Email Verified</p>
+                            <p class="text-sm text-gray-500">{{ user.email }}</p>
+                        </div>
+                        {% else %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Email Not Verified</p>
+                            <p class="text-sm text-gray-500">{{ user.email }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if not user_profile.email_verified %}
+                    <div>
+                        <form method="POST" action="{% url 'account_settings' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="resend_verification">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium text-sm transition duration-150">
+                                Resend Verification Email
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Notification Preferences</h3>
+                <p class="mt-1 text-sm text-gray-600">Manage how you receive notifications</p>
+            </div>
+            <div class="px-6 py-6">
+                <form method="POST" action="{% url 'account_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    <input type="hidden" name="first_name" value="{{ user.first_name }}">
+                    <input type="hidden" name="last_name" value="{{ user.last_name }}">
+                    <input type="hidden" name="email" value="{{ user.email }}">
+                    <input type="hidden" name="bio" value="{{ user_profile.bio }}">
+                    <input type="hidden" name="institution" value="{{ user_profile.institution }}">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900">Email Notifications</h4>
+                            <p class="text-sm text-gray-500">Receive email updates about your account activity</p>
+                        </div>
+                        <div class="ml-4">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="email_notifications" {% if user_profile.email_notifications %}checked{% endif %} class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                            Save Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="activeTab === 'usage'" x-cloak>
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Usage Statistics</h3>
+                <p class="mt-1 text-sm text-gray-600">Overview of your platform activity</p>
+            </div>
+            <div class="px-6 py-6">
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="bg-indigo-50 rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-magic text-indigo-600 text-3xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">AI Generations</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ total_ai_generations }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-file-alt text-green-600 text-3xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Documents Created</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ documents_count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-tasks text-blue-600 text-3xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Assignments Created</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ assignments_count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-purple-50 rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-share-alt text-purple-600 text-3xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Assignments Shared</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ shared_count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h4 class="text-sm font-medium text-gray-900 mb-4">Account Information</h4>
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Username</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ user.username }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Account Type</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ user_profile.role|title }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Member Since</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ user.date_joined|date:"F j, Y" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Last Login</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ user.last_login|date:"F j, Y g:i A" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+[x-cloak] { display: none !important; }
+</style>
+
+{% endblock %}

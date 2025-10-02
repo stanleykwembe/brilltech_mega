@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -695,6 +695,132 @@ EduTech Team''',
             messages.error(request, 'No unverified account found with this email address.')
     
     return render(request, 'core/resend_verification.html')
+
+@login_required
+def account_settings(request):
+    """User account settings page with profile, security, and notifications"""
+    profile = UserProfile.objects.get_or_create(user=request.user)[0]
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            try:
+                first_name = request.POST.get('first_name', '').strip()
+                last_name = request.POST.get('last_name', '').strip()
+                email = request.POST.get('email', '').strip()
+                bio = request.POST.get('bio', '').strip()
+                institution = request.POST.get('institution', '').strip()
+                email_notifications = request.POST.get('email_notifications') == 'on'
+                
+                if not all([first_name, last_name, email]):
+                    messages.error(request, 'First name, last name, and email are required.')
+                    return redirect('account_settings')
+                
+                if email != request.user.email:
+                    if User.objects.filter(email=email).exclude(id=request.user.id).exists():
+                        messages.error(request, 'Email address is already in use.')
+                        return redirect('account_settings')
+                    request.user.email = email
+                    profile.email_verified = False
+                
+                request.user.first_name = first_name
+                request.user.last_name = last_name
+                request.user.save()
+                
+                profile.bio = bio
+                profile.institution = institution
+                profile.email_notifications = email_notifications
+                profile.save()
+                
+                messages.success(request, 'Profile updated successfully!')
+                
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
+        
+        elif action == 'change_password':
+            try:
+                current_password = request.POST.get('current_password', '')
+                new_password = request.POST.get('new_password', '')
+                confirm_password = request.POST.get('confirm_password', '')
+                
+                if not request.user.check_password(current_password):
+                    messages.error(request, 'Current password is incorrect.')
+                    return redirect('account_settings')
+                
+                if len(new_password) < 8:
+                    messages.error(request, 'New password must be at least 8 characters long.')
+                    return redirect('account_settings')
+                
+                if new_password != confirm_password:
+                    messages.error(request, 'New passwords do not match.')
+                    return redirect('account_settings')
+                
+                request.user.set_password(new_password)
+                request.user.save()
+                
+                update_session_auth_hash(request, request.user)
+                
+                messages.success(request, 'Password changed successfully!')
+                
+            except Exception as e:
+                messages.error(request, f'Error changing password: {str(e)}')
+        
+        elif action == 'resend_verification':
+            try:
+                if profile.email_verified:
+                    messages.info(request, 'Your email is already verified.')
+                    return redirect('account_settings')
+                
+                verification_token = secrets.token_urlsafe(50)
+                profile.verification_token = verification_token
+                profile.verification_token_created = timezone.now()
+                profile.save()
+                
+                verification_url = request.build_absolute_uri(
+                    reverse('verify_email', kwargs={'token': verification_token})
+                )
+                
+                send_mail(
+                    subject='EduTech Platform - Verify Your Email',
+                    message=f'''Hi {request.user.first_name},
+                    
+Please verify your email address by clicking the link below:
+
+{verification_url}
+
+This link will expire in 24 hours.
+
+Best regards,
+EduTech Team''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[request.user.email],
+                    fail_silently=False,
+                )
+                
+                messages.success(request, 'Verification email sent! Please check your inbox.')
+                
+            except Exception as e:
+                messages.error(request, f'Error sending verification email: {str(e)}')
+        
+        return redirect('account_settings')
+    
+    ai_generations = UsageQuota.objects.get_or_create(user=request.user)[0]
+    total_ai_gens = sum(ai_generations.lesson_plans_used.values()) + sum(ai_generations.assignments_used.values())
+    
+    documents_count = UploadedDocument.objects.filter(uploaded_by=request.user).count()
+    assignments_count = GeneratedAssignment.objects.filter(teacher=request.user).count()
+    shared_count = AssignmentShare.objects.filter(teacher=request.user, revoked_at__isnull=True).count()
+    
+    context = {
+        'user_profile': profile,
+        'total_ai_generations': total_ai_gens,
+        'documents_count': documents_count,
+        'assignments_count': assignments_count,
+        'shared_count': shared_count,
+    }
+    
+    return render(request, 'core/account_settings.html', context)
 
 @login_required
 def revoke_share(request, share_id):
