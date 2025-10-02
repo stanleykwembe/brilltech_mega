@@ -581,9 +581,16 @@ def signup_view(request):
             )
             
             # Send verification email
-            verification_url = request.build_absolute_uri(
-                reverse('verify_email', kwargs={'token': verification_token})
-            )
+            # Build proper verification URL using Replit domain
+            verification_path = reverse('verify_email', kwargs={'token': verification_token})
+            
+            # Get the proper domain from environment or request
+            import os
+            replit_domain = os.environ.get('REPLIT_DEV_DOMAIN')
+            if replit_domain:
+                verification_url = f"https://{replit_domain}{verification_path}"
+            else:
+                verification_url = request.build_absolute_uri(verification_path)
             
             send_mail(
                 subject='Welcome to EduTech Platform - Verify Your Email',
@@ -602,7 +609,7 @@ EduTech Team''',
                 fail_silently=False,
             )
             
-            messages.success(request, f'Account created! Please check your email ({email}) and click the verification link to activate your account.')
+            messages.success(request, f'Account created successfully! IMPORTANT: You must verify your email before you can sign in. Check your inbox at {email} for the verification link.')
             return redirect('login')
             
         except Exception as e:
