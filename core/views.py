@@ -18,7 +18,7 @@ import os
 import mimetypes
 import secrets
 from datetime import timedelta
-from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare
+from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 from .subscription_utils import require_premium, get_user_subscription
 
@@ -556,22 +556,22 @@ def signup_view(request):
             return render(request, 'core/signup.html')
         
         if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists.')
+            messages.error(request, 'Username already taken. Try logging in instead.')
             return render(request, 'core/signup.html')
         
         if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email already registered.')
+            messages.error(request, 'This email is already registered. Try logging in or reset your password.')
             return render(request, 'core/signup.html')
         
         try:
-            # Create user (inactive until email verified)
+            # Create user (active but unverified)
             user = User.objects.create_user(
                 username=username,
                 email=email,
                 password=password,
                 first_name=first_name,
                 last_name=last_name,
-                is_active=False  # Deactivate until email verification
+                is_active=True
             )
             
             # Create profile with verification token
@@ -612,8 +612,11 @@ EduTech Team''',
                 fail_silently=False,
             )
             
-            messages.success(request, f'Account created successfully! IMPORTANT: You must verify your email before you can sign in. Check your inbox at {email} for the verification link.')
-            return redirect('login')
+            # Auto-login the user
+            login(request, user)
+            
+            messages.success(request, 'Welcome! Please verify your email to access all features.')
+            return redirect('dashboard')
             
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
@@ -695,6 +698,116 @@ EduTech Team''',
             messages.error(request, 'No unverified account found with this email address.')
     
     return render(request, 'core/resend_verification.html')
+
+def forgot_password(request):
+    """Forgot password - send reset link"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Generate reset token
+            reset_token = secrets.token_urlsafe(50)
+            expires_at = timezone.now() + timedelta(hours=1)
+            
+            # Create password reset token
+            PasswordResetToken.objects.create(
+                user=user,
+                token=reset_token,
+                expires_at=expires_at
+            )
+            
+            # Build reset URL
+            reset_path = reverse('reset_password', kwargs={'token': reset_token})
+            
+            # Get the proper domain from environment or request
+            replit_domain = os.environ.get('REPLIT_DEV_DOMAIN')
+            if replit_domain:
+                reset_url = f"https://{replit_domain}{reset_path}"
+            else:
+                reset_url = request.build_absolute_uri(reset_path)
+            
+            # Send reset email
+            send_mail(
+                subject='Reset Your EduTech Password',
+                message=f'''Hi {user.first_name},
+
+We received a request to reset your password. Click the link below to reset it:
+
+{reset_url}
+
+This link will expire in 1 hour.
+
+If you didn't request this, you can safely ignore this email.
+
+Need help? Contact us at support@edutech.com
+
+Best regards,
+EduTech Team''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+        except User.DoesNotExist:
+            pass
+        
+        # Always show success message for security
+        messages.success(request, 'If an account with that email exists, we have sent password reset instructions.')
+        return redirect('login')
+    
+    return render(request, 'core/forgot_password.html')
+
+def reset_password(request, token):
+    """Reset password with token"""
+    # Validate token on GET request
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+        
+        if not reset_token.is_valid():
+            messages.error(request, 'This password reset link has expired or has already been used. Please request a new one.')
+            return redirect('forgot_password')
+        
+        if request.method == 'POST':
+            password = request.POST.get('password')
+            password_confirm = request.POST.get('password_confirm')
+            
+            # Validate passwords
+            if not password or not password_confirm:
+                messages.error(request, 'Please fill in all fields.')
+                return render(request, 'core/reset_password.html', {'token': token})
+            
+            if password != password_confirm:
+                messages.error(request, 'Passwords do not match.')
+                return render(request, 'core/reset_password.html', {'token': token})
+            
+            if len(password) < 8:
+                messages.error(request, 'Password must be at least 8 characters long.')
+                return render(request, 'core/reset_password.html', {'token': token})
+            
+            # Validate token again
+            if not reset_token.is_valid():
+                messages.error(request, 'This password reset link has expired or has already been used.')
+                return redirect('forgot_password')
+            
+            # Update password
+            user = reset_token.user
+            user.set_password(password)
+            user.save()
+            
+            # Mark token as used
+            reset_token.used = True
+            reset_token.save()
+            
+            messages.success(request, 'Your password has been reset successfully! You can now sign in with your new password.')
+            return redirect('login')
+        
+        return render(request, 'core/reset_password.html', {'token': token})
+        
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, 'Invalid password reset link. Please request a new one.')
+        return redirect('forgot_password')
 
 @login_required
 def account_settings(request):

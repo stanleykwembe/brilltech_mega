@@ -41,6 +41,20 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.role})" if self.user else f"Profile ({self.role})"
 
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Password reset for {self.user.username}"
+    
+    def is_valid(self):
+        from django.utils import timezone
+        return not self.used and timezone.now() < self.expires_at
+
 class UploadedDocument(models.Model):
     DOC_TYPES = [
         ('lesson_plan', 'Lesson Plan'),
