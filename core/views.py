@@ -24,8 +24,19 @@ from .subscription_utils import require_premium, get_user_subscription
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST['username']
+        username_or_email = request.POST['username']
         password = request.POST['password']
+        
+        # Determine if input is email or username
+        username = username_or_email
+        if '@' in username_or_email:
+            # Input might be email - try to look up username
+            try:
+                user_by_email = User.objects.get(email=username_or_email)
+                username = user_by_email.username
+            except User.DoesNotExist:
+                # Email not found - treat as username (in case username contains @)
+                username = username_or_email
         
         # Check if user exists and is inactive (unverified)
         try:
@@ -42,7 +53,7 @@ def login_view(request):
             login(request, user)
             return redirect('dashboard')
         else:
-            messages.error(request, 'Invalid username or password.')
+            messages.error(request, 'Invalid credentials. Please check your username/email and password.')
     return render(request, 'core/login.html')
 
 def logout_view(request):
