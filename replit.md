@@ -4,6 +4,20 @@
 
 This is a freemium educational technology platform designed for teachers and administrators to create, manage, and share educational content. The application combines AI-powered content generation with document management capabilities, offering features like lesson plan creation, homework/assignment generation, question generation in multiple formats, and document upload/sharing functionality. The platform operates on a freemium model with usage quotas and subscription tiers.
 
+## Recent Changes
+
+### October 21, 2025
+- **Enhanced Login Experience**: Updated login to accept both username and email for authentication
+  - Smart detection of email vs username (checks for "@" symbol with fallback)
+  - Updated UI label to "Username or Email" with helpful placeholder text
+  - Improved error messaging for better UX without compromising security
+- **Improved Message System**: Enhanced Django messages framework display
+  - Auto-dismiss messages after 5 seconds
+  - Manual close buttons with smooth transitions
+  - Better visual styling with icons (check/exclamation/info)
+  - Prevents message accumulation in the UI
+- **Session Cleanup**: Cleared accumulated test messages from development
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
