@@ -2323,13 +2323,14 @@ def content_bulk_upload(request):
         try:
             if upload_type == 'pastpaper':
                 # Get shared metadata for past papers
-                exam_board = request.POST.get('exam_board')
+                exam_board_id = request.POST.get('exam_board_id')
                 year = request.POST.get('year')
                 subject_id = request.POST.get('subject_id')
                 grade_id = request.POST.get('grade_id')
                 chapter = request.POST.get('chapter', '')
                 section = request.POST.get('section', '')
                 
+                exam_board = get_object_or_404(ExamBoard, id=exam_board_id)
                 subject = get_object_or_404(Subject, id=subject_id)
                 grade = get_object_or_404(Grade, id=grade_id)
                 
@@ -2338,10 +2339,10 @@ def content_bulk_upload(request):
                         # Auto-generate title from filename
                         title = os.path.splitext(file.name)[0]
                         
-                        # Create past paper
+                        # Create past paper (exam_board is CharField, use abbreviation)
                         paper = PastPaper.objects.create(
                             title=title,
-                            exam_board=exam_board,
+                            exam_board=exam_board.abbreviation,
                             year=year,
                             subject=subject,
                             grade=grade,
@@ -2367,12 +2368,13 @@ def content_bulk_upload(request):
             
             elif upload_type == 'quiz':
                 # Get shared metadata for quizzes
-                exam_board = request.POST.get('exam_board')
+                exam_board_id = request.POST.get('exam_board_id')
                 grade_id = request.POST.get('grade_id')
                 subject_id = request.POST.get('subject_id')
                 topic = request.POST.get('topic')
                 is_premium = request.POST.get('is_premium') == 'true'
                 
+                exam_board = get_object_or_404(ExamBoard, id=exam_board_id)
                 grade = get_object_or_404(Grade, id=grade_id)
                 subject = get_object_or_404(Subject, id=subject_id)
                 
@@ -2387,9 +2389,10 @@ def content_bulk_upload(request):
                         if file.name.endswith('.txt'):
                             google_form_link = file.read().decode('utf-8').strip()
                         
+                        # Create quiz (exam_board is CharField, use abbreviation)
                         quiz = Quiz.objects.create(
                             title=title,
-                            exam_board=exam_board,
+                            exam_board=exam_board.abbreviation,
                             grade=grade,
                             subject=subject,
                             topic=topic,
@@ -2462,10 +2465,12 @@ def content_bulk_upload(request):
     # GET request - show form
     subjects = Subject.objects.all()
     grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
     
     context = {
         'subjects': subjects,
         'grades': grades,
+        'exam_boards': exam_boards,
     }
     
     return render(request, 'core/content/bulk_upload.html', context)
