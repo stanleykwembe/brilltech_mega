@@ -1,0 +1,81 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Past Papers - EduTech{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Past Papers</h1>
+        <p class="mt-1 text-sm text-gray-600">Manage and organize past examination papers</p>
+    </div>
+    <a href="{% url 'content_upload_paper' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+        <i class="fas fa-upload mr-2"></i>
+        Upload Paper
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="bg-white shadow rounded-lg p-4 mb-6">
+    <form method="get" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search papers..." class="shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md">
+        </div>
+        <div>
+            <select name="board" class="shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="">All Exam Boards</option>
+                {% for board in boards %}
+                <option value="{{ board.id }}" {% if board_filter == board.id|stringformat:"s" %}selected{% endif %}>{{ board.abbreviation }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <select name="subject" class="shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <option value="">All Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}" {% if subject_filter == subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700">
+                <i class="fas fa-filter mr-2"></i>
+                Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Papers Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Board</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for paper in papers %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ paper.title }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.exam_board.abbreviation }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.subject.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Grade {{ paper.grade.number }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.year }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                    No past papers found. <a href="{% url 'content_upload_paper' %}" class="text-orange-600 hover:text-orange-700">Upload your first paper</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

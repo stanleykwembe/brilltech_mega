@@ -1,0 +1,84 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Upload Past Paper - EduTech{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Upload Past Paper</h1>
+    <p class="mt-1 text-sm text-gray-600">Add a new past examination paper to the library</p>
+</div>
+
+<div class="bg-white shadow rounded-lg p-6">
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div class="col-span-2">
+                <label for="title" class="block text-sm font-medium text-gray-700">Paper Title *</label>
+                <input type="text" name="title" id="title" required class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="e.g., Mathematics Paper 1 November 2023">
+            </div>
+
+            <div>
+                <label for="exam_board" class="block text-sm font-medium text-gray-700">Exam Board *</label>
+                <select name="exam_board" id="exam_board" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                    <option value="">Select Exam Board</option>
+                    {% for board in boards %}
+                    <option value="{{ board.id }}">{{ board.abbreviation }} - {{ board.name_full }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="subject" class="block text-sm font-medium text-gray-700">Subject *</label>
+                <select name="subject" id="subject" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="grade" class="block text-sm font-medium text-gray-700">Grade *</label>
+                <select name="grade" id="grade" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                    <option value="">Select Grade</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="year" class="block text-sm font-medium text-gray-700">Year *</label>
+                <input type="number" name="year" id="year" required min="1990" max="2030" class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="2023">
+            </div>
+
+            <div>
+                <label for="chapter" class="block text-sm font-medium text-gray-700">Chapter (optional)</label>
+                <input type="text" name="chapter" id="chapter" class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="e.g., Algebra">
+            </div>
+
+            <div>
+                <label for="section" class="block text-sm font-medium text-gray-700">Section (optional)</label>
+                <input type="text" name="section" id="section" class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="e.g., Quadratic Equations">
+            </div>
+
+            <div class="col-span-2">
+                <label for="file" class="block text-sm font-medium text-gray-700">Upload File (PDF) *</label>
+                <input type="file" name="file" id="file" required accept=".pdf" class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                <p class="mt-1 text-xs text-gray-500">Upload the past paper in PDF format</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'content_papers' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                Cancel
+            </a>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                <i class="fas fa-upload mr-2"></i>
+                Upload Paper
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

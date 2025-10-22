@@ -51,10 +51,15 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            # Redirect based on user role
+            # Redirect based on user role (3-way routing)
             if user.is_superuser or user.is_staff:
+                # Admins go to admin panel
                 return redirect('admin_dashboard')
+            elif hasattr(user, 'userprofile') and user.userprofile.role == 'content_manager':
+                # Content managers go to content portal
+                return redirect('content_dashboard')
             else:
+                # Teachers go to teacher dashboard
                 return redirect('dashboard')
         else:
             messages.error(request, 'Invalid credentials. Please check your username/email and password.')
@@ -1706,6 +1711,20 @@ def require_admin(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+def require_content_manager(view_func):
+    """Decorator to require content manager or admin privileges"""
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Allow admins and content managers
+        is_admin = request.user.is_superuser or request.user.is_staff
+        is_content_manager = hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'content_manager'
+        if not (is_admin or is_content_manager):
+            messages.error(request, 'Access denied. Content manager privileges required.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
 @require_admin
 def admin_dashboard(request):
     """Admin dashboard with analytics"""
@@ -1893,3 +1912,211 @@ def admin_subscriptions(request):
     }
     
     return render(request, 'core/admin/subscriptions.html', context)
+
+# ===== CONTENT MANAGER VIEWS =====
+
+@require_content_manager
+def content_dashboard(request):
+    """Content manager dashboard with analytics"""
+    
+    from .models import PastPaper, Quiz
+    from django.db.models import Count
+    
+    # Analytics
+    total_papers = PastPaper.objects.count()
+    total_quizzes = Quiz.objects.count()
+    premium_quizzes = Quiz.objects.filter(is_premium=True).count()
+    free_quizzes = Quiz.objects.filter(is_premium=False).count()
+    
+    # Recent uploads
+    recent_papers = PastPaper.objects.all().order_by('-created_at')[:10]
+    recent_quizzes = Quiz.objects.all().order_by('-created_at')[:10]
+    
+    context = {
+        'total_papers': total_papers,
+        'total_quizzes': total_quizzes,
+        'premium_quizzes': premium_quizzes,
+        'free_quizzes': free_quizzes,
+        'recent_papers': recent_papers,
+        'recent_quizzes': recent_quizzes,
+    }
+    
+    return render(request, 'core/content/dashboard.html', context)
+
+@require_content_manager
+def content_papers(request):
+    """Past paper management view"""
+    
+    from .models import PastPaper, ExamBoard, Subject, Grade
+    
+    # Get search and filter parameters
+    search_query = request.GET.get('search', '')
+    board_filter = request.GET.get('board', '')
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    
+    # Filter papers
+    papers = PastPaper.objects.all()
+    
+    if search_query:
+        papers = papers.filter(title__icontains=search_query)
+    if board_filter:
+        papers = papers.filter(exam_board_id=board_filter)
+    if subject_filter:
+        papers = papers.filter(subject_id=subject_filter)
+    if grade_filter:
+        papers = papers.filter(grade_id=grade_filter)
+    
+    papers = papers.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    boards = ExamBoard.objects.all()
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'papers': papers,
+        'boards': boards,
+        'subjects': subjects,
+        'grades': grades,
+        'search_query': search_query,
+        'board_filter': board_filter,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+    }
+    
+    return render(request, 'core/content/papers.html', context)
+
+@require_content_manager
+def content_upload_paper(request):
+    """Upload new past paper"""
+    
+    from .models import PastPaper, ExamBoard, Subject, Grade
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        subject_id = request.POST.get('subject')
+        year = request.POST.get('year')
+        chapter = request.POST.get('chapter', '')
+        section = request.POST.get('section', '')
+        file = request.FILES.get('file')
+        
+        # Validation
+        if not all([title, exam_board_id, grade_id, subject_id, year, file]):
+            messages.error(request, 'Please fill in all required fields and upload a file.')
+            return redirect('content_upload_paper')
+        
+        # Create past paper
+        paper = PastPaper.objects.create(
+            title=title,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id,
+            subject_id=subject_id,
+            year=int(year),
+            chapter=chapter,
+            section=section,
+            file=file,
+            uploaded_by=request.user
+        )
+        
+        messages.success(request, f'Past paper "{title}" uploaded successfully!')
+        return redirect('content_papers')
+    
+    # GET request - show form
+    boards = ExamBoard.objects.all()
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'boards': boards,
+        'subjects': subjects,
+        'grades': grades,
+    }
+    
+    return render(request, 'core/content/upload_paper.html', context)
+
+@require_content_manager
+def content_quizzes(request):
+    """Quiz management view"""
+    
+    from .models import Quiz, Subject, Grade
+    
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')  # free or premium
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    
+    # Filter quizzes
+    quizzes = Quiz.objects.all()
+    
+    if status_filter == 'free':
+        quizzes = quizzes.filter(is_premium=False)
+    elif status_filter == 'premium':
+        quizzes = quizzes.filter(is_premium=True)
+    if subject_filter:
+        quizzes = quizzes.filter(subject_id=subject_filter)
+    if grade_filter:
+        quizzes = quizzes.filter(grade_id=grade_filter)
+    
+    quizzes = quizzes.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'quizzes': quizzes,
+        'subjects': subjects,
+        'grades': grades,
+        'status_filter': status_filter,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+    }
+    
+    return render(request, 'core/content/quizzes.html', context)
+
+@require_content_manager
+def content_create_quiz(request):
+    """Create new quiz"""
+    
+    from .models import Quiz, Subject, Grade, PastPaper
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        grade_id = request.POST.get('grade')
+        is_premium = request.POST.get('is_premium') == 'on'
+        questions_json = request.POST.get('questions_json', '[]')
+        
+        # Validation
+        if not all([title, subject_id, grade_id]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('content_create_quiz')
+        
+        # Create quiz
+        quiz = Quiz.objects.create(
+            title=title,
+            subject_id=subject_id,
+            grade_id=grade_id,
+            is_premium=is_premium,
+            questions=questions_json,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Quiz "{title}" created successfully!')
+        return redirect('content_quizzes')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    papers = PastPaper.objects.all().order_by('-created_at')[:20]  # Recent papers for AI generation
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'papers': papers,
+    }
+    
+    return render(request, 'core/content/create_quiz.html', context)

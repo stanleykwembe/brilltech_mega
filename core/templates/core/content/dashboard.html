@@ -1,0 +1,173 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Content Dashboard - EduTech{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Content Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage past papers and quizzes for the platform</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <!-- Total Past Papers -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-orange-500 p-3">
+                        <i class="fas fa-file-pdf text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Past Papers</dt>
+                        <dd class="text-3xl font-semibold text-gray-900">{{ total_papers }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Quizzes -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-orange-500 p-3">
+                        <i class="fas fa-question-circle text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Quizzes</dt>
+                        <dd class="text-3xl font-semibold text-gray-900">{{ total_quizzes }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Quizzes -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-amber-500 p-3">
+                        <i class="fas fa-crown text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Premium Quizzes</dt>
+                        <dd class="text-3xl font-semibold text-gray-900">{{ premium_quizzes }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Free Quizzes -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-green-500 p-3">
+                        <i class="fas fa-gift text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Free Quizzes</dt>
+                        <dd class="text-3xl font-semibold text-gray-900">{{ free_quizzes }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-white shadow rounded-lg p-6 mb-8">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <a href="{% url 'content_upload_paper' %}" class="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+            <i class="fas fa-upload mr-2"></i>
+            Upload Past Paper
+        </a>
+        <a href="{% url 'content_create_quiz' %}" class="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+            <i class="fas fa-plus-circle mr-2"></i>
+            Create Quiz
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- Recent Papers -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Past Papers</h3>
+            {% if recent_papers %}
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for paper in recent_papers %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-file-pdf text-orange-500 text-lg"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">{{ paper.title }}</p>
+                                <p class="text-sm text-gray-500">{{ paper.subject.name }} - Grade {{ paper.grade.number }}</p>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                {{ paper.created_at|timesince }} ago
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500">No past papers uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Quizzes -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Quizzes</h3>
+            {% if recent_quizzes %}
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for quiz in recent_quizzes %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                {% if quiz.is_premium %}
+                                <i class="fas fa-crown text-amber-500 text-lg"></i>
+                                {% else %}
+                                <i class="fas fa-question-circle text-green-500 text-lg"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">{{ quiz.title }}</p>
+                                <p class="text-sm text-gray-500">{{ quiz.subject.name }} - Grade {{ quiz.grade.number }}</p>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                {{ quiz.created_at|timesince }} ago
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500">No quizzes created yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

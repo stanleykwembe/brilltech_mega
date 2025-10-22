@@ -1,0 +1,82 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Create Quiz - EduTech{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Create Quiz</h1>
+    <p class="mt-1 text-sm text-gray-600">Build a new quiz for the question library</p>
+</div>
+
+<div class="bg-white shadow rounded-lg p-6">
+    <form method="post" x-data="{ isPremium: false }" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div class="col-span-2">
+                <label for="title" class="block text-sm font-medium text-gray-700">Quiz Title *</label>
+                <input type="text" name="title" id="title" required class="mt-1 focus:ring-orange-500 focus:border-orange-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="e.g., Algebra Practice Quiz">
+            </div>
+
+            <div>
+                <label for="subject" class="block text-sm font-medium text-gray-700">Subject *</label>
+                <select name="subject" id="subject" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="grade" class="block text-sm font-medium text-gray-700">Grade *</label>
+                <select name="grade" id="grade" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                    <option value="">Select Grade</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-span-2">
+                <label class="flex items-center">
+                    <input type="checkbox" name="is_premium" x-model="isPremium" class="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 rounded">
+                    <span class="ml-2 text-sm text-gray-700">Premium Quiz (requires subscription)</span>
+                </label>
+                <p class="mt-1 text-xs text-gray-500">Free quizzes are accessible to all users, premium quizzes require a paid subscription</p>
+            </div>
+        </div>
+
+        <!-- Question Editor -->
+        <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Questions</h3>
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-info-circle text-orange-500"></i> Questions will be added in future update</p>
+                <p class="text-xs text-gray-500">For now, you can create the quiz structure and add questions later through the Google Forms integration.</p>
+            </div>
+            <input type="hidden" name="questions_json" value="[]">
+        </div>
+
+        <!-- AI Generation Section -->
+        <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-robot text-orange-500"></i> AI-Assisted Generation (Coming Soon)
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">Generate quiz questions automatically from past papers using AI</p>
+            <div class="bg-gray-100 rounded-lg p-4">
+                <p class="text-xs text-gray-500">This feature will be available in the next update. You'll be able to select a past paper and automatically extract questions.</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 border-t border-gray-200 pt-6">
+            <a href="{% url 'content_quizzes' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                Cancel
+            </a>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                <i class="fas fa-plus-circle mr-2"></i>
+                Create Quiz
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
