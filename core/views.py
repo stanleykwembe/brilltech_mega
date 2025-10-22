@@ -1407,7 +1407,7 @@ def public_assignment_download(request, token):
 @login_required
 def subscription_dashboard(request):
     """View current subscription and manage upgrades"""
-    from .models import SubscriptionPlan, SubscribedSubject, UserSubscription
+    from .models import SubscriptionPlan, SubscribedSubject, UserSubscription, PayFastPayment
     
     # Get user profile with subscription info
     profile = UserProfile.objects.get(user=request.user)
@@ -1446,6 +1446,12 @@ def subscription_dashboard(request):
             'percentage': (used / limit * 100) if limit > 0 else 0
         })
     
+    # Get payment history
+    payment_history = PayFastPayment.objects.filter(
+        user=request.user,
+        status='complete'
+    ).select_related('plan').order_by('-completed_at')[:10]
+    
     context = {
         'profile': profile,
         'active_subscription': active_subscription,
@@ -1455,6 +1461,7 @@ def subscription_dashboard(request):
         'subject_quotas': subject_quotas,
         'subject_limit': profile.get_subject_limit(),
         'can_add_subjects': subscribed_subjects.count() < profile.get_subject_limit(),
+        'payment_history': payment_history,
     }
     
     return render(request, 'core/subscription.html', context)
@@ -1601,6 +1608,15 @@ def payfast_notify(request):
                 subscription.current_period_end = timezone.now() + timedelta(days=30)
                 subscription.save()
             
+            # Update UserProfile subscription field
+            try:
+                profile = UserProfile.objects.get(user=user)
+                profile.subscription = plan.plan_type
+                profile.save()
+                logger.info(f'Updated UserProfile subscription to {plan.plan_type} for user {user.username}')
+            except UserProfile.DoesNotExist:
+                logger.error(f'UserProfile not found for user {user.username}')
+            
             logger.info(f'Payment complete for user {user.username}, plan {plan.name}')
         else:
             payment.status = 'failed'
@@ -1615,7 +1631,7 @@ def payfast_notify(request):
 
 def payment_success(request):
     """Redirect after successful payment"""
-    from .models import UserSubscription, SubscriptionPlan
+    from .models import UserSubscription, SubscriptionPlan, UserProfile, PayFastPayment
     from django.utils import timezone
     from datetime import timedelta
     from django.conf import settings
@@ -1637,10 +1653,32 @@ def payment_success(request):
                 subscription.current_period_end = timezone.now() + timedelta(days=30)
                 subscription.save()
                 
+                # Update UserProfile subscription field
+                profile = UserProfile.objects.get(user=request.user)
+                profile.subscription = subscription.plan.plan_type
+                profile.save()
+                
+                # Create payment record
+                PayFastPayment.objects.create(
+                    user=request.user,
+                    subscription=subscription,
+                    plan=subscription.plan,
+                    payfast_payment_id=f'sandbox_{timezone.now().timestamp()}',
+                    merchant_id=settings.PAYFAST_MERCHANT_ID,
+                    amount_gross=subscription.plan.price,
+                    amount_fee=0,
+                    amount_net=subscription.plan.price,
+                    status='complete',
+                    payment_status_text='COMPLETE',
+                    completed_at=timezone.now(),
+                    itn_data={'sandbox': True}
+                )
+                
                 messages.success(request, f'🎉 Subscription activated! You now have {subscription.plan.name} access.')
                 return redirect('subscription_dashboard')
         except Exception as e:
             # Don't fail if this doesn't work - ITN will handle it
+            logger.error(f'Error activating subscription in payment_success: {str(e)}')
             pass
     
     messages.success(request, 'Payment received! Your subscription is being activated.')
