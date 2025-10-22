@@ -1695,12 +1695,20 @@ def payment_cancelled(request):
 
 # ===== ADMIN VIEWS =====
 
-@login_required
+def require_admin(view_func):
+    """Decorator to require admin/staff privileges"""
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not (request.user.is_superuser or request.user.is_staff):
+            messages.error(request, 'Access denied. Admin privileges required.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+@require_admin
 def admin_dashboard(request):
     """Admin dashboard with analytics"""
-    if not (request.user.is_superuser or request.user.is_staff):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     from .models import UserSubscription, PayFastPayment, SubscriptionPlan
     from django.db.models import Count, Sum, Q
@@ -1753,12 +1761,9 @@ def admin_dashboard(request):
     
     return render(request, 'core/admin/dashboard.html', context)
 
-@login_required
+@require_admin
 def admin_users(request):
     """User management interface"""
-    if not (request.user.is_superuser or request.user.is_staff):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     # Get search and filter parameters
     search_query = request.GET.get('search', '')
@@ -1794,12 +1799,9 @@ def admin_users(request):
     
     return render(request, 'core/admin/users.html', context)
 
-@login_required
+@require_admin
 def admin_change_subscription(request, user_id):
     """Change user's subscription tier"""
-    if not (request.user.is_superuser or request.user.is_staff):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         from .models import UserSubscription, SubscriptionPlan
@@ -1837,12 +1839,9 @@ def admin_change_subscription(request, user_id):
     
     return redirect('admin_users')
 
-@login_required
+@require_admin
 def admin_toggle_user_status(request, user_id):
     """Activate or deactivate user account"""
-    if not (request.user.is_superuser or request.user.is_staff):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         user = get_object_or_404(User, id=user_id)
@@ -1857,12 +1856,9 @@ def admin_toggle_user_status(request, user_id):
     
     return redirect('admin_users')
 
-@login_required
+@require_admin
 def admin_subscriptions(request):
     """Subscription management view"""
-    if not (request.user.is_superuser or request.user.is_staff):
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     from .models import UserSubscription, SubscriptionPlan, PayFastPayment
     from django.db.models import Sum
