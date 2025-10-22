@@ -78,6 +78,7 @@ def lesson_plans_view(request):
     if request.method == 'POST':
         if 'upload_file' in request.POST:
             # Handle file upload
+            from core.models import SubscribedSubject
             title = request.POST.get('title')
             subject_id = request.POST.get('subject')
             grade_id = request.POST.get('grade')
@@ -85,6 +86,11 @@ def lesson_plans_view(request):
             uploaded_file = request.FILES.get('file')
             
             if all([title, subject_id, grade_id, board_id, uploaded_file]):
+                # Validate subject is subscribed
+                if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
+                    messages.error(request, 'You can only upload lesson plans for your subscribed subjects.')
+                    return redirect('lesson_plans')
+                
                 document = UploadedDocument(
                     uploaded_by=request.user,
                     title=title,
@@ -102,7 +108,15 @@ def lesson_plans_view(request):
         elif 'generate_ai' in request.POST:
             # Handle AI generation
             try:
-                subject = Subject.objects.get(id=request.POST.get('subject'))
+                from core.models import SubscribedSubject
+                subject_id = request.POST.get('subject')
+                
+                # Validate subject is subscribed
+                if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
+                    messages.error(request, 'You can only generate lesson plans for your subscribed subjects.')
+                    return redirect('lesson_plans')
+                
+                subject = Subject.objects.get(id=subject_id)
                 grade = Grade.objects.get(id=request.POST.get('grade'))
                 board = ExamBoard.objects.get(id=request.POST.get('board'))
                 topic = request.POST.get('topic')
@@ -136,14 +150,23 @@ def lesson_plans_view(request):
             except Exception as e:
                 messages.error(request, f'Failed to generate lesson plan: {str(e)}')
     
+    # Get user's subscribed subjects
+    from core.models import SubscribedSubject
+    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
+    
+    # Filter documents by subscribed subjects only
     documents = UploadedDocument.objects.filter(
         uploaded_by=request.user, 
-        type='lesson_plan'
+        type='lesson_plan',
+        subject_id__in=user_subject_ids
     ).order_by('-created_at')
+    
+    # Only show subscribed subjects in the dropdown
+    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
     
     context = {
         'documents': documents,
-        'subjects': Subject.objects.all(),
+        'subjects': available_subjects,
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
     }
@@ -153,6 +176,7 @@ def lesson_plans_view(request):
 def assignments_view(request):
     if request.method == 'POST' and 'upload_file' in request.POST:
         # Handle file upload for assignments
+        from core.models import SubscribedSubject
         title = request.POST.get('title')
         subject_id = request.POST.get('subject')
         grade_id = request.POST.get('grade')
@@ -160,6 +184,11 @@ def assignments_view(request):
         uploaded_file = request.FILES.get('file')
         
         if all([title, subject_id, grade_id, board_id, uploaded_file]):
+            # Validate subject is subscribed
+            if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
+                messages.error(request, 'You can only upload assignments for your subscribed subjects.')
+                return redirect('assignments')
+            
             document = UploadedDocument(
                 uploaded_by=request.user,
                 title=title,
@@ -174,10 +203,20 @@ def assignments_view(request):
         else:
             messages.error(request, 'Please fill all required fields.')
     
-    assignments = GeneratedAssignment.objects.filter(teacher=request.user).order_by('-created_at')
+    # Get user's subscribed subjects
+    from core.models import SubscribedSubject
+    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
+    
+    # Filter assignments by subscribed subjects
+    assignments = GeneratedAssignment.objects.filter(
+        teacher=request.user,
+        subject_id__in=user_subject_ids
+    ).order_by('-created_at')
+    
     uploaded_assignments = UploadedDocument.objects.filter(
         uploaded_by=request.user,
-        type='homework'
+        type='homework',
+        subject_id__in=user_subject_ids
     ).order_by('-created_at')
     
     # Add sharing status to assignments for visual indicators
@@ -205,12 +244,15 @@ def assignments_view(request):
     # Get teacher's classes for sharing modal
     teacher_classes = ClassGroup.objects.filter(teacher=request.user, is_active=True).order_by('name')
     
+    # Only show subscribed subjects in the dropdown
+    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
+    
     context = {
         'assignments': assignments,
         'uploaded_assignments': uploaded_assignments,
         'documents': uploaded_assignments,  # For backward compatibility with template
         'shared_assignments': shared_assignments,
-        'subjects': Subject.objects.all(),
+        'subjects': available_subjects,
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
         'teacher_classes': teacher_classes,
@@ -219,8 +261,15 @@ def assignments_view(request):
 
 @login_required
 def questions_view(request):
+    # Get user's subscribed subjects
+    from core.models import SubscribedSubject
+    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
+    
+    # Only show subscribed subjects in the dropdown
+    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
+    
     context = {
-        'subjects': Subject.objects.all(),
+        'subjects': available_subjects,
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
     }
@@ -228,11 +277,22 @@ def questions_view(request):
 
 @login_required
 def documents_view(request):
-    documents = UploadedDocument.objects.filter(uploaded_by=request.user).order_by('-created_at')
+    # Get user's subscribed subjects
+    from core.models import SubscribedSubject
+    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
+    
+    # Filter documents by subscribed subjects
+    documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        subject_id__in=user_subject_ids
+    ).order_by('-created_at')
+    
+    # Only show subscribed subjects in the dropdown
+    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
     
     context = {
         'documents': documents,
-        'subjects': Subject.objects.all(),
+        'subjects': available_subjects,
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
     }
@@ -544,7 +604,11 @@ def generate_questions_ai(request):
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 def signup_view(request):
-    """Teacher signup with email verification"""
+    """Teacher signup with email verification and subject selection"""
+    from core.models import Subject, SubscribedSubject
+    
+    subjects = Subject.objects.all().order_by('name')
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -552,27 +616,36 @@ def signup_view(request):
         password_confirm = request.POST.get('password_confirm')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
+        selected_subject_ids = request.POST.getlist('subjects')
         
         # Validation
         if not all([username, email, password, password_confirm, first_name, last_name]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
+        
+        if not selected_subject_ids:
+            messages.error(request, 'Please select at least one subject to get started.')
+            return render(request, 'core/signup.html', {'subjects': subjects})
+        
+        if len(selected_subject_ids) > 1:
+            messages.error(request, 'Free plan allows 1 subject only. Upgrade after signup for more.')
+            return render(request, 'core/signup.html', {'subjects': subjects})
         
         if password != password_confirm:
             messages.error(request, 'Passwords do not match.')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
         
         if len(password) < 8:
             messages.error(request, 'Password must be at least 8 characters long.')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
         
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already taken. Try logging in instead.')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
         
         if User.objects.filter(email=email).exists():
             messages.error(request, 'This email is already registered. Try logging in or reset your password.')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
         
         try:
             # Create user (active but unverified)
@@ -585,14 +658,31 @@ def signup_view(request):
                 is_active=True
             )
             
-            # Create profile with verification token
+            # Create profile with verification token and teacher code
             verification_token = secrets.token_urlsafe(50)
+            import random
+            import string
+            
+            # Generate unique teacher code
+            while True:
+                teacher_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                if not UserProfile.objects.filter(teacher_code=teacher_code).exists():
+                    break
+            
             profile = UserProfile.objects.create(
                 user=user,
                 role='teacher',
                 verification_token=verification_token,
-                verification_token_created=timezone.now()
+                verification_token_created=timezone.now(),
+                teacher_code=teacher_code
             )
+            
+            # Create subscribed subject entries
+            for subject_id in selected_subject_ids:
+                SubscribedSubject.objects.create(
+                    user=user,
+                    subject_id=subject_id
+                )
             
             # Send verification email
             # Build proper verification URL using Replit domain
@@ -631,9 +721,9 @@ EduTech Team''',
             
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
-            return render(request, 'core/signup.html')
+            return render(request, 'core/signup.html', {'subjects': subjects})
     
-    return render(request, 'core/signup.html')
+    return render(request, 'core/signup.html', {'subjects': subjects})
 
 def verify_email(request, token):
     """Verify email address with token"""
@@ -823,12 +913,42 @@ def reset_password(request, token):
 @login_required
 def account_settings(request):
     """User account settings page with profile, security, and notifications"""
+    from core.models import Subject, SubscribedSubject
+    
     profile = UserProfile.objects.get_or_create(user=request.user)[0]
+    subjects = Subject.objects.all().order_by('name')
+    user_subjects = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
     
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        if action == 'update_profile':
+        if action == 'update_subjects':
+            try:
+                selected_subject_ids = request.POST.getlist('subjects')
+                max_subjects = profile.get_max_subjects()
+                
+                if not selected_subject_ids:
+                    messages.error(request, 'Please select at least one subject.')
+                    return redirect('account_settings')
+                
+                if len(selected_subject_ids) > max_subjects:
+                    messages.error(request, f'Your {profile.get_subscription_display()} plan allows up to {max_subjects} subject(s). Upgrade to add more.')
+                    return redirect('account_settings')
+                
+                # Remove old subjects and add new ones
+                SubscribedSubject.objects.filter(user=request.user).delete()
+                for subject_id in selected_subject_ids:
+                    SubscribedSubject.objects.create(
+                        user=request.user,
+                        subject_id=subject_id
+                    )
+                
+                messages.success(request, f'Successfully updated your subjects! You now have {len(selected_subject_ids)} subject(s) selected.')
+                
+            except Exception as e:
+                messages.error(request, f'Error updating subjects: {str(e)}')
+        
+        elif action == 'update_profile':
             try:
                 first_name = request.POST.get('first_name', '').strip()
                 last_name = request.POST.get('last_name', '').strip()
@@ -942,6 +1062,9 @@ EduTech Team''',
         'documents_count': documents_count,
         'assignments_count': assignments_count,
         'shared_count': shared_count,
+        'subjects': subjects,
+        'user_subjects': list(user_subjects),
+        'max_subjects': profile.get_max_subjects(),
     }
     
     return render(request, 'core/account_settings.html', context)
