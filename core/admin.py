@@ -3,7 +3,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import (
     Subject, Grade, ExamBoard, UserProfile, UploadedDocument, 
-    GeneratedAssignment, UsageQuota, SubscriptionPlan, UserSubscription, PayFastPayment
+    GeneratedAssignment, UsageQuota, SubscriptionPlan, UserSubscription, PayFastPayment,
+    SubscribedSubject, PastPaper, Quiz, QuizResponse, ClassGroup, AssignmentShare
 )
 
 # Unregister the default User admin
@@ -132,9 +133,17 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         }),
     )
 
+@admin.register(SubscribedSubject)
+class SubscribedSubjectAdmin(admin.ModelAdmin):
+    list_display = ['user', 'subject', 'subscribed_at']
+    list_filter = ['subject']
+    search_fields = ['user__username', 'subject__name']
+    readonly_fields = ['subscribed_at']
+    ordering = ['-subscribed_at']
+
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ['user', 'plan', 'status', 'current_period_start', 'current_period_end', 'selected_subject']
+    list_display = ['user', 'plan', 'status', 'current_period_start', 'current_period_end']
     list_filter = ['status', 'plan']
     search_fields = ['user__username', 'user__email']
     readonly_fields = ['started_at', 'created_at', 'updated_at']
@@ -148,13 +157,13 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
             'fields': ('started_at', 'current_period_start', 'current_period_end', 'cancelled_at')
         }),
         ('Additional Info', {
-            'fields': ('selected_subject', 'payfast_token', 'created_at', 'updated_at')
+            'fields': ('payfast_token', 'created_at', 'updated_at')
         }),
     )
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.select_related('user', 'plan', 'selected_subject')
+        return qs.select_related('user', 'plan')
 
 @admin.register(PayFastPayment)
 class PayFastPaymentAdmin(admin.ModelAdmin):
@@ -186,6 +195,101 @@ class PayFastPaymentAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('user', 'plan', 'subscription')
+
+@admin.register(PastPaper)
+class PastPaperAdmin(admin.ModelAdmin):
+    list_display = ['title', 'exam_board', 'subject', 'grade', 'paper_code', 'year', 'uploaded_at']
+    list_filter = ['exam_board', 'subject', 'grade', 'year', 'paper_type']
+    search_fields = ['title', 'paper_code', 'subject__name']
+    readonly_fields = ['uploaded_at']
+    ordering = ['-year', 'subject']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'exam_board', 'exam_board_custom', 'subject', 'grade')
+        }),
+        ('Paper Details', {
+            'fields': ('paper_type', 'paper_code', 'year')
+        }),
+        ('Organization', {
+            'fields': ('chapter', 'section')
+        }),
+        ('File & Upload Info', {
+            'fields': ('file', 'notes', 'uploaded_by', 'uploaded_at')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('subject', 'grade', 'uploaded_by')
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ['title', 'subject', 'grade', 'exam_board', 'difficulty_level', 'is_premium', 'is_ai_generated', 'times_used', 'is_active']
+    list_filter = ['exam_board', 'subject', 'grade', 'difficulty_level', 'is_premium', 'is_ai_generated', 'is_active']
+    search_fields = ['title', 'topic', 'subject__name']
+    readonly_fields = ['times_used', 'created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'subject', 'grade', 'exam_board')
+        }),
+        ('Content Organization', {
+            'fields': ('topic', 'chapter', 'section')
+        }),
+        ('Quiz Settings', {
+            'fields': ('google_form_link', 'is_premium', 'is_ai_generated', 'difficulty_level', 'is_active')
+        }),
+        ('Source & Analytics', {
+            'fields': ('created_from_paper', 'times_used')
+        }),
+        ('Timestamps', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('subject', 'grade', 'created_from_paper', 'created_by')
+
+@admin.register(QuizResponse)
+class QuizResponseAdmin(admin.ModelAdmin):
+    list_display = ['student_name', 'quiz', 'teacher_code', 'score', 'submitted_at']
+    list_filter = ['quiz', 'teacher', 'submitted_at']
+    search_fields = ['student_name', 'teacher_code', 'quiz__title']
+    readonly_fields = ['submitted_at']
+    ordering = ['-submitted_at']
+    
+    fieldsets = (
+        ('Student & Quiz', {
+            'fields': ('student_name', 'quiz', 'teacher', 'teacher_code')
+        }),
+        ('Response Data', {
+            'fields': ('score', 'answers_json', 'submitted_at')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('quiz', 'teacher')
+
+@admin.register(ClassGroup)
+class ClassGroupAdmin(admin.ModelAdmin):
+    list_display = ['name', 'teacher', 'subject', 'grade', 'is_active', 'created_at']
+    list_filter = ['subject', 'grade', 'is_active']
+    search_fields = ['name', 'teacher__username', 'description']
+    readonly_fields = ['created_at']
+    ordering = ['teacher', 'name']
+
+@admin.register(AssignmentShare)
+class AssignmentShareAdmin(admin.ModelAdmin):
+    list_display = ['assignment_title', 'class_group', 'teacher', 'shared_at', 'is_active']
+    list_filter = ['shared_at']
+    search_fields = ['teacher__username', 'class_group__name']
+    readonly_fields = ['token', 'shared_at', 'last_accessed', 'view_count']
+    ordering = ['-shared_at']
 
 # Customize admin site
 admin.site.site_header = "EduTech Platform Admin"
