@@ -200,7 +200,7 @@
                             <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Select exam board</option>
                                 {% for board in boards %}
-                                <option value="{{ board.id }}">{{ board.name_full }}</option>
+                                <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
                                 {% endfor %}
                             </select>
                         </div>
