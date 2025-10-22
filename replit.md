@@ -7,6 +7,19 @@ This is a freemium educational technology platform designed for teachers and adm
 ## Recent Changes
 
 ### October 22, 2025
+- **Content Management Portal**: Built separate portal for content managers to upload educational materials
+  - New role: content_manager (in addition to admin and teacher)
+  - 3-way login routing: admin→/panel/, content_manager→/content/, teacher→/dashboard/
+  - Content dashboard with analytics: total papers, total quizzes, premium vs free breakdown
+  - Past paper upload: exam board, grade, subject, year, chapter, section, file upload
+  - Past paper management: search, filter by board/subject/grade, view all papers
+  - Quiz creation: manual builder with premium/free toggle
+  - Quiz management: filter by type/subject/grade, view all quizzes with Google Forms links
+  - Orange/amber theme to distinguish from admin (purple) and teacher (gray/blue) portals
+  - Role-based access: admins can access all 3 portals, content managers can access content + teacher portals
+  - Custom @require_content_manager decorator for security
+  - Cross-portal navigation in sidebars for admins and content managers
+
 - **Admin Panel Implementation**: Created comprehensive admin interface for platform management
   - Role-based login redirect (admins → admin dashboard, teachers → teacher dashboard)
   - Admin dashboard with analytics: total users, revenue, subscription breakdown, recent activity
@@ -16,6 +29,7 @@ This is a freemium educational technology platform designed for teachers and adm
   - Admin interface uses purple/indigo theme to visually distinguish from teacher interface
   - Quick actions for managing users: change plan, toggle status directly from user list
   - Dedicated admin navigation sidebar separate from teacher navigation
+  - Added link to content portal for admins
 
 ### October 22, 2025 (Earlier)
 - **Document Sharing Extended**: Enabled sharing for all 6 document types
