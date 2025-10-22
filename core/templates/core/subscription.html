@@ -17,22 +17,30 @@
         <div class="flex items-center justify-between">
             <div class="w-full">
                 <h4 class="text-xl font-semibold text-gray-900">
-                    {{ profile.get_subscription_plan_display }}
+                    {{ profile.get_subscription_display }}
+                    {% if active_subscription %}
                     <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Active
                     </span>
+                    {% endif %}
                 </h4>
                 <p class="mt-1 text-sm text-gray-600">
-                    {% if profile.subscription_plan == 'free' %}
+                    {% if profile.subscription == 'free' %}
                     Free Plan
-                    {% elif profile.subscription_plan == 'starter' %}
+                    {% elif profile.subscription == 'starter' %}
                     R50/month
-                    {% elif profile.subscription_plan == 'growth' %}
+                    {% elif profile.subscription == 'growth' %}
                     R100/month
-                    {% elif profile.subscription_plan == 'premium' %}
+                    {% elif profile.subscription == 'premium' %}
                     R250/month
                     {% endif %}
                 </p>
+                {% if active_subscription %}
+                <p class="mt-2 text-sm text-gray-500">
+                    <i class="fas fa-calendar-alt mr-1"></i>
+                    Renews on: {{ active_subscription.current_period_end|date:"M d, Y" }}
+                </p>
+                {% endif %}
                 
                 <!-- Subscribed Subjects -->
                 {% if subscribed_subjects %}
@@ -86,12 +94,12 @@
     <div class="px-6 py-6">
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {% for plan in available_plans %}
-            <div class="border rounded-lg p-6 {% if profile.subscription_plan == plan.plan_type %}ring-2 ring-indigo-600 bg-indigo-50{% else %}border-gray-300{% endif %}">
+            <div class="border rounded-lg p-6 {% if profile.subscription == plan.plan_type %}ring-2 ring-indigo-600 bg-indigo-50{% else %}border-gray-300{% endif %}">
                 <div class="text-center">
                     <h4 class="text-lg font-semibold text-gray-900">{{ plan.name }}</h4>
                     <p class="mt-2 text-3xl font-bold text-gray-900">R{{ plan.price }}</p>
                     <p class="text-sm text-gray-500">per month</p>
-                    {% if profile.subscription_plan == plan.plan_type %}
+                    {% if profile.subscription == plan.plan_type %}
                     <span class="mt-3 inline-block px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded">
                         Current Plan
                     </span>

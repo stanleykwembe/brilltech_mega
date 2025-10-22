@@ -106,7 +106,7 @@
                             <p><strong>Current Plan: {{ user_profile.get_subscription_display }}</strong></p>
                             <p class="mt-1">You can select up to {{ max_subjects }} subject{% if max_subjects != 1 %}s{% endif %}.
                             {% if max_subjects < 3 %}
-                                <a href="{% url 'subscription_plans' %}" class="underline font-medium">Upgrade</a> to unlock more subjects.
+                                <a href="{% url 'subscription_dashboard' %}" class="underline font-medium">Upgrade</a> to unlock more subjects.
                             {% endif %}
                             </p>
                         </div>
