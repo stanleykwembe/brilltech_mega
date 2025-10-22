@@ -1025,7 +1025,7 @@ def account_settings(request):
         if action == 'update_subjects':
             try:
                 selected_subject_ids = request.POST.getlist('subjects')
-                max_subjects = profile.get_max_subjects()
+                max_subjects = profile.get_subject_limit()
                 
                 if not selected_subject_ids:
                     messages.error(request, 'Please select at least one subject.')
@@ -1164,7 +1164,7 @@ EduTech Team''',
         'shared_count': shared_count,
         'subjects': subjects,
         'user_subjects': list(user_subjects),
-        'max_subjects': profile.get_max_subjects(),
+        'max_subjects': profile.get_subject_limit(),
     }
     
     return render(request, 'core/account_settings.html', context)
@@ -1407,10 +1407,16 @@ def public_assignment_download(request, token):
 @login_required
 def subscription_dashboard(request):
     """View current subscription and manage upgrades"""
-    from .models import SubscriptionPlan, SubscribedSubject
+    from .models import SubscriptionPlan, SubscribedSubject, UserSubscription
     
     # Get user profile with subscription info
     profile = UserProfile.objects.get(user=request.user)
+    
+    # Get active subscription if exists
+    try:
+        active_subscription = UserSubscription.objects.get(user=request.user, status='active')
+    except UserSubscription.DoesNotExist:
+        active_subscription = None
     
     # Get user's subscribed subjects
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
@@ -1442,6 +1448,7 @@ def subscription_dashboard(request):
     
     context = {
         'profile': profile,
+        'active_subscription': active_subscription,
         'subscribed_subjects': subscribed_subjects,
         'available_plans': available_plans,
         'all_subjects': all_subjects,
