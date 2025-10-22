@@ -1608,6 +1608,34 @@ def payfast_notify(request):
 
 def payment_success(request):
     """Redirect after successful payment"""
+    from .models import UserSubscription, SubscriptionPlan
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.conf import settings
+    
+    # In sandbox mode, PayFast might not send ITN immediately
+    # So we activate the subscription here as a fallback for testing
+    if hasattr(settings, 'PAYFAST_MERCHANT_ID') and settings.PAYFAST_MERCHANT_ID == '10000100':
+        try:
+            # Get the latest pending subscription for this user
+            subscription = UserSubscription.objects.filter(
+                user=request.user,
+                status='pending'
+            ).order_by('-created_at').first()
+            
+            if subscription and subscription.plan.price > 0:
+                # Activate the subscription
+                subscription.status = 'active'
+                subscription.current_period_start = timezone.now()
+                subscription.current_period_end = timezone.now() + timedelta(days=30)
+                subscription.save()
+                
+                messages.success(request, f'🎉 Subscription activated! You now have {subscription.plan.name} access.')
+                return redirect('subscription_dashboard')
+        except Exception as e:
+            # Don't fail if this doesn't work - ITN will handle it
+            pass
+    
     messages.success(request, 'Payment received! Your subscription is being activated.')
     return redirect('subscription_dashboard')
 
