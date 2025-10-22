@@ -1337,34 +1337,47 @@ def public_assignment_download(request, token):
 @login_required
 def subscription_dashboard(request):
     """View current subscription and manage upgrades"""
-    from .models import SubscriptionPlan, UserSubscription, PayFastPayment
-    from django.db.models import Q
+    from .models import SubscriptionPlan, SubscribedSubject
     
-    try:
-        user_subscription = UserSubscription.objects.select_related('plan', 'selected_subject').get(user=request.user)
-    except UserSubscription.DoesNotExist:
-        free_plan = SubscriptionPlan.objects.get(plan_type='free')
-        from django.utils import timezone
-        from datetime import timedelta
-        user_subscription = UserSubscription.objects.create(
-            user=request.user,
-            plan=free_plan,
-            status='active',
-            current_period_start=timezone.now(),
-            current_period_end=timezone.now() + timedelta(days=365)
-        )
+    # Get user profile with subscription info
+    profile = UserProfile.objects.get(user=request.user)
     
+    # Get user's subscribed subjects
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    
+    # Get all available plans
     available_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
     
-    payment_history = PayFastPayment.objects.filter(user=request.user).order_by('-created_at')[:10]
+    # Get all subjects for selection
+    all_subjects = Subject.objects.all().order_by('name')
     
-    subjects = Subject.objects.all().order_by('name')
+    # Get usage quota info
+    try:
+        quota = UsageQuota.objects.get(user=request.user)
+    except UsageQuota.DoesNotExist:
+        quota = None
+    
+    # Calculate quota usage per subject
+    subject_quotas = []
+    for sub in subscribed_subjects:
+        subject_id = str(sub.subject.id)
+        used = quota.lesson_plans_used.get(subject_id, 0) if quota else 0
+        limit = profile.get_lesson_plan_limit_per_subject()
+        subject_quotas.append({
+            'subject': sub.subject,
+            'used': used,
+            'limit': limit,
+            'percentage': (used / limit * 100) if limit > 0 else 0
+        })
     
     context = {
-        'subscription': user_subscription,
+        'profile': profile,
+        'subscribed_subjects': subscribed_subjects,
         'available_plans': available_plans,
-        'payment_history': payment_history,
-        'subjects': subjects,
+        'all_subjects': all_subjects,
+        'subject_quotas': subject_quotas,
+        'subject_limit': profile.get_subject_limit(),
+        'can_add_subjects': subscribed_subjects.count() < profile.get_subject_limit(),
     }
     
     return render(request, 'core/subscription.html', context)

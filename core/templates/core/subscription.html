@@ -15,28 +15,63 @@
     </div>
     <div class="px-6 py-6">
         <div class="flex items-center justify-between">
-            <div>
+            <div class="w-full">
                 <h4 class="text-xl font-semibold text-gray-900">
-                    {{ subscription.plan.name }}
-                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if subscription.status == 'active' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                        {{ subscription.status|title }}
+                    {{ profile.get_subscription_plan_display }}
+                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
                     </span>
                 </h4>
                 <p class="mt-1 text-sm text-gray-600">
-                    R{{ subscription.plan.price }}/month
+                    {% if profile.subscription_plan == 'free' %}
+                    Free Plan
+                    {% elif profile.subscription_plan == 'starter' %}
+                    R50/month
+                    {% elif profile.subscription_plan == 'growth' %}
+                    R100/month
+                    {% elif profile.subscription_plan == 'premium' %}
+                    R250/month
+                    {% endif %}
                 </p>
-                <p class="mt-1 text-sm text-gray-500">
-                    {{ subscription.plan.description }}
-                </p>
-                {% if subscription.selected_subject %}
-                <p class="mt-2 text-sm text-indigo-600 font-medium">
-                    <i class="fas fa-book mr-1"></i> Selected Subject: {{ subscription.selected_subject.name }}
-                </p>
+                
+                <!-- Subscribed Subjects -->
+                {% if subscribed_subjects %}
+                <div class="mt-4">
+                    <h5 class="text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-book mr-1"></i> Your Subjects ({{ subscribed_subjects.count }}/{{ subject_limit }}):
+                    </h5>
+                    <div class="flex flex-wrap gap-2">
+                        {% for sub in subscribed_subjects %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                            {{ sub.subject.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
-                {% if subscription.status == 'active' %}
-                <p class="mt-2 text-xs text-gray-500">
-                    Renews on: {{ subscription.current_period_end|date:"F j, Y" }}
-                </p>
+                
+                <!-- Quota Usage -->
+                {% if subject_quotas %}
+                <div class="mt-4 space-y-3">
+                    <h5 class="text-sm font-medium text-gray-700">
+                        <i class="fas fa-chart-bar mr-1"></i> Monthly Quota Usage:
+                    </h5>
+                    {% for quota in subject_quotas %}
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-600">{{ quota.subject.name }}</span>
+                            <span class="text-gray-900 font-medium">
+                                {{ quota.used }}/{% if quota.limit == 0 %}Unlimited{% else %}{{ quota.limit }}{% endif %} lesson plans
+                            </span>
+                        </div>
+                        {% if quota.limit > 0 %}
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ quota.percentage }}%"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -51,12 +86,12 @@
     <div class="px-6 py-6">
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {% for plan in available_plans %}
-            <div class="border rounded-lg p-6 {% if subscription.plan.id == plan.id %}ring-2 ring-indigo-600 bg-indigo-50{% else %}border-gray-300{% endif %}">
+            <div class="border rounded-lg p-6 {% if profile.subscription_plan == plan.plan_type %}ring-2 ring-indigo-600 bg-indigo-50{% else %}border-gray-300{% endif %}">
                 <div class="text-center">
                     <h4 class="text-lg font-semibold text-gray-900">{{ plan.name }}</h4>
                     <p class="mt-2 text-3xl font-bold text-gray-900">R{{ plan.price }}</p>
                     <p class="text-sm text-gray-500">per month</p>
-                    {% if subscription.plan.id == plan.id %}
+                    {% if profile.subscription_plan == plan.plan_type %}
                     <span class="mt-3 inline-block px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded">
                         Current Plan
                     </span>
@@ -106,28 +141,17 @@
                     </li>
                 </ul>
                 
-                {% if subscription.plan.id != plan.id and plan.plan_type != 'free' %}
+                {% if profile.subscription_plan != plan.plan_type and plan.plan_type != 'free' %}
                 <form method="POST" action="{% url 'initiate_subscription' plan.id %}" class="mt-6">
                     {% csrf_token %}
-                    {% if plan.plan_type == 'growth' %}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Choose Subject:</label>
-                        <select name="selected_subject" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select a subject...</option>
-                            {% for subject in subjects %}
-                            <option value="{{ subject.id }}">{{ subject.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endif %}
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
-                        {% if plan.price > subscription.plan.price %}Upgrade{% else %}Change Plan{% endif %}
+                        Upgrade to {{ plan.name }}
                     </button>
                 </form>
-                {% elif plan.plan_type == 'free' and subscription.plan.id != plan.id %}
-                <a href="{% url 'initiate_subscription' plan.id %}" class="mt-6 block w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md font-medium text-center transition duration-150">
-                    Switch to Free
-                </a>
+                {% elif plan.plan_type == 'free' and profile.subscription_plan != 'free' %}
+                <button disabled class="mt-6 block w-full bg-gray-200 text-gray-400 px-4 py-2 rounded-md font-medium text-center cursor-not-allowed">
+                    Downgrade (Contact Support)
+                </button>
                 {% endif %}
             </div>
             {% endfor %}
