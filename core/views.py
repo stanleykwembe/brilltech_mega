@@ -2117,7 +2117,7 @@ def content_create_quiz(request):
     # GET request - show form
     subjects = Subject.objects.all()
     grades = Grade.objects.all()
-    papers = PastPaper.objects.all().order_by('-created_at')[:20]  # Recent papers for AI generation
+    papers = PastPaper.objects.all().order_by('-uploaded_at')[:20]  # Recent papers for AI generation
     
     context = {
         'subjects': subjects,
