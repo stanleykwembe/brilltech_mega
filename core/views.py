@@ -116,6 +116,29 @@ def lesson_plans_view(request):
                     messages.error(request, 'You can only generate lesson plans for your subscribed subjects.')
                     return redirect('lesson_plans')
                 
+                # Check quota before generation
+                profile = UserProfile.objects.get(user=request.user)
+                quota = UsageQuota.objects.get_or_create(user=request.user)[0]
+                
+                # Check if user can use AI features
+                if not profile.can_use_ai():
+                    messages.error(request, 'AI features are not available on your plan. Upgrade to Growth or Premium to use AI generation.')
+                    return redirect('lesson_plans')
+                
+                # Get lesson plan limit for this tier
+                lesson_plan_limit = profile.get_lesson_plan_limit_per_subject()
+                
+                # Get current usage for this subject
+                subject_key = str(subject_id)
+                current_usage = quota.lesson_plans_used.get(subject_key, 0)
+                
+                # Check if limit is reached (0 means unlimited)
+                if lesson_plan_limit > 0 and current_usage >= lesson_plan_limit:
+                    messages.error(request, 
+                        f'You have reached your monthly limit of {lesson_plan_limit} lesson plan(s) for this subject. '
+                        f'Upgrade your plan to generate more lesson plans.')
+                    return redirect('lesson_plans')
+                
                 subject = Subject.objects.get(id=subject_id)
                 grade = Grade.objects.get(id=request.POST.get('grade'))
                 board = ExamBoard.objects.get(id=request.POST.get('board'))
@@ -139,14 +162,14 @@ def lesson_plans_view(request):
                 )
                 document.save()
                 
-                # Update quota usage
-                quota, created = UsageQuota.objects.get_or_create(user=request.user)
-                if 'lesson_plans' not in quota.lesson_plans_used:
-                    quota.lesson_plans_used['lesson_plans'] = 0
-                quota.lesson_plans_used['lesson_plans'] += 1
+                # Update quota usage per subject
+                if subject_key not in quota.lesson_plans_used:
+                    quota.lesson_plans_used[subject_key] = 0
+                quota.lesson_plans_used[subject_key] += 1
                 quota.save()
                 
-                messages.success(request, 'Lesson plan generated successfully!')
+                remaining = lesson_plan_limit - (current_usage + 1) if lesson_plan_limit > 0 else 'unlimited'
+                messages.success(request, f'Lesson plan generated successfully! Remaining: {remaining}')
             except Exception as e:
                 messages.error(request, f'Failed to generate lesson plan: {str(e)}')
     
@@ -164,11 +187,32 @@ def lesson_plans_view(request):
     # Only show subscribed subjects in the dropdown
     available_subjects = Subject.objects.filter(id__in=user_subject_ids)
     
+    # Get quota information for display
+    profile = UserProfile.objects.get_or_create(user=request.user)[0]
+    quota = UsageQuota.objects.get_or_create(user=request.user)[0]
+    lesson_plan_limit = profile.get_lesson_plan_limit_per_subject()
+    can_use_ai = profile.can_use_ai()
+    
+    # Calculate usage per subject
+    quota_info = {}
+    for subject_id in user_subject_ids:
+        subject_key = str(subject_id)
+        used = quota.lesson_plans_used.get(subject_key, 0)
+        quota_info[subject_id] = {
+            'used': used,
+            'limit': lesson_plan_limit,
+            'remaining': lesson_plan_limit - used if lesson_plan_limit > 0 else 'unlimited'
+        }
+    
     context = {
         'documents': documents,
         'subjects': available_subjects,
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
+        'can_use_ai': can_use_ai,
+        'lesson_plan_limit': lesson_plan_limit,
+        'quota_info': quota_info,
+        'user_profile': profile,
     }
     return render(request, 'core/lesson_plans.html', context)
 
