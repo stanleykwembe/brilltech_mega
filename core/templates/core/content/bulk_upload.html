@@ -1,0 +1,321 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Bulk Upload - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Bulk Upload</h1>
+    <p class="mt-1 text-sm text-gray-600">Upload multiple files at once with shared metadata</p>
+</div>
+
+<div x-data="{
+    uploadType: 'pastpaper',
+    files: [],
+    uploading: false,
+    results: null,
+    
+    handleFiles(e) {
+        this.files = Array.from(e.target.files);
+    },
+    
+    handleDrop(e) {
+        e.preventDefault();
+        this.files = Array.from(e.dataTransfer.files);
+    },
+    
+    removeFile(index) {
+        this.files.splice(index, 1);
+    },
+    
+    async submitUpload() {
+        if (this.files.length === 0) {
+            alert('Please select files to upload');
+            return;
+        }
+        
+        this.uploading = true;
+        this.results = null;
+        
+        const formData = new FormData(document.getElementById('bulkUploadForm'));
+        this.files.forEach((file, index) => {
+            formData.append('files', file);
+        });
+        
+        try {
+            const response = await fetch('{% url 'content_bulk_upload' %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            this.results = data;
+            
+            if (data.success) {
+                this.files = [];
+                document.getElementById('bulkUploadForm').reset();
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        } finally {
+            this.uploading = false;
+        }
+    }
+}">
+
+    <!-- Upload Type Selector -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-3">Upload Type</label>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div @click="uploadType = 'pastpaper'" 
+                 :class="uploadType === 'pastpaper' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-gray-300'"
+                 class="relative rounded-lg border bg-white px-6 py-4 shadow-sm cursor-pointer hover:border-gray-400">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file-pdf text-2xl text-red-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">Past Papers</p>
+                        <p class="text-xs text-gray-500">Exam papers with metadata</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div @click="uploadType = 'quiz'" 
+                 :class="uploadType === 'quiz' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-gray-300'"
+                 class="relative rounded-lg border bg-white px-6 py-4 shadow-sm cursor-pointer hover:border-gray-400">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-question-circle text-2xl text-blue-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">Quizzes</p>
+                        <p class="text-xs text-gray-500">Google Forms links</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div @click="uploadType = 'assignment'" 
+                 :class="uploadType === 'assignment' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-gray-300'"
+                 class="relative rounded-lg border bg-white px-6 py-4 shadow-sm cursor-pointer hover:border-gray-400">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-tasks text-2xl text-green-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">Assignments</p>
+                        <p class="text-xs text-gray-500">Student worksheets</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="bulkUploadForm" @submit.prevent="submitUpload">
+        {% csrf_token %}
+        <input type="hidden" name="upload_type" :value="uploadType">
+        
+        <!-- Metadata Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Shared Metadata</h3>
+            <p class="text-sm text-gray-500 mb-4">This information will apply to all uploaded files</p>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <!-- Past Paper Fields -->
+                <template x-if="uploadType === 'pastpaper'">
+                    <div class="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Exam Board *</label>
+                            <input type="text" name="exam_board" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., IEB, CAPS, Cambridge">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Year *</label>
+                            <input type="number" name="year" required min="2000" max="2030" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., 2024">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                            <select name="subject_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                            <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Grade</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Chapter (Optional)</label>
+                            <input type="text" name="chapter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., Chapter 5">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Section (Optional)</label>
+                            <input type="text" name="section" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., Section A">
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Quiz Fields -->
+                <template x-if="uploadType === 'quiz'">
+                    <div class="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Exam Board *</label>
+                            <input type="text" name="exam_board" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., IEB, CAPS">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                            <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Grade</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                            <select name="subject_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Topic *</label>
+                            <input type="text" name="topic" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., Algebra">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Type *</label>
+                            <select name="is_premium" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="false">Free (Available to all)</option>
+                                <option value="true">Premium (Paid only)</option>
+                            </select>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Assignment Fields -->
+                <template x-if="uploadType === 'assignment'">
+                    <div class="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                            <select name="subject_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                            <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Grade</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Topic *</label>
+                            <input type="text" name="topic" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., Fractions">
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        
+        <!-- File Upload Area -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Files</h3>
+            
+            <div @drop="handleDrop" @dragover.prevent @dragenter.prevent
+                 class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <p class="text-sm text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
+                <input type="file" multiple @change="handleFiles" accept=".pdf,.docx" class="hidden" id="fileInput">
+                <button type="button" @click="$refs.fileInput.click()" class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                    <i class="fas fa-folder-open mr-2"></i>Select Files
+                </button>
+                <input type="file" multiple @change="handleFiles" accept=".pdf,.docx" x-ref="fileInput" class="hidden">
+                <p class="text-xs text-gray-500 mt-2">Supports PDF and DOCX files</p>
+            </div>
+            
+            <!-- File List -->
+            <div x-show="files.length > 0" class="mt-4">
+                <p class="text-sm font-medium text-gray-700 mb-2"><span x-text="files.length"></span> file(s) selected</p>
+                <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
+                    <template x-for="(file, index) in files" :key="index">
+                        <li class="px-4 py-3 flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-file text-gray-400 mr-3"></i>
+                                <span class="text-sm text-gray-900" x-text="file.name"></span>
+                                <span class="ml-2 text-xs text-gray-500" x-text="(file.size / 1024).toFixed(1) + ' KB'"></span>
+                            </div>
+                            <button type="button" @click="removeFile(index)" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button type="submit" :disabled="uploading || files.length === 0" 
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span x-show="!uploading">
+                    <i class="fas fa-upload mr-2"></i>Upload <span x-text="files.length"></span> File(s)
+                </span>
+                <span x-show="uploading">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Uploading...
+                </span>
+            </button>
+        </div>
+    </form>
+    
+    <!-- Results -->
+    <div x-show="results" class="mt-6 bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Results</h3>
+        <div x-show="results && results.success" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+            <p class="text-sm text-green-800">
+                <i class="fas fa-check-circle mr-2"></i>
+                Successfully uploaded <span x-text="results.uploaded_count"></span> file(s)
+            </p>
+        </div>
+        
+        <div x-show="results && results.failed_count > 0" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p class="text-sm text-yellow-800">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span x-text="results.failed_count"></span> file(s) failed to upload
+            </p>
+        </div>
+        
+        <!-- Detailed Results -->
+        <template x-if="results && results.details">
+            <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
+                <template x-for="(detail, index) in results.details" :key="index">
+                    <li class="px-4 py-3 flex items-center justify-between">
+                        <span class="text-sm text-gray-900" x-text="detail.filename"></span>
+                        <span x-show="detail.success" class="text-sm text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>Success
+                        </span>
+                        <span x-show="!detail.success" class="text-sm text-red-600" :title="detail.error">
+                            <i class="fas fa-times-circle mr-1"></i>Failed
+                        </span>
+                    </li>
+                </template>
+            </ul>
+        </template>
+    </div>
+</div>
+
+{% endblock %}

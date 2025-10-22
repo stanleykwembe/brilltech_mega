@@ -38,6 +38,10 @@
                             <i class="fas fa-question-circle mr-3 text-gray-400 group-hover:text-gray-300"></i>
                             Quizzes
                         </a>
+                        <a href="{% url 'content_bulk_upload' %}" class="{% if 'bulk_upload' in request.resolver_match.url_name %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-cloud-upload-alt mr-3 text-gray-400 group-hover:text-gray-300"></i>
+                            Bulk Upload
+                        </a>
                         
                         <!-- Portal Switcher -->
                         <div class="pt-4 mt-4 border-t border-gray-700">

@@ -2282,3 +2282,172 @@ def content_review_formatted_paper(request, paper_id):
     }
     
     return render(request, 'core/content/review_formatted_paper.html', context)
+
+@require_content_manager
+def content_bulk_upload(request):
+    """Bulk upload of past papers, quizzes, or assignments"""
+    from .models import PastPaper, Quiz, GeneratedAssignment
+    
+    if request.method == 'POST':
+        upload_type = request.POST.get('upload_type')
+        files = request.FILES.getlist('files')
+        
+        if not files:
+            return JsonResponse({'success': False, 'error': 'No files provided'})
+        
+        results = {
+            'success': True,
+            'uploaded_count': 0,
+            'failed_count': 0,
+            'details': []
+        }
+        
+        try:
+            if upload_type == 'pastpaper':
+                # Get shared metadata for past papers
+                exam_board = request.POST.get('exam_board')
+                year = request.POST.get('year')
+                subject_id = request.POST.get('subject_id')
+                grade_id = request.POST.get('grade_id')
+                chapter = request.POST.get('chapter', '')
+                section = request.POST.get('section', '')
+                
+                subject = get_object_or_404(Subject, id=subject_id)
+                grade = get_object_or_404(Grade, id=grade_id)
+                
+                for file in files:
+                    try:
+                        # Auto-generate title from filename
+                        title = os.path.splitext(file.name)[0]
+                        
+                        # Create past paper
+                        paper = PastPaper.objects.create(
+                            title=title,
+                            exam_board=exam_board,
+                            year=year,
+                            subject=subject,
+                            grade=grade,
+                            chapter=chapter,
+                            section=section,
+                            file=file,
+                            uploaded_by=request.user
+                        )
+                        
+                        results['uploaded_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': True
+                        })
+                        
+                    except Exception as e:
+                        results['failed_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': False,
+                            'error': str(e)
+                        })
+            
+            elif upload_type == 'quiz':
+                # Get shared metadata for quizzes
+                exam_board = request.POST.get('exam_board')
+                grade_id = request.POST.get('grade_id')
+                subject_id = request.POST.get('subject_id')
+                topic = request.POST.get('topic')
+                is_premium = request.POST.get('is_premium') == 'true'
+                
+                grade = get_object_or_404(Grade, id=grade_id)
+                subject = get_object_or_404(Subject, id=subject_id)
+                
+                for file in files:
+                    try:
+                        # Auto-generate title from filename
+                        title = os.path.splitext(file.name)[0]
+                        
+                        # Expect files to be text files with Google Forms links
+                        # Or create quizzes without links if PDFs
+                        google_form_link = ''
+                        if file.name.endswith('.txt'):
+                            google_form_link = file.read().decode('utf-8').strip()
+                        
+                        quiz = Quiz.objects.create(
+                            title=title,
+                            exam_board=exam_board,
+                            grade=grade,
+                            subject=subject,
+                            topic=topic,
+                            is_premium=is_premium,
+                            google_form_link=google_form_link,
+                            created_by=request.user
+                        )
+                        
+                        results['uploaded_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': True
+                        })
+                        
+                    except Exception as e:
+                        results['failed_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': False,
+                            'error': str(e)
+                        })
+            
+            elif upload_type == 'assignment':
+                # Get shared metadata for assignments
+                subject_id = request.POST.get('subject_id')
+                grade_id = request.POST.get('grade_id')
+                topic = request.POST.get('topic')
+                
+                subject = get_object_or_404(Subject, id=subject_id)
+                grade = get_object_or_404(Grade, id=grade_id)
+                
+                for file in files:
+                    try:
+                        # Auto-generate title from filename
+                        title = os.path.splitext(file.name)[0]
+                        
+                        # Create assignment
+                        assignment = GeneratedAssignment.objects.create(
+                            user=request.user,
+                            subject=subject,
+                            grade=grade,
+                            topic=topic,
+                            assignment_type='worksheet',
+                            content=f'Uploaded: {title}',
+                            file=file
+                        )
+                        
+                        results['uploaded_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': True
+                        })
+                        
+                    except Exception as e:
+                        results['failed_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'success': False,
+                            'error': str(e)
+                        })
+            
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid upload type'})
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+        
+        return JsonResponse(results)
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+    }
+    
+    return render(request, 'core/content/bulk_upload.html', context)

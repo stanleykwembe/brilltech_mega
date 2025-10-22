@@ -60,4 +60,5 @@ urlpatterns = [
     path('content/formatted-papers/<int:paper_id>/review/', views.content_review_formatted_paper, name='content_review_formatted_paper'),
     path('content/quizzes/', views.content_quizzes, name='content_quizzes'),
     path('content/quizzes/create/', views.content_create_quiz, name='content_create_quiz'),
+    path('content/bulk-upload/', views.content_bulk_upload, name='content_bulk_upload'),
 ]
