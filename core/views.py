@@ -2295,6 +2295,24 @@ def content_bulk_upload(request):
         if not files:
             return JsonResponse({'success': False, 'error': 'No files provided'})
         
+        # Validate file sizes and types
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+        ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
+        
+        for file in files:
+            if file.size > MAX_FILE_SIZE:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'File {file.name} exceeds 10MB limit'
+                })
+            
+            file_ext = os.path.splitext(file.name)[1].lower()
+            if file_ext not in ALLOWED_EXTENSIONS:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'File {file.name} has unsupported format. Only PDF, DOCX, and TXT allowed.'
+                })
+        
         results = {
             'success': True,
             'uploaded_count': 0,
