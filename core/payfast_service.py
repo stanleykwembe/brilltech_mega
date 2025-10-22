@@ -17,10 +17,32 @@ class PayFastService:
         'w2w.payfast.co.za',
     ]
     
+    # PayFast requires fields in this EXACT order for signature generation
+    CHECKOUT_SIGNATURE_FIELD_ORDER = [
+        'merchant_id', 'merchant_key', 'return_url', 'cancel_url', 
+        'notify_url', 'name_first', 'name_last', 'email_address',
+        'cell_number', 'amount', 'item_name', 'item_description',
+        'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4',
+        'custom_int5', 'custom_str1', 'custom_str2', 'custom_str3',
+        'custom_str4', 'custom_str5', 'email_confirmation',
+        'confirmation_address', 'payment_method', 'm_payment_id',
+        'subscription_type', 'billing_date', 'recurring_amount',
+        'frequency', 'cycles'
+    ]
+    
+    @staticmethod
+    def _sort_by_priority_list(values, priority):
+        """Sort values based on PayFast priority list order"""
+        priority_dict = {k: i for i, k in enumerate(priority)}
+        def priority_getter(value):
+            return priority_dict.get(value, len(values))
+        return sorted(values, key=priority_getter)
+    
     @staticmethod
     def generate_signature(data_dict, passphrase=None):
         """
         Generate MD5 signature for PayFast payment
+        Uses PayFast's required field ordering, not alphabetical sorting
         
         Args:
             data_dict: Dictionary of payment parameters
@@ -32,16 +54,32 @@ class PayFastService:
         if passphrase is None:
             passphrase = settings.PAYFAST_PASSPHRASE
         
-        payload_string = ""
-        for key in sorted(data_dict.keys()):
-            if key != 'signature' and data_dict[key]:
-                payload_string += f"{key}={urllib.parse.quote_plus(str(data_dict[key]))}&"
+        # Filter out empty values and strip whitespace
+        output_data = {}
+        for key, value in data_dict.items():
+            if str(value).strip():
+                output_data[key] = str(value).strip()
         
+        # Sort keys by PayFast field order (NOT alphabetically!)
+        keys = PayFastService._sort_by_priority_list(
+            output_data.keys(), 
+            PayFastService.CHECKOUT_SIGNATURE_FIELD_ORDER
+        )
+        
+        # Build parameter string with URL encoding
+        payload_string = ""
+        for key in keys:
+            if key != 'signature':
+                payload_string += f"{key}={urllib.parse.quote_plus(output_data[key])}&"
+        
+        # Remove trailing '&'
         payload_string = payload_string.rstrip('&')
         
+        # Append passphrase if provided
         if passphrase:
-            payload_string += f"&passphrase={urllib.parse.quote_plus(passphrase)}"
+            payload_string += f"&passphrase={urllib.parse.quote_plus(passphrase.strip())}"
         
+        # Generate MD5 hash
         signature = hashlib.md5(payload_string.encode()).hexdigest()
         return signature
     

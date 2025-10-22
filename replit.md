@@ -7,6 +7,18 @@ This is a freemium educational technology platform designed for teachers and adm
 ## Recent Changes
 
 ### October 22, 2025
+- **Document Sharing Extended**: Enabled sharing for all 6 document types
+  - Share modal added to Classwork, Homework, Tests, and Exams pages
+  - All document types now support shareable links with teacher code
+  - Due dates and expiry dates work across all shared documents
+  - Shared tabs show view counts and status for each document type
+
+- **PayFast Signature Fix**: Resolved payment gateway signature error
+  - Fixed signature generation to use PayFast's required field ordering
+  - Added CHECKOUT_SIGNATURE_FIELD_ORDER constant for proper field sequence
+  - Implemented whitespace stripping and proper URL encoding
+  - Signature now matches PayFast's validation requirements
+
 - **Subscription System Overhaul**: Implemented subject-based resource allocation system
   - Updated subscription tiers: Free (R0), Starter (R50), Growth (R100), Premium (R250)
   - Subject limits per tier: 1/1/2/3 subjects respectively
