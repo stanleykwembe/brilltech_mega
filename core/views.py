@@ -145,9 +145,12 @@ def lesson_plans_view(request):
                 topic = request.POST.get('topic')
                 duration = request.POST.get('duration', '60 minutes')
                 
+                # Get AI model based on user's tier (GPT-3.5 for Growth, GPT-4 for Premium)
+                ai_model = profile.get_ai_model()
+                
                 ai_content = generate_lesson_plan(
                     subject.name, f"Grade {grade.number}", 
-                    board.abbreviation, topic, duration
+                    board.abbreviation, topic, duration, model=ai_model
                 )
                 
                 # Create document with AI content persisted in database
@@ -580,6 +583,10 @@ def generate_assignment_ai(request):
     """Generate homework assignment using AI"""
     if request.method == 'POST':
         try:
+            # Get user's AI model
+            profile = UserProfile.objects.get(user=request.user)
+            ai_model = profile.get_ai_model()
+            
             subject = Subject.objects.get(id=request.POST.get('subject'))
             grade = Grade.objects.get(id=request.POST.get('grade'))
             board = ExamBoard.objects.get(id=request.POST.get('board'))
@@ -590,7 +597,7 @@ def generate_assignment_ai(request):
             
             ai_content = generate_homework(
                 subject.name, f"Grade {grade.number}", 
-                board.abbreviation, topic, question_type, num_questions
+                board.abbreviation, topic, question_type, num_questions, model=ai_model
             )
             
             # Create assignment
@@ -622,6 +629,10 @@ def generate_questions_ai(request):
     """Generate practice questions using AI"""
     if request.method == 'POST':
         try:
+            # Get user's AI model
+            profile = UserProfile.objects.get(user=request.user)
+            ai_model = profile.get_ai_model()
+            
             subject = Subject.objects.get(id=request.POST.get('subject'))
             grade = Grade.objects.get(id=request.POST.get('grade'))
             board = ExamBoard.objects.get(id=request.POST.get('board'))
@@ -631,7 +642,7 @@ def generate_questions_ai(request):
             
             ai_content = generate_questions(
                 subject.name, f"Grade {grade.number}", 
-                board.abbreviation, topic, question_type, difficulty
+                board.abbreviation, topic, question_type, difficulty, model=ai_model
             )
             
             return JsonResponse({

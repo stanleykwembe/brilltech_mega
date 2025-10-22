@@ -9,8 +9,17 @@ from openai import OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes"):
-    """Generate a detailed lesson plan using GPT-5"""
+def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes", model="gpt-3.5-turbo"):
+    """Generate a detailed lesson plan using AI
+    
+    Args:
+        subject: Subject name
+        grade: Grade level
+        board: Exam board
+        topic: Topic to teach
+        duration: Lesson duration
+        model: AI model to use (gpt-3.5-turbo for Growth, gpt-4 for Premium)
+    """
     prompt = f"""Create a detailed lesson plan for:
     Subject: {subject}
     Grade: {grade}
@@ -36,7 +45,7 @@ def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes"):
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-5",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are an expert teacher creating educational content. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
@@ -51,8 +60,12 @@ def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes"):
     except Exception as e:
         raise Exception(f"Failed to generate lesson plan: {e}")
 
-def generate_homework(subject, grade, board, topic, question_type, num_questions=5):
-    """Generate homework questions using GPT-5"""
+def generate_homework(subject, grade, board, topic, question_type, num_questions=5, model="gpt-3.5-turbo"):
+    """Generate homework questions using AI
+    
+    Args:
+        model: AI model to use (gpt-3.5-turbo for Growth, gpt-4 for Premium)
+    """
     prompt = f"""Create homework questions for:
     Subject: {subject}
     Grade: {grade}
@@ -78,7 +91,7 @@ def generate_homework(subject, grade, board, topic, question_type, num_questions
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-5",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are an expert teacher creating educational assessments. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
@@ -93,8 +106,12 @@ def generate_homework(subject, grade, board, topic, question_type, num_questions
     except Exception as e:
         raise Exception(f"Failed to generate homework: {e}")
 
-def generate_questions(subject, grade, board, topic, question_type, difficulty="medium"):
-    """Generate practice questions using GPT-5"""
+def generate_questions(subject, grade, board, topic, question_type, difficulty="medium", model="gpt-3.5-turbo"):
+    """Generate practice questions using AI
+    
+    Args:
+        model: AI model to use (gpt-3.5-turbo for Growth, gpt-4 for Premium)
+    """
     prompt = f"""Create practice questions for:
     Subject: {subject}
     Grade: {grade}
@@ -120,7 +137,7 @@ def generate_questions(subject, grade, board, topic, question_type, difficulty="
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-5",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are an expert teacher creating educational assessments. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
