@@ -7,6 +7,20 @@ This is a freemium educational technology platform designed for teachers and adm
 ## Recent Changes
 
 ### October 22, 2025
+- **Bulk Upload System**: Content managers can efficiently upload folders of educational materials
+  - Added "Bulk Upload" menu item in content manager sidebar navigation
+  - Upload type selector: Past Papers, Quizzes, or Assignments
+  - Dynamic metadata form using Alpine.js shows different fields based on upload type:
+    - Past Papers: exam board, year, subject, grade, chapter (optional), section (optional)
+    - Quizzes: exam board, grade, subject, topic, premium/free status, Google Forms links (from .txt files)
+    - Assignments: subject, grade, topic
+  - Multiple file upload with drag-and-drop support and folder selection
+  - File validation: 10MB size limit, PDF/DOCX/TXT formats only
+  - Auto-title generation from filenames for all uploaded files
+  - Shared metadata applies to all files in the batch upload
+  - Upload results summary showing success/failure status for each file
+  - JSON response with detailed error messages and upload statistics
+
 - **AI Document Reformatting System**: Content managers can now AI-reformat uploaded exam papers
   - Created FormattedPaper model with JSONField for questions/memo storage
   - AI extraction service using GPT-4 for question extraction and memo generation
@@ -18,6 +32,7 @@ This is a freemium educational technology platform designed for teachers and adm
   - Formatted Papers management page with filtering by subject/grade/status
   - Images referenced by description in JSON (extraction handled separately)
   - Database uses indexed JSONField in SQLite for efficient question storage
+  - Added "AI Reformat" action button to Past Papers table
 
 - **Content Portal UI Update**: Sidebar redesigned to match teacher dashboard
   - Changed from orange horizontal layout to gray-800 vertical sidebar (teacher style)
