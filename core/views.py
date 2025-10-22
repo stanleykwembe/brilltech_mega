@@ -77,7 +77,7 @@ def dashboard_view(request):
 def lesson_plans_view(request):
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
-    boards = ExamBoard.objects.all().order_by('name')
+    boards = ExamBoard.objects.all().order_by('name_full')
     
     my_documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
@@ -106,7 +106,7 @@ def lesson_plans_view(request):
 def classwork_view(request):
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
-    boards = ExamBoard.objects.all().order_by('name')
+    boards = ExamBoard.objects.all().order_by('name_full')
     
     my_documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
@@ -135,7 +135,7 @@ def classwork_view(request):
 def homework_view(request):
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
-    boards = ExamBoard.objects.all().order_by('name')
+    boards = ExamBoard.objects.all().order_by('name_full')
     
     my_documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
@@ -164,7 +164,7 @@ def homework_view(request):
 def tests_view(request):
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
-    boards = ExamBoard.objects.all().order_by('name')
+    boards = ExamBoard.objects.all().order_by('name_full')
     
     my_documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
@@ -193,7 +193,7 @@ def tests_view(request):
 def exams_view(request):
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
-    boards = ExamBoard.objects.all().order_by('name')
+    boards = ExamBoard.objects.all().order_by('name_full')
     
     my_documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
@@ -338,8 +338,8 @@ def documents_view(request):
         'subscribed_subjects': subscribed_subjects,
         'subjects': Subject.objects.filter(id__in=user_subject_ids),  # for backward compatibility
         'grades': Grade.objects.all().order_by('number'),
-        'boards': ExamBoard.objects.all().order_by('name'),
-        'exam_boards': ExamBoard.objects.all().order_by('name'),  # for backward compatibility
+        'boards': ExamBoard.objects.all().order_by('name_full'),
+        'exam_boards': ExamBoard.objects.all().order_by('name_full'),  # for backward compatibility
     }
     return render(request, 'core/documents.html', context)
 
