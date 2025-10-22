@@ -18,9 +18,10 @@ class Grade(models.Model):
 class ExamBoard(models.Model):
     name_full = models.CharField(max_length=200)  # e.g., "Cambridge International"
     abbreviation = models.CharField(max_length=10)  # e.g., "CIE"
+    region = models.CharField(max_length=100, default='')  # e.g., "South Africa", "Zimbabwe"
     
     def __str__(self):
-        return f"{self.name_full} ({self.abbreviation})"
+        return f"{self.abbreviation} ({self.region})" if self.region else self.abbreviation
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
