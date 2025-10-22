@@ -26,6 +26,7 @@ class ExamBoard(models.Model):
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('teacher', 'Teacher'),
+        ('content_manager', 'Content Manager'),
         ('admin', 'Admin'),
     ]
     
