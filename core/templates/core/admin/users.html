@@ -1,0 +1,196 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}User Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage all platform users and their subscriptions</p>
+</div>
+
+<!-- Search and Filters -->
+<div class="bg-white shadow rounded-lg mb-6 p-6">
+    <form method="get" action="{% url 'admin_users' %}">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div class="md:col-span-2">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Users</label>
+                <input type="text" 
+                       name="search" 
+                       id="search" 
+                       value="{{ search_query }}"
+                       placeholder="Username, email, name..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            
+            <div>
+                <label for="subscription" class="block text-sm font-medium text-gray-700 mb-1">Subscription</label>
+                <select name="subscription" 
+                        id="subscription" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Plans</option>
+                    <option value="free" {% if subscription_filter == 'free' %}selected{% endif %}>Free</option>
+                    <option value="starter" {% if subscription_filter == 'starter' %}selected{% endif %}>Starter</option>
+                    <option value="growth" {% if subscription_filter == 'growth' %}selected{% endif %}>Growth</option>
+                    <option value="premium" {% if subscription_filter == 'premium' %}selected{% endif %}>Premium</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" 
+                        id="status" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex space-x-3">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                <i class="fas fa-search mr-2"></i> Apply Filters
+            </button>
+            <a href="{% url 'admin_users' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                <i class="fas fa-redo mr-2"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">All Users ({{ users.count }})</h3>
+    </div>
+    
+    {% if users %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for user in users %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <i class="fas fa-user text-indigo-600"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
+                                <div class="text-sm text-gray-500">{{ user.userprofile.role|title }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ user.email }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            {% if user.userprofile.subscription == 'premium' %}bg-yellow-100 text-yellow-800
+                            {% elif user.userprofile.subscription == 'growth' %}bg-purple-100 text-purple-800
+                            {% elif user.userprofile.subscription == 'starter' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ user.userprofile.get_subscription_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if user.is_active %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i> Active
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-times-circle mr-1"></i> Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ user.date_joined|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2" x-data="{ showMenu: false }">
+                            <button @click="showMenu = !showMenu" class="text-indigo-600 hover:text-indigo-900 relative">
+                                <i class="fas fa-ellipsis-v"></i>
+                                
+                                <div x-show="showMenu" 
+                                     @click.away="showMenu = false"
+                                     x-cloak
+                                     class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                    <div class="py-1" role="menu">
+                                        <!-- Change Subscription -->
+                                        <button @click="document.getElementById('change-sub-{{ user.id }}').classList.toggle('hidden')" 
+                                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-crown mr-2"></i> Change Plan
+                                        </button>
+                                        
+                                        <!-- Toggle Status -->
+                                        <form method="post" action="{% url 'admin_toggle_user_status' user.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                {% if user.is_active %}
+                                                <i class="fas fa-ban mr-2"></i> Deactivate
+                                                {% else %}
+                                                <i class="fas fa-check mr-2"></i> Activate
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <!-- Change Subscription Form (Hidden) -->
+                        <div id="change-sub-{{ user.id }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                <div class="mt-3">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Change Subscription for {{ user.username }}</h3>
+                                    <form method="post" action="{% url 'admin_change_subscription' user.id %}">
+                                        {% csrf_token %}
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Plan</label>
+                                            <select name="subscription" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="free" {% if user.userprofile.subscription == 'free' %}selected{% endif %}>Free</option>
+                                                <option value="starter" {% if user.userprofile.subscription == 'starter' %}selected{% endif %}>Starter (R50)</option>
+                                                <option value="growth" {% if user.userprofile.subscription == 'growth' %}selected{% endif %}>Growth (R100)</option>
+                                                <option value="premium" {% if user.userprofile.subscription == 'premium' %}selected{% endif %}>Premium (R250)</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex space-x-3">
+                                            <button type="submit" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                                                Update Plan
+                                            </button>
+                                            <button type="button" @click="document.getElementById('change-sub-{{ user.id }}').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-12 text-center">
+        <i class="fas fa-users text-gray-400 text-5xl mb-4"></i>
+        <p class="text-gray-500">No users found matching your criteria</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

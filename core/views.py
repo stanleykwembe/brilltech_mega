@@ -51,7 +51,11 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('dashboard')
+            # Redirect based on user role
+            if user.is_superuser or user.is_staff:
+                return redirect('admin_dashboard')
+            else:
+                return redirect('dashboard')
         else:
             messages.error(request, 'Invalid credentials. Please check your username/email and password.')
     return render(request, 'core/login.html')
@@ -1688,3 +1692,208 @@ def payment_cancelled(request):
     """Redirect after cancelled payment"""
     messages.warning(request, 'Payment was cancelled. You can try again anytime.')
     return redirect('subscription_dashboard')
+
+# ===== ADMIN VIEWS =====
+
+@login_required
+def admin_dashboard(request):
+    """Admin dashboard with analytics"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('dashboard')
+    
+    from .models import UserSubscription, PayFastPayment, SubscriptionPlan
+    from django.db.models import Count, Sum, Q
+    
+    # Get analytics data
+    total_users = User.objects.count()
+    verified_users = User.objects.filter(is_active=True).count()
+    total_teachers = UserProfile.objects.filter(role='teacher').count()
+    
+    # Subscription breakdown
+    free_users = UserProfile.objects.filter(subscription='free').count()
+    starter_users = UserProfile.objects.filter(subscription='starter').count()
+    growth_users = UserProfile.objects.filter(subscription='growth').count()
+    premium_users = UserProfile.objects.filter(subscription='premium').count()
+    
+    # Revenue calculations
+    active_subscriptions = UserSubscription.objects.filter(status='active').select_related('plan')
+    total_mrr = sum(sub.plan.price for sub in active_subscriptions)
+    
+    completed_payments = PayFastPayment.objects.filter(status='complete')
+    total_revenue = completed_payments.aggregate(Sum('amount_gross'))['amount_gross__sum'] or 0
+    
+    # Recent signups (last 7 days)
+    from datetime import timedelta
+    week_ago = timezone.now() - timedelta(days=7)
+    recent_signups = User.objects.filter(date_joined__gte=week_ago).count()
+    
+    # Recent users
+    latest_users = User.objects.select_related('userprofile').order_by('-date_joined')[:10]
+    
+    # Recent payments
+    recent_payments = PayFastPayment.objects.filter(
+        status='complete'
+    ).select_related('user', 'plan').order_by('-completed_at')[:10]
+    
+    context = {
+        'total_users': total_users,
+        'verified_users': verified_users,
+        'total_teachers': total_teachers,
+        'free_users': free_users,
+        'starter_users': starter_users,
+        'growth_users': growth_users,
+        'premium_users': premium_users,
+        'total_mrr': total_mrr,
+        'total_revenue': total_revenue,
+        'recent_signups': recent_signups,
+        'latest_users': latest_users,
+        'recent_payments': recent_payments,
+    }
+    
+    return render(request, 'core/admin/dashboard.html', context)
+
+@login_required
+def admin_users(request):
+    """User management interface"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('dashboard')
+    
+    # Get search and filter parameters
+    search_query = request.GET.get('search', '')
+    subscription_filter = request.GET.get('subscription', '')
+    status_filter = request.GET.get('status', '')
+    
+    # Base queryset
+    users = User.objects.select_related('userprofile').order_by('-date_joined')
+    
+    # Apply filters
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    if subscription_filter:
+        users = users.filter(userprofile__subscription=subscription_filter)
+    
+    if status_filter == 'active':
+        users = users.filter(is_active=True)
+    elif status_filter == 'inactive':
+        users = users.filter(is_active=False)
+    
+    context = {
+        'users': users,
+        'search_query': search_query,
+        'subscription_filter': subscription_filter,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'core/admin/users.html', context)
+
+@login_required
+def admin_change_subscription(request, user_id):
+    """Change user's subscription tier"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        from .models import UserSubscription, SubscriptionPlan
+        
+        user = get_object_or_404(User, id=user_id)
+        new_subscription = request.POST.get('subscription')
+        
+        if new_subscription in ['free', 'starter', 'growth', 'premium']:
+            profile = UserProfile.objects.get(user=user)
+            profile.subscription = new_subscription
+            profile.save()
+            
+            # Update or create UserSubscription
+            plan = SubscriptionPlan.objects.get(plan_type=new_subscription)
+            subscription, created = UserSubscription.objects.get_or_create(
+                user=user,
+                defaults={
+                    'plan': plan,
+                    'status': 'active',
+                    'current_period_start': timezone.now(),
+                    'current_period_end': timezone.now() + timedelta(days=30)
+                }
+            )
+            
+            if not created:
+                subscription.plan = plan
+                subscription.status = 'active'
+                subscription.current_period_start = timezone.now()
+                subscription.current_period_end = timezone.now() + timedelta(days=30)
+                subscription.save()
+            
+            messages.success(request, f'Updated {user.username} to {new_subscription.title()} plan.')
+        else:
+            messages.error(request, 'Invalid subscription tier.')
+    
+    return redirect('admin_users')
+
+@login_required
+def admin_toggle_user_status(request, user_id):
+    """Activate or deactivate user account"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        
+        if user.id == request.user.id:
+            messages.error(request, 'You cannot deactivate your own account.')
+        else:
+            user.is_active = not user.is_active
+            user.save()
+            status = 'activated' if user.is_active else 'deactivated'
+            messages.success(request, f'User {user.username} has been {status}.')
+    
+    return redirect('admin_users')
+
+@login_required
+def admin_subscriptions(request):
+    """Subscription management view"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('dashboard')
+    
+    from .models import UserSubscription, SubscriptionPlan, PayFastPayment
+    from django.db.models import Sum
+    
+    # Get all active subscriptions
+    active_subscriptions = UserSubscription.objects.filter(
+        status='active'
+    ).select_related('user', 'plan').order_by('-current_period_end')
+    
+    # Get all subscription plans
+    plans = SubscriptionPlan.objects.all().order_by('price')
+    
+    # Calculate revenue per plan
+    plan_revenue = {}
+    for plan in plans:
+        plan_subs = active_subscriptions.filter(plan=plan)
+        plan_revenue[plan.id] = {
+            'plan': plan,
+            'count': plan_subs.count(),
+            'mrr': plan_subs.count() * plan.price
+        }
+    
+    # Payment history
+    payments = PayFastPayment.objects.filter(
+        status='complete'
+    ).select_related('user', 'plan').order_by('-completed_at')[:50]
+    
+    context = {
+        'active_subscriptions': active_subscriptions,
+        'plan_revenue': plan_revenue.values(),
+        'payments': payments,
+    }
+    
+    return render(request, 'core/admin/subscriptions.html', context)

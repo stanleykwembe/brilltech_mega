@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel - EduTech{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="h-full">
+    <div class="min-h-full">
+        <!-- Admin Sidebar -->
+        <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+            <div class="flex-1 flex flex-col min-h-0 bg-indigo-800">
+                <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+                    <div class="flex items-center flex-shrink-0 px-4">
+                        <i class="fas fa-user-shield text-white text-2xl mr-3"></i>
+                        <h1 class="text-white text-xl font-semibold">Admin Panel</h1>
+                    </div>
+                    <nav class="mt-5 flex-1 px-2 bg-indigo-800 space-y-1">
+                        <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}bg-indigo-900 text-white{% else %}text-indigo-100 hover:bg-indigo-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-chart-line mr-3 text-indigo-300 group-hover:text-white"></i>
+                            Dashboard
+                        </a>
+                        <a href="{% url 'admin_users' %}" class="{% if request.resolver_match.url_name == 'admin_users' %}bg-indigo-900 text-white{% else %}text-indigo-100 hover:bg-indigo-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-users mr-3 text-indigo-300 group-hover:text-white"></i>
+                            User Management
+                        </a>
+                        <a href="{% url 'admin_subscriptions' %}" class="{% if request.resolver_match.url_name == 'admin_subscriptions' %}bg-indigo-900 text-white{% else %}text-indigo-100 hover:bg-indigo-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-crown mr-3 text-indigo-300 group-hover:text-white"></i>
+                            Subscriptions
+                        </a>
+                        <hr class="my-4 border-indigo-700">
+                        <a href="{% url 'dashboard' %}" class="text-indigo-100 hover:bg-indigo-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-arrow-left mr-3 text-indigo-300 group-hover:text-white"></i>
+                            Teacher View
+                        </a>
+                    </nav>
+                </div>
+                <div class="flex-shrink-0 flex bg-indigo-900 p-4" x-data="{ profileOpen: false }">
+                    <div class="flex items-center w-full relative">
+                        <div class="flex-shrink-0">
+                            <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                <i class="fas fa-user-shield text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm font-medium text-white">{{ user.username }}</p>
+                            <p class="text-xs font-medium text-indigo-300">Administrator</p>
+                        </div>
+                        <button @click="profileOpen = !profileOpen" class="ml-3 text-indigo-300 hover:text-white focus:outline-none">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        
+                        <div x-show="profileOpen" 
+                             @click.away="profileOpen = false"
+                             x-cloak
+                             class="absolute bottom-full mb-2 right-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                            <div class="py-1" role="menu">
+                                <a href="{% url 'account_settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-cog mr-2"></i> Account Settings
+                                </a>
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="md:pl-64 flex flex-col flex-1">
+            <main class="flex-1">
+                <div class="py-6">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                        {% if messages %}
+                        <div class="mb-4 space-y-2">
+                            {% for message in messages %}
+                            <div x-data="{ show: true }" 
+                                 x-show="show" 
+                                 x-init="setTimeout(() => show = false, 5000)"
+                                 class="rounded-md p-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        {% if message.tags == 'success' %}
+                                        <i class="fas fa-check-circle"></i>
+                                        {% elif message.tags == 'error' %}
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {% elif message.tags == 'warning' %}
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        {% else %}
+                                        <i class="fas fa-info-circle"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium">{{ message }}</p>
+                                    </div>
+                                    <div class="ml-auto pl-3">
+                                        <button @click="show = false" class="inline-flex text-gray-400 hover:text-gray-500">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

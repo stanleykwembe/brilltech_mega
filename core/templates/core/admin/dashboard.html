@@ -1,0 +1,237 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Admin Dashboard - EduTech{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-600">Platform overview and key metrics</p>
+</div>
+
+<!-- Analytics Cards -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <!-- Total Users -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-users text-4xl text-indigo-600"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ total_users }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-green-600">{{ verified_users }}</span>
+                <span class="text-gray-500"> verified</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-dollar-sign text-4xl text-green-600"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Monthly Revenue</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">R{{ total_mrr }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-gray-600">R{{ total_revenue }}</span>
+                <span class="text-gray-500"> all-time</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Subscriptions -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-crown text-4xl text-yellow-500"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Paid Subscribers</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ starter_users|add:growth_users|add:premium_users }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-gray-600">{{ free_users }}</span>
+                <span class="text-gray-500"> on free plan</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Signups -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-plus text-4xl text-blue-600"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">New Users (7d)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ recent_signups }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="text-gray-500">Weekly growth</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Breakdown -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="bg-white p-5 shadow rounded-lg border-l-4 border-gray-400">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Free Plan</p>
+                <p class="text-3xl font-bold text-gray-900">{{ free_users }}</p>
+            </div>
+            <i class="fas fa-user text-3xl text-gray-400"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-5 shadow rounded-lg border-l-4 border-blue-400">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Starter (R50)</p>
+                <p class="text-3xl font-bold text-blue-900">{{ starter_users }}</p>
+            </div>
+            <i class="fas fa-star text-3xl text-blue-400"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-5 shadow rounded-lg border-l-4 border-purple-400">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Growth (R100)</p>
+                <p class="text-3xl font-bold text-purple-900">{{ growth_users }}</p>
+            </div>
+            <i class="fas fa-chart-line text-3xl text-purple-400"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-5 shadow rounded-lg border-l-4 border-yellow-400">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Premium (R250)</p>
+                <p class="text-3xl font-bold text-yellow-900">{{ premium_users }}</p>
+            </div>
+            <i class="fas fa-crown text-3xl text-yellow-400"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- Latest Users -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Latest Users</h3>
+        </div>
+        <div class="px-6 py-4">
+            {% if latest_users %}
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for user in latest_users %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <i class="fas fa-user text-indigo-600 text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">{{ user.username }}</p>
+                                <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
+                            </div>
+                            <div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if user.userprofile.subscription == 'premium' %}bg-yellow-100 text-yellow-800
+                                    {% elif user.userprofile.subscription == 'growth' %}bg-purple-100 text-purple-800
+                                    {% elif user.userprofile.subscription == 'starter' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ user.userprofile.get_subscription_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-4">No users yet</p>
+            {% endif %}
+        </div>
+        <div class="px-6 py-3 bg-gray-50">
+            <a href="{% url 'admin_users' %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                View all users <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Payments</h3>
+        </div>
+        <div class="px-6 py-4">
+            {% if recent_payments %}
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for payment in recent_payments %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-green-600 text-sm"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">{{ payment.user.username }}</p>
+                                <p class="text-sm text-gray-500">{{ payment.plan.name }} - R{{ payment.amount_gross }}</p>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ payment.completed_at|date:"M d" }}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-4">No payments yet</p>
+            {% endif %}
+        </div>
+        <div class="px-6 py-3 bg-gray-50">
+            <a href="{% url 'admin_subscriptions' %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                View all payments <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
