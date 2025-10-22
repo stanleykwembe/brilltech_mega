@@ -51,9 +51,12 @@
             <select class="border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                 <option value="">All Types</option>
                 <option value="lesson_plan">Lesson Plans</option>
+                <option value="classwork">Classwork</option>
                 <option value="homework">Homework</option>
-                <option value="past_paper">Past Papers</option>
-                <option value="sample_questions">Sample Questions</option>
+                <option value="assignment">Assignments</option>
+                <option value="test">Tests</option>
+                <option value="exam">Exams</option>
+                <option value="general">General</option>
             </select>
             <select class="border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                 <option value="">All Subjects</option>
@@ -138,7 +141,8 @@
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form id="uploadForm">
+            <form id="uploadForm" method="POST" action="{% url 'upload_document' %}" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Upload Document</h3>
@@ -148,7 +152,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
-                            <input type="file" accept=".pdf,.docx" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="file" name="file" accept=".pdf,.docx" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                         
                         <div>
@@ -159,11 +163,14 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
                             <select name="type" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">Select type</option>
+                                <option value="">Select type...</option>
                                 <option value="lesson_plan">Lesson Plan</option>
+                                <option value="classwork">Classwork</option>
                                 <option value="homework">Homework</option>
-                                <option value="past_paper">Past Paper</option>
-                                <option value="sample_questions">Sample Questions</option>
+                                <option value="assignment">Assignment</option>
+                                <option value="test">Test</option>
+                                <option value="exam">Exam</option>
+                                <option value="general">General Document</option>
                             </select>
                         </div>
                         
@@ -172,8 +179,8 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
                                 <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                                     <option value="">Select subject</option>
-                                    {% for subject in subjects %}
-                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                    {% for subject in subscribed_subjects %}
+                                    <option value="{{ subject.subject.id }}">{{ subject.subject.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -190,10 +197,10 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
-                            <select name="exam_board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Select exam board</option>
-                                {% for board in exam_boards %}
-                                <option value="{{ board.id }}">{{ board.name_full }}</option>
+                                {% for board in boards %}
+                                <option value="{{ board.id }}">{{ board.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -229,21 +236,10 @@ function closeModal(modalId) {
 
 // Handle upload form submission
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
     submitBtn.disabled = true;
-    
-    // Simulate file upload (replace with actual upload logic)
-    setTimeout(() => {
-        alert('Document uploaded successfully!');
-        closeModal('uploadModal');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        this.reset();
-    }, 2000);
 });
 </script>
 {% endblock %}

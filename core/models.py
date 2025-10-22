@@ -98,9 +98,12 @@ class PasswordResetToken(models.Model):
 class UploadedDocument(models.Model):
     DOC_TYPES = [
         ('lesson_plan', 'Lesson Plan'),
+        ('classwork', 'Classwork'),
         ('homework', 'Homework'),
-        ('past_paper', 'Past Paper'),
-        ('sample_questions', 'Sample Questions'),
+        ('assignment', 'Assignment'),
+        ('test', 'Test'),
+        ('exam', 'Exam'),
+        ('general', 'General Document'),
     ]
     
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -108,12 +111,15 @@ class UploadedDocument(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
     board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
-    type = models.CharField(max_length=20, choices=DOC_TYPES)
+    type = models.CharField(max_length=20, choices=DOC_TYPES, default='general')
     file_url = models.URLField(blank=True)
     file = models.FileField(upload_to='documents/%Y/%m/', null=True, blank=True)
     ai_content = models.JSONField(null=True, blank=True)  # Store AI-generated content
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']  # Sort by upload date, newest first
     
     def __str__(self):
         return f"{self.title} - {self.subject} Grade {self.grade}"

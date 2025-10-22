@@ -31,17 +31,25 @@
                             <i class="fas fa-clipboard-list mr-3 text-gray-400 group-hover:text-gray-300"></i>
                             Lesson Plans
                         </a>
+                        <a href="{% url 'classwork' %}" class="{% if request.resolver_match.url_name == 'classwork' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-book-open mr-3 text-gray-400 group-hover:text-gray-300"></i>
+                            Classwork
+                        </a>
+                        <a href="{% url 'homework' %}" class="{% if request.resolver_match.url_name == 'homework' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-home mr-3 text-gray-400 group-hover:text-gray-300"></i>
+                            Homework
+                        </a>
                         <a href="{% url 'assignments' %}" class="{% if request.resolver_match.url_name == 'assignments' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-tasks mr-3 text-gray-400 group-hover:text-gray-300"></i>
                             Assignments
                         </a>
-                        <a href="{% url 'classes' %}" class="{% if request.resolver_match.url_name == 'classes' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-users mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            My Classes
+                        <a href="{% url 'tests' %}" class="{% if request.resolver_match.url_name == 'tests' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-file-alt mr-3 text-gray-400 group-hover:text-gray-300"></i>
+                            Tests
                         </a>
-                        <a href="{% url 'questions' %}" class="{% if request.resolver_match.url_name == 'questions' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-question-circle mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Question Generator
+                        <a href="{% url 'exams' %}" class="{% if request.resolver_match.url_name == 'exams' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-graduation-cap mr-3 text-gray-400 group-hover:text-gray-300"></i>
+                            Exams
                         </a>
                         <a href="{% url 'documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-folder mr-3 text-gray-400 group-hover:text-gray-300"></i>

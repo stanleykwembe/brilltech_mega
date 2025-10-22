@@ -1,0 +1,262 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ document_type_display }} - EduTech Platform{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">{{ document_type_display }}</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage your {{ document_type_display|lower }} materials</p>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6" x-data="{ activeTab: '{{ active_tab|default:'my_uploads' }}' }">
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button @click="activeTab = 'admin_library'" 
+                :class="activeTab === 'admin_library' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-book-reader mr-2"></i>
+                Admin Library
+            </button>
+            
+            {% if user.userprofile.can_use_ai %}
+            <button @click="activeTab = 'ai_generate'" 
+                :class="activeTab === 'ai_generate' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-magic mr-2"></i>
+                AI Generate
+            </button>
+            {% endif %}
+            
+            <button @click="activeTab = 'my_uploads'" 
+                :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-upload mr-2"></i>
+                My Uploads
+            </button>
+            
+            <button @click="activeTab = 'shared'" 
+                :class="activeTab === 'shared' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-share-alt mr-2"></i>
+                Shared Assignments
+            </button>
+        </nav>
+    </div>
+    
+    <!-- Admin Library Tab -->
+    <div x-show="activeTab === 'admin_library'" x-cloak class="mt-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Admin Library</h3>
+            <p class="text-sm text-gray-500">Pre-made {{ document_type_display|lower }} from the admin team will appear here.</p>
+            <!-- TODO: Add admin library content -->
+        </div>
+    </div>
+    
+    <!-- AI Generate Tab -->
+    {% if user.userprofile.can_use_ai %}
+    <div x-show="activeTab === 'ai_generate'" x-cloak class="mt-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Generate {{ document_type_display }}</h3>
+            {% block ai_generate_content %}
+            <form method="POST" action="{% url 'generate_lesson_plan_ai' %}" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="document_type" value="{{ document_type }}">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                    <select name="subject" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select subject...</option>
+                        {% for subject in subscribed_subjects %}
+                        <option value="{{ subject.subject.id }}">{{ subject.subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                    <select name="grade" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select grade...</option>
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Exam Board</label>
+                    <select name="board" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Select board...</option>
+                        {% for board in boards %}
+                        <option value="{{ board.id }}">{{ board.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                    <input type="text" name="topic" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+                           placeholder="E.g., Pythagoras Theorem">
+                </div>
+                
+                {% block additional_ai_fields %}
+                {% endblock %}
+                
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
+                    <i class="fas fa-magic mr-2"></i>Generate with AI
+                </button>
+            </form>
+            {% endblock %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- My Uploads Tab -->
+    <div x-show="activeTab === 'my_uploads'" x-cloak class="mt-6">
+        <!-- Upload Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Upload {{ document_type_display }}</h3>
+            <form method="POST" action="{% url 'upload_document' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="document_type" value="{{ document_type }}">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="Enter document title">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                        <select name="subject" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select subject...</option>
+                            {% for subject in subscribed_subjects %}
+                            <option value="{{ subject.subject.id }}">{{ subject.subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                        <select name="grade" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select grade...</option>
+                            {% for grade in grades %}
+                            <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Exam Board</label>
+                        <select name="board" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select board...</option>
+                            {% for board in boards %}
+                            <option value="{{ board.id }}">{{ board.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
+                    <input type="file" name="file" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Supported formats: PDF, DOCX</p>
+                </div>
+                
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
+                    <i class="fas fa-upload mr-2"></i>Upload {{ document_type_display }}
+                </button>
+            </form>
+        </div>
+        
+        <!-- My Uploaded Documents -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">My {{ document_type_display }} Documents</h3>
+            
+            {% if my_documents %}
+            <div class="space-y-3">
+                {% for doc in my_documents %}
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900">{{ doc.title }}</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ doc.subject.name }} | Grade {{ doc.grade.number }} | {{ doc.board.abbreviation }}
+                                <span class="mx-1">•</span>
+                                Uploaded {{ doc.created_at|date:"M d, Y" }}
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'view_document' doc.id %}" class="text-indigo-600 hover:text-indigo-800">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' doc.id %}" class="text-green-600 hover:text-green-800">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button onclick="shareDocument({{ doc.id }})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-8">No {{ document_type_display|lower }} uploaded yet. Upload your first document above!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Shared Assignments Tab -->
+    <div x-show="activeTab === 'shared'" x-cloak class="mt-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Shared {{ document_type_display }}</h3>
+            
+            {% if shared_documents %}
+            <div class="space-y-3">
+                {% for share in shared_documents %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900">
+                                {% if share.uploaded_document %}{{ share.uploaded_document.title }}{% else %}{{ share.generated_assignment.title }}{% endif %}
+                            </h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Shared with: {{ share.class_group.name }}
+                                <span class="mx-1">•</span>
+                                {{ share.shared_at|date:"M d, Y" }}
+                                <span class="mx-1">•</span>
+                                Views: {{ share.view_count }}
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="copyShareLink('{{ request.scheme }}://{{ request.get_host }}/share/{{ share.token }}/')" 
+                                    class="text-blue-600 hover:text-blue-800 text-sm">
+                                <i class="fas fa-link mr-1"></i>Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-8">No {{ document_type_display|lower }} shared yet. Share documents from "My Uploads" tab!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyShareLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Share link copied to clipboard!');
+    });
+}
+
+function shareDocument(docId) {
+    // This will be implemented to open a modal for sharing
+    alert('Share document feature coming soon! Document ID: ' + docId);
+}
+</script>
+{% endblock %}

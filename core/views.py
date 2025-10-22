@@ -18,7 +18,7 @@ import os
 import mimetypes
 import secrets
 from datetime import timedelta
-from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken
+from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken, SubscribedSubject
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 from .subscription_utils import require_premium, get_user_subscription
 
@@ -75,149 +75,148 @@ def dashboard_view(request):
 
 @login_required
 def lesson_plans_view(request):
-    if request.method == 'POST':
-        if 'upload_file' in request.POST:
-            # Handle file upload
-            from core.models import SubscribedSubject
-            title = request.POST.get('title')
-            subject_id = request.POST.get('subject')
-            grade_id = request.POST.get('grade')
-            board_id = request.POST.get('board')
-            uploaded_file = request.FILES.get('file')
-            
-            if all([title, subject_id, grade_id, board_id, uploaded_file]):
-                # Validate subject is subscribed
-                if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
-                    messages.error(request, 'You can only upload lesson plans for your subscribed subjects.')
-                    return redirect('lesson_plans')
-                
-                document = UploadedDocument(
-                    uploaded_by=request.user,
-                    title=title,
-                    subject_id=subject_id,
-                    grade_id=grade_id,
-                    board_id=board_id,
-                    type='lesson_plan',
-                    file=uploaded_file
-                )
-                document.save()
-                messages.success(request, 'Lesson plan uploaded successfully!')
-            else:
-                messages.error(request, 'Please fill all required fields.')
-        
-        elif 'generate_ai' in request.POST:
-            # Handle AI generation
-            try:
-                from core.models import SubscribedSubject
-                subject_id = request.POST.get('subject')
-                
-                # Validate subject is subscribed
-                if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
-                    messages.error(request, 'You can only generate lesson plans for your subscribed subjects.')
-                    return redirect('lesson_plans')
-                
-                # Check quota before generation
-                profile = UserProfile.objects.get(user=request.user)
-                quota = UsageQuota.objects.get_or_create(user=request.user)[0]
-                
-                # Check if user can use AI features
-                if not profile.can_use_ai():
-                    messages.error(request, 'AI features are not available on your plan. Upgrade to Growth or Premium to use AI generation.')
-                    return redirect('lesson_plans')
-                
-                # Get lesson plan limit for this tier
-                lesson_plan_limit = profile.get_lesson_plan_limit_per_subject()
-                
-                # Get current usage for this subject
-                subject_key = str(subject_id)
-                current_usage = quota.lesson_plans_used.get(subject_key, 0)
-                
-                # Check if limit is reached (0 means unlimited)
-                if lesson_plan_limit > 0 and current_usage >= lesson_plan_limit:
-                    messages.error(request, 
-                        f'You have reached your monthly limit of {lesson_plan_limit} lesson plan(s) for this subject. '
-                        f'Upgrade your plan to generate more lesson plans.')
-                    return redirect('lesson_plans')
-                
-                subject = Subject.objects.get(id=subject_id)
-                grade = Grade.objects.get(id=request.POST.get('grade'))
-                board = ExamBoard.objects.get(id=request.POST.get('board'))
-                topic = request.POST.get('topic')
-                duration = request.POST.get('duration', '60 minutes')
-                
-                # Get AI model based on user's tier (GPT-3.5 for Growth, GPT-4 for Premium)
-                ai_model = profile.get_ai_model()
-                
-                ai_content = generate_lesson_plan(
-                    subject.name, f"Grade {grade.number}", 
-                    board.abbreviation, topic, duration, model=ai_model
-                )
-                
-                # Create document with AI content persisted in database
-                document = UploadedDocument(
-                    uploaded_by=request.user,
-                    title=f"AI Generated: {topic}",
-                    subject=subject,
-                    grade=grade,
-                    board=board,
-                    type='lesson_plan',
-                    ai_content=ai_content  # Store directly in database
-                )
-                document.save()
-                
-                # Update quota usage per subject
-                if subject_key not in quota.lesson_plans_used:
-                    quota.lesson_plans_used[subject_key] = 0
-                quota.lesson_plans_used[subject_key] += 1
-                quota.save()
-                
-                remaining = lesson_plan_limit - (current_usage + 1) if lesson_plan_limit > 0 else 'unlimited'
-                messages.success(request, f'Lesson plan generated successfully! Remaining: {remaining}')
-            except Exception as e:
-                messages.error(request, f'Failed to generate lesson plan: {str(e)}')
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    boards = ExamBoard.objects.all().order_by('name')
     
-    # Get user's subscribed subjects
-    from core.models import SubscribedSubject
-    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
-    
-    # Filter documents by subscribed subjects only
-    documents = UploadedDocument.objects.filter(
-        uploaded_by=request.user, 
-        type='lesson_plan',
-        subject_id__in=user_subject_ids
+    my_documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        type='lesson_plan'
     ).order_by('-created_at')
     
-    # Only show subscribed subjects in the dropdown
-    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
-    
-    # Get quota information for display
-    profile = UserProfile.objects.get_or_create(user=request.user)[0]
-    quota = UsageQuota.objects.get_or_create(user=request.user)[0]
-    lesson_plan_limit = profile.get_lesson_plan_limit_per_subject()
-    can_use_ai = profile.can_use_ai()
-    
-    # Calculate usage per subject
-    quota_info = {}
-    for subject_id in user_subject_ids:
-        subject_key = str(subject_id)
-        used = quota.lesson_plans_used.get(subject_key, 0)
-        quota_info[subject_id] = {
-            'used': used,
-            'limit': lesson_plan_limit,
-            'remaining': lesson_plan_limit - used if lesson_plan_limit > 0 else 'unlimited'
-        }
+    shared_documents = AssignmentShare.objects.filter(
+        teacher=request.user,
+        uploaded_document__type='lesson_plan',
+        revoked_at__isnull=True
+    ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
     
     context = {
-        'documents': documents,
-        'subjects': available_subjects,
-        'grades': Grade.objects.all(),
-        'exam_boards': ExamBoard.objects.all(),
-        'can_use_ai': can_use_ai,
-        'lesson_plan_limit': lesson_plan_limit,
-        'quota_info': quota_info,
-        'user_profile': profile,
+        'document_type': 'lesson_plan',
+        'document_type_display': 'Lesson Plans',
+        'subscribed_subjects': subscribed_subjects,
+        'grades': grades,
+        'boards': boards,
+        'my_documents': my_documents,
+        'shared_documents': shared_documents,
     }
-    return render(request, 'core/lesson_plans.html', context)
+    
+    return render(request, 'core/document_type_base.html', context)
+
+@login_required
+def classwork_view(request):
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    boards = ExamBoard.objects.all().order_by('name')
+    
+    my_documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        type='classwork'
+    ).order_by('-created_at')
+    
+    shared_documents = AssignmentShare.objects.filter(
+        teacher=request.user,
+        uploaded_document__type='classwork',
+        revoked_at__isnull=True
+    ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
+    
+    context = {
+        'document_type': 'classwork',
+        'document_type_display': 'Classwork',
+        'subscribed_subjects': subscribed_subjects,
+        'grades': grades,
+        'boards': boards,
+        'my_documents': my_documents,
+        'shared_documents': shared_documents,
+    }
+    
+    return render(request, 'core/document_type_base.html', context)
+
+@login_required
+def homework_view(request):
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    boards = ExamBoard.objects.all().order_by('name')
+    
+    my_documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        type='homework'
+    ).order_by('-created_at')
+    
+    shared_documents = AssignmentShare.objects.filter(
+        teacher=request.user,
+        uploaded_document__type='homework',
+        revoked_at__isnull=True
+    ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
+    
+    context = {
+        'document_type': 'homework',
+        'document_type_display': 'Homework',
+        'subscribed_subjects': subscribed_subjects,
+        'grades': grades,
+        'boards': boards,
+        'my_documents': my_documents,
+        'shared_documents': shared_documents,
+    }
+    
+    return render(request, 'core/document_type_base.html', context)
+
+@login_required
+def tests_view(request):
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    boards = ExamBoard.objects.all().order_by('name')
+    
+    my_documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        type='test'
+    ).order_by('-created_at')
+    
+    shared_documents = AssignmentShare.objects.filter(
+        teacher=request.user,
+        uploaded_document__type='test',
+        revoked_at__isnull=True
+    ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
+    
+    context = {
+        'document_type': 'test',
+        'document_type_display': 'Tests',
+        'subscribed_subjects': subscribed_subjects,
+        'grades': grades,
+        'boards': boards,
+        'my_documents': my_documents,
+        'shared_documents': shared_documents,
+    }
+    
+    return render(request, 'core/document_type_base.html', context)
+
+@login_required
+def exams_view(request):
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    boards = ExamBoard.objects.all().order_by('name')
+    
+    my_documents = UploadedDocument.objects.filter(
+        uploaded_by=request.user,
+        type='exam'
+    ).order_by('-created_at')
+    
+    shared_documents = AssignmentShare.objects.filter(
+        teacher=request.user,
+        uploaded_document__type='exam',
+        revoked_at__isnull=True
+    ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
+    
+    context = {
+        'document_type': 'exam',
+        'document_type_display': 'Exams',
+        'subscribed_subjects': subscribed_subjects,
+        'grades': grades,
+        'boards': boards,
+        'my_documents': my_documents,
+        'shared_documents': shared_documents,
+    }
+    
+    return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def assignments_view(request):
@@ -325,25 +324,71 @@ def questions_view(request):
 @login_required
 def documents_view(request):
     # Get user's subscribed subjects
-    from core.models import SubscribedSubject
-    user_subject_ids = SubscribedSubject.objects.filter(user=request.user).values_list('subject_id', flat=True)
+    subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    user_subject_ids = subscribed_subjects.values_list('subject_id', flat=True)
     
     # Filter documents by subscribed subjects
     documents = UploadedDocument.objects.filter(
         uploaded_by=request.user,
         subject_id__in=user_subject_ids
-    ).order_by('-created_at')
-    
-    # Only show subscribed subjects in the dropdown
-    available_subjects = Subject.objects.filter(id__in=user_subject_ids)
+    ).select_related('subject', 'grade', 'board').order_by('-created_at')
     
     context = {
         'documents': documents,
-        'subjects': available_subjects,
-        'grades': Grade.objects.all(),
-        'exam_boards': ExamBoard.objects.all(),
+        'subscribed_subjects': subscribed_subjects,
+        'subjects': Subject.objects.filter(id__in=user_subject_ids),  # for backward compatibility
+        'grades': Grade.objects.all().order_by('number'),
+        'boards': ExamBoard.objects.all().order_by('name'),
+        'exam_boards': ExamBoard.objects.all().order_by('name'),  # for backward compatibility
     }
     return render(request, 'core/documents.html', context)
+
+@login_required
+def upload_document(request):
+    """Handle document upload from My Documents page or specific document type pages"""
+    if request.method == 'POST':
+        try:
+            title = request.POST.get('title')
+            doc_type = request.POST.get('type') or request.POST.get('document_type', 'general')
+            subject_id = request.POST.get('subject')
+            grade_id = request.POST.get('grade')
+            board_id = request.POST.get('board')
+            tags = request.POST.get('tags', '')
+            file = request.FILES.get('file')
+            
+            # Validate required fields
+            if not all([title, subject_id, grade_id, board_id, file]):
+                messages.error(request, 'All fields are required.')
+                return redirect(request.META.get('HTTP_REFERER', 'documents'))
+            
+            # Validate user has access to this subject
+            if not SubscribedSubject.objects.filter(user=request.user, subject_id=subject_id).exists():
+                messages.error(request, 'You do not have access to this subject. Please check your subscription.')
+                return redirect(request.META.get('HTTP_REFERER', 'documents'))
+            
+            # Create document
+            document = UploadedDocument(
+                uploaded_by=request.user,
+                title=title,
+                type=doc_type,
+                subject_id=subject_id,
+                grade_id=grade_id,
+                board_id=board_id,
+                tags=tags,
+                file=file
+            )
+            document.save()
+            
+            messages.success(request, f'Document "{title}" uploaded successfully!')
+            
+            # Redirect back to referring page or documents view
+            return redirect(request.META.get('HTTP_REFERER', 'documents'))
+            
+        except Exception as e:
+            messages.error(request, f'Error uploading document: {str(e)}')
+            return redirect(request.META.get('HTTP_REFERER', 'documents'))
+    
+    return redirect('documents')
 
 @login_required
 def subscription_view(request):
