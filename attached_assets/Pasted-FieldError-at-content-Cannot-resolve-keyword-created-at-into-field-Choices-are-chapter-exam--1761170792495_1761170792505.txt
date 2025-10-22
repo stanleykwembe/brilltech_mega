@@ -1,0 +1,32 @@
+FieldError at /content/
+Cannot resolve keyword 'created_at' into field. Choices are: chapter, exam_board, exam_board_custom, file, grade, grade_id, id, notes, paper_code, paper_type, quiz, section, subject, subject_id, title, uploaded_at, uploaded_by, uploaded_by_id, year
+Request Method:	GET
+Request URL:	http://ae03fc36-be29-4f72-b0e2-42bd2de37519-00-3r440f7quw5vj.worf.replit.dev/content/
+Django Version:	5.0.2
+Exception Type:	FieldError
+Exception Value:	
+Cannot resolve keyword 'created_at' into field. Choices are: chapter, exam_board, exam_board_custom, file, grade, grade_id, id, notes, paper_code, paper_type, quiz, section, subject, subject_id, title, uploaded_at, uploaded_by, uploaded_by_id, year
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/db/models/sql/query.py, line 1772, in names_to_path
+Raised during:	core.views.wrapper
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.13
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/zz7i75jb78idaz0rb1y1i4rzdyxq28vf-sitecustomize/lib/python/site-packages',
+ '/nix/store/yaps09f01jp3fd1405qlr0qz6haf6z03-python3.11-pip-25.0.1/lib/python3.11/site-packages',
+ '/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python311.zip',
+ '/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11',
+ '/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/y0iwy8ma2m45pr23bw4r7lyz69v2b6wf-python3.11-setuptools-80.7.1/lib/python3.11/site-packages']
+Server time:	Wed, 22 Oct 2025 22:06:09 +0000
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/core/handlers/base.py, line 197, in _get_response
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

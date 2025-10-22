@@ -1929,7 +1929,7 @@ def content_dashboard(request):
     free_quizzes = Quiz.objects.filter(is_premium=False).count()
     
     # Recent uploads
-    recent_papers = PastPaper.objects.all().order_by('-created_at')[:10]
+    recent_papers = PastPaper.objects.all().order_by('-uploaded_at')[:10]
     recent_quizzes = Quiz.objects.all().order_by('-created_at')[:10]
     
     context = {
@@ -1967,7 +1967,7 @@ def content_papers(request):
     if grade_filter:
         papers = papers.filter(grade_id=grade_filter)
     
-    papers = papers.order_by('-created_at')
+    papers = papers.order_by('-uploaded_at')
     
     # Get filters for dropdowns
     boards = ExamBoard.objects.all()
