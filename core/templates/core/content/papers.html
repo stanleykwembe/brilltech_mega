@@ -56,21 +56,30 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             {% for paper in papers %}
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ paper.title }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.exam_board.abbreviation }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.exam_board }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.subject.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Grade {{ paper.grade.number }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.year }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ paper.uploaded_at|date:"M d, Y" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="{% url 'content_reformat_paper' paper.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Reformat with AI">
+                        <i class="fas fa-magic mr-1"></i>AI Reformat
+                    </a>
+                    <a href="{{ paper.file.url }}" target="_blank" class="text-gray-600 hover:text-gray-900" title="View PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
                     No past papers found. <a href="{% url 'content_upload_paper' %}" class="text-orange-600 hover:text-orange-700">Upload your first paper</a>
                 </td>
             </tr>
