@@ -1198,6 +1198,7 @@ def create_share(request):
             assignment_id = request.POST.get('assignment_id')
             class_name = request.POST.get('class_name')  # For now, just use class name directly
             due_date_str = request.POST.get('due_date')
+            expiry_date_str = request.POST.get('expiry_date')
             
             # Parse due date if provided
             due_date = None
@@ -1221,6 +1222,28 @@ def create_share(request):
                 except (ValueError, TypeError):
                     pass  # Leave due_date as None if parsing fails
             
+            # Parse expiry date if provided
+            expiry_date = None
+            if expiry_date_str:
+                from django.utils.dateparse import parse_datetime, parse_date
+                from django.utils import timezone
+                try:
+                    # Try to parse as date first, then datetime
+                    parsed_date = parse_date(expiry_date_str)
+                    if parsed_date:
+                        # Convert date to datetime at end of day
+                        from datetime import datetime, time
+                        expiry_date = timezone.make_aware(
+                            datetime.combine(parsed_date, time.max.replace(microsecond=0))
+                        )
+                    else:
+                        expiry_date = parse_datetime(expiry_date_str)
+                        # Make naive datetimes timezone-aware
+                        if expiry_date and timezone.is_naive(expiry_date):
+                            expiry_date = timezone.make_aware(expiry_date)
+                except (ValueError, TypeError):
+                    pass  # Leave expiry_date as None if parsing fails
+            
             # Get or create class group
             class_group, created = ClassGroup.objects.get_or_create(
                 teacher=request.user,
@@ -1240,7 +1263,8 @@ def create_share(request):
                         teacher=request.user,
                         class_group=class_group,
                         generated_assignment=assignment,
-                        due_date=due_date
+                        due_date=due_date,
+                        expires_at=expiry_date
                     )
                 except IntegrityError:
                     # Handle duplicate active share
@@ -1257,7 +1281,8 @@ def create_share(request):
                         teacher=request.user,
                         class_group=class_group,
                         uploaded_document=document,
-                        due_date=due_date
+                        due_date=due_date,
+                        expires_at=expiry_date
                     )
                 except IntegrityError:
                     # Handle duplicate active share
