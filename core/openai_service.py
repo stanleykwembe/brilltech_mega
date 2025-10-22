@@ -151,3 +151,134 @@ def generate_questions(subject, grade, board, topic, question_type, difficulty="
             raise Exception("Empty response from OpenAI")
     except Exception as e:
         raise Exception(f"Failed to generate questions: {e}")
+
+def extract_questions_from_paper(file_path, subject, grade, exam_board, paper_type, model="gpt-4"):
+    """Extract questions and generate memo from uploaded exam paper using AI with image support
+    
+    Args:
+        file_path: Path to the uploaded exam paper (PDF)
+        subject: Subject name
+        grade: Grade level  
+        exam_board: Exam board name
+        paper_type: Type of paper (paper1, paper2, etc)
+        model: AI model to use (default gpt-4 for best quality)
+        
+    Returns:
+        dict with:
+            - questions_json: Structured questions with marks, images noted
+            - memo_json: Complete marking scheme/answers
+            - total_questions: Number of questions extracted
+            - total_marks: Total marks for the paper
+            - question_type: Detected question type (mcq, structured, mixed)
+    """
+    prompt = f"""You are an expert examiner analyzing a {exam_board} {subject} Grade {grade} exam paper ({paper_type}).
+
+Extract ALL questions from this exam paper and create a comprehensive marking memo.
+
+For each question, identify:
+1. Question number and sub-parts (e.g., 1, 1.1, 1.2, 1.2.a)
+2. Complete question text
+3. Marks allocated
+4. Any diagrams/images (note their presence and description)
+5. Question type (MCQ, structured, free response, calculation, etc.)
+
+For the memo, provide:
+1. Complete answers/model responses
+2. Marking criteria and rubrics
+3. Common mistakes to watch for
+4. Mark allocation breakdown
+
+Return ONLY valid JSON in this EXACT structure:
+{{
+    "paper_info": {{
+        "subject": "{subject}",
+        "grade": "{grade}",
+        "exam_board": "{exam_board}",
+        "total_marks": 100
+    }},
+    "questions": [
+        {{
+            "question_number": "1",
+            "question_text": "Full question text here",
+            "marks": 5,
+            "question_type": "structured",
+            "has_diagram": false,
+            "diagram_description": "",
+            "sub_questions": [
+                {{
+                    "sub_number": "1.1",
+                    "sub_text": "Sub-question text",
+                    "marks": 2,
+                    "has_diagram": false
+                }}
+            ]
+        }}
+    ],
+    "memo": [
+        {{
+            "question_number": "1",
+            "answer": "Complete answer or marking scheme",
+            "marking_points": ["Point 1 (1 mark)", "Point 2 (1 mark)"],
+            "common_mistakes": ["Mistake to watch for"],
+            "sub_answers": [
+                {{
+                    "sub_number": "1.1",
+                    "answer": "Answer for sub-question",
+                    "marking_points": ["Point 1 (1 mark)"]
+                }}
+            ]
+        }}
+    ],
+    "question_type_summary": "mixed",
+    "total_questions": 5,
+    "total_marks": 100
+}}
+
+NOTE: For diagrams/images, set has_diagram: true and provide a text description in diagram_description. We'll handle image extraction separately."""
+    
+    try:
+        import PyPDF2
+        
+        # Extract text from PDF
+        pdf_text = ""
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            for page in pdf_reader.pages:
+                pdf_text += page.extract_text() + "\n\n"
+        
+        # Call OpenAI with extracted text
+        response = openai_client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are an expert examiner who extracts questions and creates marking memos from exam papers. Respond only with valid JSON."},
+                {"role": "user", "content": f"{prompt}\n\nEXAM PAPER TEXT:\n\n{pdf_text[:8000]}"}  # Limit to avoid token limits
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3
+        )
+        
+        content = response.choices[0].message.content
+        if content:
+            result = json.loads(content)
+            
+            # Ensure we have the required fields
+            return {
+                'questions_json': {
+                    'paper_info': result.get('paper_info', {}),
+                    'questions': result.get('questions', [])
+                },
+                'memo_json': {
+                    'memo': result.get('memo', [])
+                },
+                'total_questions': result.get('total_questions', len(result.get('questions', []))),
+                'total_marks': result.get('total_marks', result.get('paper_info', {}).get('total_marks', 0)),
+                'question_type': result.get('question_type_summary', 'mixed'),
+                'ai_model_used': model
+            }
+        else:
+            raise Exception("Empty response from OpenAI")
+            
+    except PyPDF2.errors.PdfReadError as e:
+        raise Exception(f"Failed to read PDF file: {e}")
+    except Exception as e:
+        raise Exception(f"Failed to extract questions from paper: {e}")

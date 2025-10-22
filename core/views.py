@@ -2120,3 +2120,159 @@ def content_create_quiz(request):
     }
     
     return render(request, 'core/content/create_quiz.html', context)
+
+@require_content_manager  
+def content_formatted_papers(request):
+    """View and manage AI-formatted papers"""
+    from .models import FormattedPaper, Subject, Grade, ExamBoard
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    status_filter = request.GET.get('status', '')  # pending, completed, failed
+    
+    # Filter formatted papers
+    papers = FormattedPaper.objects.select_related('source_paper', 'subject', 'grade', 'created_by')
+    
+    if subject_filter:
+        papers = papers.filter(subject_id=subject_filter)
+    if grade_filter:
+        papers = papers.filter(grade_id=grade_filter)
+    if status_filter:
+        papers = papers.filter(processing_status=status_filter)
+    
+    papers = papers.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'formatted_papers': papers,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'core/content/formatted_papers.html', context)
+
+@require_content_manager
+def content_reformat_paper(request, paper_id):
+    """AI reformat a past paper - select paper and initiate AI processing"""
+    from .models import PastPaper, FormattedPaper
+    from .openai_service import extract_questions_from_paper
+    from django.conf import settings
+    import os
+    
+    paper = get_object_or_404(PastPaper, id=paper_id)
+    
+    if request.method == 'POST':
+        try:
+            # Create FormattedPaper record with pending status
+            formatted_paper = FormattedPaper.objects.create(
+                source_paper=paper,
+                title=f"Formatted: {paper.title}",
+                subject=paper.subject,
+                grade=paper.grade,
+                exam_board=paper.exam_board,
+                year=paper.year,
+                questions_json={},
+                memo_json={},
+                processing_status='processing',
+                created_by=request.user
+            )
+            
+            # Get the file path
+            file_path = paper.file.path
+            
+            # Call AI service to extract questions
+            result = extract_questions_from_paper(
+                file_path=file_path,
+                subject=paper.subject.name,
+                grade=paper.grade.number,
+                exam_board=paper.exam_board,
+                paper_type=paper.paper_type,
+                model='gpt-4'  # Use best model for accuracy
+            )
+            
+            # Update formatted paper with results
+            formatted_paper.questions_json = result['questions_json']
+            formatted_paper.memo_json = result['memo_json']
+            formatted_paper.total_questions = result['total_questions']
+            formatted_paper.total_marks = result['total_marks']
+            formatted_paper.question_type = result['question_type']
+            formatted_paper.ai_model_used = result['ai_model_used']
+            formatted_paper.processing_status = 'completed'
+            formatted_paper.save()
+            
+            messages.success(request, f'Successfully extracted {result["total_questions"]} questions from the paper!')
+            return redirect('content_review_formatted_paper', paper_id=formatted_paper.id)
+            
+        except Exception as e:
+            # Update status to failed
+            if 'formatted_paper' in locals():
+                formatted_paper.processing_status = 'failed'
+                formatted_paper.error_message = str(e)
+                formatted_paper.save()
+            
+            messages.error(request, f'Failed to process paper: {str(e)}')
+            return redirect('content_papers')
+    
+    # GET request - show confirmation
+    context = {
+        'paper': paper,
+    }
+    return render(request, 'core/content/reformat_paper.html', context)
+
+@require_content_manager
+def content_review_formatted_paper(request, paper_id):
+    """Review and edit AI-extracted questions and memo"""
+    from .models import FormattedPaper
+    import json
+    
+    formatted_paper = get_object_or_404(FormattedPaper, id=paper_id)
+    
+    if request.method == 'POST':
+        # Handle save of edited questions and memo
+        action = request.POST.get('action')
+        
+        if action == 'save':
+            try:
+                # Get updated JSON from form
+                questions_json = json.loads(request.POST.get('questions_json', '{}'))
+                memo_json = json.loads(request.POST.get('memo_json', '{}'))
+                
+                # Update formatted paper
+                formatted_paper.questions_json = questions_json
+                formatted_paper.memo_json = memo_json
+                formatted_paper.total_questions = len(questions_json.get('questions', []))
+                formatted_paper.reviewed = True
+                formatted_paper.save()
+                
+                messages.success(request, 'Changes saved successfully!')
+                return redirect('content_review_formatted_paper', paper_id=paper_id)
+                
+            except json.JSONDecodeError:
+                messages.error(request, 'Invalid JSON format. Please check your edits.')
+        
+        elif action == 'publish':
+            formatted_paper.is_published = True
+            formatted_paper.reviewed = True
+            formatted_paper.save()
+            messages.success(request, 'Formatted paper published successfully!')
+            return redirect('content_formatted_papers')
+    
+    # Format JSON for display in textarea
+    questions_json_str = json.dumps(formatted_paper.questions_json, indent=2)
+    memo_json_str = json.dumps(formatted_paper.memo_json, indent=2)
+    
+    context = {
+        'formatted_paper': formatted_paper,
+        'questions_json_str': questions_json_str,
+        'memo_json_str': memo_json_str,
+        'source_paper': formatted_paper.source_paper,
+    }
+    
+    return render(request, 'core/content/review_formatted_paper.html', context)

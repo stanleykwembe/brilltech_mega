@@ -7,6 +7,25 @@ This is a freemium educational technology platform designed for teachers and adm
 ## Recent Changes
 
 ### October 22, 2025
+- **AI Document Reformatting System**: Content managers can now AI-reformat uploaded exam papers
+  - Created FormattedPaper model with JSONField for questions/memo storage
+  - AI extraction service using GPT-4 for question extraction and memo generation
+  - PDF text extraction using PyPDF2 for exam paper analysis
+  - Questions stored as JSON with support for sub-questions, marks, diagrams/images
+  - Memo includes marking points, common mistakes, and model answers
+  - Review interface for editing AI-extracted content before publishing
+  - Processing status tracking (pending, processing, completed, failed)
+  - Formatted Papers management page with filtering by subject/grade/status
+  - Images referenced by description in JSON (extraction handled separately)
+  - Database uses indexed JSONField in SQLite for efficient question storage
+
+- **Content Portal UI Update**: Sidebar redesigned to match teacher dashboard
+  - Changed from orange horizontal layout to gray-800 vertical sidebar (teacher style)
+  - Orange accent color on icon and profile avatar for brand distinction
+  - Added "Formatted Papers" navigation link with magic wand icon
+  - Consistent Portal Switcher section with proper hierarchy
+  - Improved visual consistency across all three portals
+
 - **Content Management Portal**: Built separate portal for content managers to upload educational materials
   - New role: content_manager (in addition to admin and teacher)
   - 3-way login routing: admin→/panel/, content_manager→/content/, teacher→/dashboard/
@@ -15,7 +34,6 @@ This is a freemium educational technology platform designed for teachers and adm
   - Past paper management: search, filter by board/subject/grade, view all papers
   - Quiz creation: manual builder with premium/free toggle
   - Quiz management: filter by type/subject/grade, view all quizzes with Google Forms links
-  - Orange/amber theme to distinguish from admin (purple) and teacher (gray/blue) portals
   - Role-based access: admins can access all 3 portals, content managers can access content + teacher portals
   - Custom @require_content_manager decorator for security
   - Cross-portal navigation in sidebars for admins and content managers

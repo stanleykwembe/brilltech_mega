@@ -55,6 +55,9 @@ urlpatterns = [
     path('content/', views.content_dashboard, name='content_dashboard'),
     path('content/papers/', views.content_papers, name='content_papers'),
     path('content/papers/upload/', views.content_upload_paper, name='content_upload_paper'),
+    path('content/papers/<int:paper_id>/reformat/', views.content_reformat_paper, name='content_reformat_paper'),
+    path('content/formatted-papers/', views.content_formatted_papers, name='content_formatted_papers'),
+    path('content/formatted-papers/<int:paper_id>/review/', views.content_review_formatted_paper, name='content_review_formatted_paper'),
     path('content/quizzes/', views.content_quizzes, name='content_quizzes'),
     path('content/quizzes/create/', views.content_create_quiz, name='content_create_quiz'),
 ]

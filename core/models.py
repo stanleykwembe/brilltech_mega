@@ -415,6 +415,75 @@ class QuizResponse(models.Model):
     def __str__(self):
         return f"{self.student_name} - {self.quiz.title} ({self.score}%)"
 
+class FormattedPaper(models.Model):
+    """AI-reformatted exam papers with extracted questions and memos"""
+    QUESTION_TYPE_CHOICES = [
+        ('mcq', 'Multiple Choice'),
+        ('structured', 'Structured'),
+        ('free_response', 'Free Response'),
+        ('mixed', 'Mixed'),
+    ]
+    
+    # Link to original past paper
+    source_paper = models.ForeignKey(PastPaper, on_delete=models.CASCADE, related_name='formatted_versions')
+    
+    # Metadata (inherited from source paper for quick filtering)
+    title = models.CharField(max_length=300)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    exam_board = models.CharField(max_length=50, choices=PastPaper.EXAM_BOARD_CHOICES)
+    year = models.IntegerField()
+    
+    # Formatted content
+    questions_json = models.JSONField()
+    memo_json = models.JSONField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='mixed')
+    total_questions = models.IntegerField(default=0)
+    total_marks = models.IntegerField(default=0)
+    
+    # Image storage - directory path where extracted images are stored
+    images_directory = models.CharField(max_length=500, blank=True)
+    has_extracted_images = models.BooleanField(default=False)
+    
+    # AI processing metadata
+    is_ai_generated = models.BooleanField(default=True)
+    ai_model_used = models.CharField(max_length=50, blank=True)
+    processing_status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ], default='pending')
+    error_message = models.TextField(blank=True)
+    
+    # Tracking
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    reviewed = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['subject', 'grade', 'exam_board']),
+            models.Index(fields=['processing_status']),
+            models.Index(fields=['is_published']),
+        ]
+    
+    def __str__(self):
+        return f"Formatted: {self.title}"
+    
+    @property
+    def has_images(self):
+        """Check if any questions contain image references"""
+        if not self.questions_json:
+            return False
+        for q in self.questions_json.get('questions', []):
+            if q.get('image_path') or any(opt.get('image_path') for opt in q.get('options', [])):
+                return True
+        return False
+
 class SubscriptionPlan(models.Model):
     """Defines available subscription tiers and their features"""
     PLAN_TYPES = [
