@@ -45,10 +45,10 @@ urlpatterns = [
     path('payfast/notify/', views.payfast_notify, name='payfast_notify'),
     path('payment/success/', views.payment_success, name='payment_success'),
     path('payment/cancelled/', views.payment_cancelled, name='payment_cancelled'),
-    # Admin endpoints
-    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin/users/', views.admin_users, name='admin_users'),
-    path('admin/users/<int:user_id>/change-subscription/', views.admin_change_subscription, name='admin_change_subscription'),
-    path('admin/users/<int:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
-    path('admin/subscriptions/', views.admin_subscriptions, name='admin_subscriptions'),
+    # Admin panel endpoints (using /panel/ to avoid conflict with Django's /admin/)
+    path('panel/', views.admin_dashboard, name='admin_dashboard'),
+    path('panel/users/', views.admin_users, name='admin_users'),
+    path('panel/users/<int:user_id>/change-subscription/', views.admin_change_subscription, name='admin_change_subscription'),
+    path('panel/users/<int:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
+    path('panel/subscriptions/', views.admin_subscriptions, name='admin_subscriptions'),
 ]
