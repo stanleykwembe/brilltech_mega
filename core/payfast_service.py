@@ -122,9 +122,18 @@ class PayFastService:
             'cycles': '0',
         }
         
-        payment_data['signature'] = PayFastService.generate_signature(payment_data)
+        # Remove empty fields BEFORE signature generation
+        # This ensures both our signature and PayFast's signature use the same fields
+        clean_data = {}
+        for key, value in payment_data.items():
+            # Only include fields with non-empty values
+            if str(value).strip():
+                clean_data[key] = str(value).strip()
         
-        return payment_data
+        # Generate signature on clean data
+        clean_data['signature'] = PayFastService.generate_signature(clean_data)
+        
+        return clean_data
     
     @staticmethod
     def validate_itn_signature(post_data):
