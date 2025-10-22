@@ -1961,7 +1961,7 @@ def content_papers(request):
     if search_query:
         papers = papers.filter(title__icontains=search_query)
     if board_filter:
-        papers = papers.filter(exam_board_id=board_filter)
+        papers = papers.filter(exam_board=board_filter)
     if subject_filter:
         papers = papers.filter(subject_id=subject_filter)
     if grade_filter:
@@ -1995,28 +1995,34 @@ def content_upload_paper(request):
     
     if request.method == 'POST':
         title = request.POST.get('title')
-        exam_board_id = request.POST.get('exam_board')
+        exam_board = request.POST.get('exam_board')
         grade_id = request.POST.get('grade')
         subject_id = request.POST.get('subject')
+        paper_type = request.POST.get('paper_type', 'paper1')
+        paper_code = request.POST.get('paper_code', '')
         year = request.POST.get('year')
         chapter = request.POST.get('chapter', '')
         section = request.POST.get('section', '')
+        notes = request.POST.get('notes', '')
         file = request.FILES.get('file')
         
         # Validation
-        if not all([title, exam_board_id, grade_id, subject_id, year, file]):
+        if not all([title, exam_board, grade_id, subject_id, year, file]):
             messages.error(request, 'Please fill in all required fields and upload a file.')
             return redirect('content_upload_paper')
         
         # Create past paper
         paper = PastPaper.objects.create(
             title=title,
-            exam_board_id=exam_board_id,
+            exam_board=exam_board,
             grade_id=grade_id,
             subject_id=subject_id,
+            paper_type=paper_type,
+            paper_code=paper_code if paper_code else f"{title}_{year}",
             year=int(year),
             chapter=chapter,
             section=section,
+            notes=notes,
             file=file,
             uploaded_by=request.user
         )
