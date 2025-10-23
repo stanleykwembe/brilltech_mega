@@ -13,7 +13,16 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Architecture
 - **Frameworks**: Streamlit (main application), Django templates (web views), Tailwind CSS (styling), Alpine.js (interactivity).
 - **Icons**: Font Awesome.
-- **UI/UX Decisions**: Consistent visual design across portals (Admin, Content, Teacher) with distinct color themes for role differentiation (e.g., purple/indigo for Admin, gray-800 sidebar with orange accents for Content/Teacher). Interactive modals and forms using Alpine.js.
+- **UI/UX Design System**: Modern Windows 11/iPhone-inspired aesthetic with glassmorphism effects, gradient backgrounds, smooth animations, and multi-layer shadows.
+  - **Design Tokens**: 8px radius for cards, 4px for buttons, 12px for modals; 200-300ms transitions; staggered animation delays.
+  - **Color Themes**: Portal-specific color differentiation:
+    - **Admin Portal**: Purple/indigo theme (indigo-800, purple gradients) for administrative authority
+    - **Content Management Portal**: Orange/teal theme (orange-500, teal accents) for content creation
+    - **Teacher Portal**: Gray-800 with indigo/purple accents for daily teaching workflows
+  - **Modern Components**: Stat cards with gradient icons, progress bars, action cards with hover effects, modern form styling with rounded inputs.
+  - **Animation System**: Scale-in animations with staggered delays (delay-100 through delay-400), smooth hover transitions, gradient text effects.
+  - **CSS Architecture**: Base modern-dashboard.css for shared design system + portal-specific theme files (admin-theme.css, content-theme.css) for color overrides.
+- **Interactive Elements**: Modals, forms, and dropdowns using Alpine.js with smooth transitions.
 
 ### Backend Architecture
 - **Framework**: Django 5.0 (Python).
