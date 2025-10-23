@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'core/css/modern-dashboard.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
         [x-cloak] { display: none !important; }
@@ -28,12 +30,12 @@
     
     {% if user.is_authenticated %}
     <div class="min-h-full">
-        <!-- Sidebar -->
+        <!-- Teacher Sidebar -->
         <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
             <div class="flex-1 flex flex-col min-h-0 sidebar">
                 <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
                     <div class="flex items-center flex-shrink-0 px-4 mb-8">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg mr-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg logo-gradient shadow-lg mr-3">
                             <i class="fas fa-graduation-cap text-white text-xl"></i>
                         </div>
                         <h1 class="text-white text-xl font-bold tracking-tight">EduTech</h1>
@@ -84,7 +86,7 @@
                 <div class="flex-shrink-0 flex bg-gray-700 p-4" x-data="{ profileOpen: false }">
                     <div class="flex items-center w-full relative">
                         <div class="flex-shrink-0">
-                            <div class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center">
+                            <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
                                 <i class="fas fa-user text-white text-sm"></i>
                             </div>
                         </div>
@@ -97,10 +99,10 @@
                         </button>
                         <div x-show="profileOpen" @click.away="profileOpen = false" x-cloak class="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                             <a href="{% url 'account_settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i>Account Settings
+                                <i class="fas fa-cog mr-2"></i> Account Settings
                             </a>
                             <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
                             </a>
                         </div>
                     </div>
