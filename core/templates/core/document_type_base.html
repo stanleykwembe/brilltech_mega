@@ -132,92 +132,150 @@
         </div>
         
         <!-- My Uploaded Documents -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">My {{ document_type_display }} Documents</h3>
+        <div class="mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <div class="icon-gradient w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-folder-open text-white text-lg"></i>
+                </div>
+                My {{ document_type_display }} Documents
+            </h3>
             
             {% if my_documents %}
-            <div class="space-y-3">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {% for doc in my_documents %}
-                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <h4 class="text-sm font-medium text-gray-900">{{ doc.title }}</h4>
-                            <p class="text-xs text-gray-500 mt-1">
-                                {{ doc.subject.name }} | Grade {{ doc.grade.number }} | {{ doc.board.abbreviation }}
-                                <span class="mx-1">•</span>
-                                Uploaded {{ doc.created_at|date:"M d, Y" }}
-                            </p>
+                <div class="stat-card animate-scale-in opacity-0 delay-{{ forloop.counter }}00 group">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="stat-icon-wrapper icon-indigo">
+                            <i class="fas fa-file-alt text-white text-lg"></i>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <a href="{% url 'view_document' doc.id %}" class="text-indigo-600 hover:text-indigo-800">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'download_document' doc.id %}" class="text-green-600 hover:text-green-800">
-                                <i class="fas fa-download"></i>
-                            </a>
-                            <button onclick="shareDocument({{ doc.id }})" class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-share-alt"></i>
-                            </button>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            {{ doc.created_at|date:"M d" }}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ doc.subject.name }}
+                        </span>
+                        <h3 class="text-lg font-medium text-gray-900 mt-2 mb-2 group-hover:text-indigo-600 transition-colors">{{ doc.title }}</h3>
+                        <p class="text-sm text-gray-600 mb-3">Grade {{ doc.grade.number }} • {{ doc.board.abbreviation }}</p>
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'view_document' doc.id %}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-colors">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </a>
+                                <a href="{% url 'download_document' doc.id %}" class="text-green-600 hover:text-green-700 text-sm font-medium transition-colors">
+                                    <i class="fas fa-download mr-1"></i>Download
+                                </a>
+                                <button onclick="shareDocument({{ doc.id }})" class="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+                                    <i class="fas fa-share-alt mr-1"></i>Share
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-gray-500 text-center py-8">No {{ document_type_display|lower }} uploaded yet. Upload your first document above!</p>
+            <div class="action-card text-center">
+                <div class="action-icon-wrapper bg-gray-50 mx-auto">
+                    <i class="fas fa-inbox text-gray-400 text-4xl"></i>
+                </div>
+                <div class="mt-5">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No {{ document_type_display|lower }} uploaded yet</h3>
+                    <p class="text-gray-600 mb-4">Click the upload button above to add your first document.</p>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
     
     <!-- Shared Assignments Tab -->
     <div x-show="activeTab === 'shared'" x-cloak class="mt-6">
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Shared {{ document_type_display }}</h3>
-            
-            {% if shared_documents %}
-            <div class="space-y-3">
-                {% for share in shared_documents %}
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <h4 class="text-sm font-medium text-gray-900">
-                                {% if share.uploaded_document %}{{ share.uploaded_document.title }}{% else %}{{ share.generated_assignment.title }}{% endif %}
-                            </h4>
-                            <p class="text-xs text-gray-500 mt-1">
-                                Shared with: {{ share.class_group.name }}
-                                <span class="mx-1">•</span>
-                                {{ share.shared_at|date:"M d, Y" }}
-                                <span class="mx-1">•</span>
-                                Views: {{ share.view_count }}
-                            </p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="copyShareLink('{{ request.scheme }}://{{ request.get_host }}/share/{{ share.token }}/')" 
-                                    class="text-blue-600 hover:text-blue-800 text-sm">
-                                <i class="fas fa-link mr-1"></i>Copy Link
+        <h3 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <div class="icon-gradient w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-share-alt text-white text-lg"></i>
+            </div>
+            Shared {{ document_type_display }}
+        </h3>
+        
+        {% if shared_documents %}
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for share in shared_documents %}
+            <div class="stat-card animate-scale-in opacity-0 delay-{{ forloop.counter }}00 group">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="stat-icon-wrapper icon-blue">
+                        <i class="fas fa-link text-white text-lg"></i>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-eye mr-1"></i>
+                        {{ share.view_count }} views
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {{ share.class_group.name }}
+                    </span>
+                    <h3 class="text-lg font-medium text-gray-900 mt-2 mb-2 group-hover:text-blue-600 transition-colors">
+                        {% if share.uploaded_document %}{{ share.uploaded_document.title }}{% else %}{{ share.generated_assignment.title }}{% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">
+                        Shared {{ share.shared_at|date:"M d, Y" }}
+                        {% if share.due_date %}
+                        <span class="mx-1">•</span>
+                        Due: {{ share.due_date|date:"M d" }}
+                        {% endif %}
+                    </p>
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div class="flex space-x-3">
+                            <button onclick="copyShareLink('{{ share.token }}')" 
+                                    class="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+                                <i class="fas fa-copy mr-1"></i>Copy Link
                             </button>
+                            <a href="{% url 'public_assignment' share.token %}" target="_blank" 
+                               class="text-green-600 hover:text-green-700 text-sm font-medium transition-colors">
+                                <i class="fas fa-external-link-alt mr-1"></i>View
+                            </a>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <p class="text-sm text-gray-500 text-center py-8">No {{ document_type_display|lower }} shared yet. Share documents from "My Uploads" tab!</p>
-            {% endif %}
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="action-card text-center">
+            <div class="action-icon-wrapper bg-gray-50 mx-auto">
+                <i class="fas fa-share-nodes text-gray-400 text-4xl"></i>
+            </div>
+            <div class="mt-5">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No {{ document_type_display|lower }} shared yet</h3>
+                <p class="text-gray-600 mb-4">Share documents from the "My Uploads" tab to create shareable links for your students.</p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
-function copyShareLink(url) {
-    navigator.clipboard.writeText(url).then(() => {
+function copyShareLink(token) {
+    const link = `${window.location.origin}/share/a/${token}/`;
+    navigator.clipboard.writeText(link).then(() => {
+        alert('Share link copied to clipboard!');
+    }).catch(() => {
+        // Fallback for older browsers
+        const tempInput = document.createElement('input');
+        tempInput.value = link;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
         alert('Share link copied to clipboard!');
     });
 }
 
 function shareDocument(docId) {
     // Find the document title from the DOM
-    const docElement = event.target.closest('.border').querySelector('h4');
+    const docElement = event.target.closest('.stat-card').querySelector('h3');
     const docTitle = docElement ? docElement.textContent.trim() : 'Document';
     
     // Open share modal
