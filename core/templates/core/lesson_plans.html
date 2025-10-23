@@ -1,22 +1,27 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Lesson Plans - EduTech Platform{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/modern-dashboard.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="mb-8">
+<div class="mb-8 animate-fade-in-up">
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Lesson Plans</h1>
-            <p class="mt-1 text-sm text-gray-600">Create and manage your lesson plans</p>
+            <h1 class="heading-primary">Lesson Plans</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">Create and manage your lesson plans</p>
         </div>
-        <button onclick="openModal('createModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
+        <button onclick="openModal('createModal')" class="btn-gradient">
             <i class="fas fa-plus mr-2"></i>Create Lesson Plan
         </button>
     </div>
 </div>
 
 <!-- Tab Navigation -->
-<div class="bg-white shadow rounded-lg mb-6">
+<div class="bg-white shadow rounded-lg mb-6 animate-scale-in opacity-0 delay-100">
     <div class="border-b border-gray-200">
         <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
             <button onclick="showTab('admin-library')" id="admin-library-tab" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600">
@@ -34,17 +39,29 @@
 
 <!-- Admin Library Tab -->
 <div id="admin-library" class="tab-content">
-    <div class="text-center py-12 bg-white rounded-lg shadow">
-        <i class="fas fa-building text-gray-400 text-4xl mb-4"></i>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Admin Content Library</h3>
-        <p class="text-gray-600">Coming soon - Pre-approved lesson plans from your institution</p>
+    <div class="action-card text-center group">
+        <div class="action-icon-wrapper bg-gray-50 mx-auto">
+            <i class="fas fa-building text-gray-400 text-4xl"></i>
+        </div>
+        <div class="mt-5">
+            <h3 class="text-xl font-bold text-gray-900">Admin Content Library</h3>
+            <p class="mt-2 text-sm text-gray-600">Coming soon - Pre-approved lesson plans from your institution</p>
+        </div>
     </div>
 </div>
 
 <!-- AI Generate Tab -->
 <div id="ai-generate" class="tab-content hidden">
-    <div class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Generate AI Lesson Plan</h3>
+    <div class="action-card">
+        <div class="flex items-center mb-6">
+            <div class="action-icon-wrapper bg-indigo-50 mr-4">
+                <i class="fas fa-magic text-indigo-600 text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="heading-secondary">Generate AI Lesson Plan</h3>
+                <p class="text-sm text-gray-600">Let AI create a comprehensive lesson plan for you</p>
+            </div>
+        </div>
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <input type="hidden" name="generate_ai" value="1">
@@ -97,7 +114,7 @@
             </div>
             
             <div class="flex justify-end">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                <button type="submit" class="btn-gradient">
                     <i class="fas fa-magic mr-2"></i>Generate Lesson Plan
                 </button>
             </div>
@@ -107,8 +124,16 @@
 
 <!-- My Uploads Tab -->
 <div id="my-uploads" class="tab-content hidden">
-    <div class="bg-white shadow rounded-lg mb-6 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Upload Lesson Plan</h3>
+    <div class="action-card mb-6">
+        <div class="flex items-center mb-6">
+            <div class="action-icon-wrapper bg-green-50 mr-4">
+                <i class="fas fa-upload text-green-600 text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="heading-secondary">Upload Lesson Plan</h3>
+                <p class="text-sm text-gray-600">Share your own lesson plans with the platform</p>
+            </div>
+        </div>
         <form method="post" enctype="multipart/form-data" class="space-y-4">
             {% csrf_token %}
             <input type="hidden" name="upload_file" value="1">
@@ -157,7 +182,7 @@
             </div>
             
             <div class="flex justify-end">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition duration-150">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition duration-150 hover:scale-105">
                     <i class="fas fa-upload mr-2"></i>Upload Lesson Plan
                 </button>
             </div>
@@ -167,20 +192,23 @@
     <!-- Lesson Plans Grid -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {% for document in documents %}
-        <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        {{ document.subject.name }}
-                    </span>
-                    <div class="flex items-center text-sm text-gray-500">
-                        <i class="fas fa-calendar mr-1"></i>
-                        {{ document.created_at|date:"M d, Y" }}
-                    </div>
+        <div class="stat-card animate-scale-in opacity-0 delay-{{ forloop.counter }}00">
+            <div class="flex items-start justify-between mb-3">
+                <div class="stat-icon-wrapper icon-indigo">
+                    <i class="fas fa-file-alt text-white text-lg"></i>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ document.title }}</h3>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-calendar mr-1"></i>
+                    {{ document.created_at|date:"M d" }}
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {{ document.subject.name }}
+                </span>
+                <h3 class="text-lg font-medium text-gray-900 mt-2 mb-2">{{ document.title }}</h3>
                 <p class="text-sm text-gray-600 mb-3">Grade {{ document.grade.number }} • {{ document.board.abbreviation }}</p>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div class="flex space-x-2">
                         <a href="{% url 'view_document' document.id %}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
                             <i class="fas fa-eye mr-1"></i>View
@@ -202,10 +230,14 @@
         </div>
         {% empty %}
         <div class="col-span-full">
-            <div class="text-center py-12">
-                <i class="fas fa-clipboard-list text-gray-400 text-4xl mb-4"></i>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No lesson plans uploaded yet</h3>
-                <p class="text-gray-600 mb-4">Upload your first lesson plan using the form above.</p>
+            <div class="action-card text-center">
+                <div class="action-icon-wrapper bg-gray-50 mx-auto">
+                    <i class="fas fa-clipboard-list text-gray-400 text-4xl"></i>
+                </div>
+                <div class="mt-5">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No lesson plans uploaded yet</h3>
+                    <p class="text-gray-600 mb-4">Upload your first lesson plan using the form above.</p>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -214,27 +246,22 @@
 
 <script>
 function showTab(tabName) {
-    // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => content.classList.add('hidden'));
     
-    // Remove active class from all tab buttons
     const tabButtons = document.querySelectorAll('.tab-button');
     tabButtons.forEach(button => {
         button.classList.remove('border-indigo-500', 'text-indigo-600');
         button.classList.add('border-transparent', 'text-gray-500');
     });
     
-    // Show selected tab content
     document.getElementById(tabName).classList.remove('hidden');
     
-    // Add active class to selected tab button
     const activeButton = document.getElementById(tabName + '-tab');
     activeButton.classList.remove('border-transparent', 'text-gray-500');
     activeButton.classList.add('border-indigo-500', 'text-indigo-600');
 }
 
-// Initialize with Admin Library tab active
 document.addEventListener('DOMContentLoaded', function() {
     showTab('admin-library');
 });
