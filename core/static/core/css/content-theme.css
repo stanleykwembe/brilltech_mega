@@ -1,0 +1,92 @@
+/* ==========================================
+   Content Management Portal Color Theme
+   Orange/Teal Theme Override
+   ========================================== */
+
+:root {
+    /* Content Portal Color System - Orange/Teal */
+    --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    --primary-light: #fb923c;
+    --primary-dark: #c2410c;
+    
+    /* Sidebar Colors */
+    --sidebar-bg: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+    --sidebar-active-bg: rgba(249, 115, 22, 0.15);
+    --sidebar-hover-bg: rgba(249, 115, 22, 0.08);
+    --sidebar-text: #d1d5db;
+    --sidebar-text-active: #ffffff;
+    --sidebar-icon: #9ca3af;
+    --sidebar-accent: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    
+    /* Card Accents */
+    --card-accent-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    
+    /* Icon Gradients - Content Theme */
+    --icon-gradient-1: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    --icon-gradient-2: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    --icon-gradient-3: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    --icon-gradient-4: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* Sidebar Styling */
+.sidebar-content {
+    background: var(--sidebar-bg);
+    box-shadow: 4px 0 24px rgba(249, 115, 22, 0.15);
+}
+
+.sidebar-content .sidebar-nav-item::before {
+    background: var(--sidebar-accent);
+}
+
+.sidebar-content .sidebar-nav-item.active {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-text-active);
+}
+
+.sidebar-content .sidebar-nav-item:not(.active):hover {
+    background: var(--sidebar-hover-bg);
+}
+
+/* Content-specific icon colors */
+.icon-content-primary {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+}
+
+.icon-content-secondary {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+}
+
+.icon-content-tertiary {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+}
+
+.icon-content-accent {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+/* Logo gradient for content */
+.logo-gradient-content {
+    background: linear-gradient(135deg, #f97316 0%, #14b8a6 100%);
+}
+
+/* Progress bar for content */
+.progress-bar-content {
+    background: linear-gradient(135deg, #f97316 0%, #14b8a6 100%);
+}
+
+/* Text gradient for content */
+.text-gradient-content {
+    background: linear-gradient(135deg, #f97316 0%, #14b8a6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Content feature banners */
+.feature-banner-content {
+    background: linear-gradient(135deg, #f97316 0%, #14b8a6 100%);
+}

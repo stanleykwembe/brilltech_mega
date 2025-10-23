@@ -1,0 +1,92 @@
+/* ==========================================
+   Admin Portal Color Theme
+   Purple/Indigo Theme Override
+   ========================================== */
+
+:root {
+    /* Admin Color System - Purple/Indigo */
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    --primary-light: #818cf8;
+    --primary-dark: #4338ca;
+    
+    /* Sidebar Colors */
+    --sidebar-bg: linear-gradient(180deg, #4c1d95 0%, #3730a3 100%);
+    --sidebar-active-bg: rgba(99, 102, 241, 0.2);
+    --sidebar-hover-bg: rgba(99, 102, 241, 0.1);
+    --sidebar-text: #e0e7ff;
+    --sidebar-text-active: #ffffff;
+    --sidebar-icon: #a5b4fc;
+    --sidebar-accent: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    
+    /* Card Accents */
+    --card-accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    
+    /* Icon Gradients - Admin Theme */
+    --icon-gradient-1: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    --icon-gradient-2: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    --icon-gradient-3: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+    --icon-gradient-4: linear-gradient(135deg, #e879f9 0%, #d946ef 100%);
+}
+
+/* Sidebar Styling */
+.sidebar-admin {
+    background: var(--sidebar-bg);
+    box-shadow: 4px 0 24px rgba(79, 70, 229, 0.2);
+}
+
+.sidebar-admin .sidebar-nav-item::before {
+    background: var(--sidebar-accent);
+}
+
+.sidebar-admin .sidebar-nav-item.active {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-text-active);
+}
+
+.sidebar-admin .sidebar-nav-item:not(.active):hover {
+    background: var(--sidebar-hover-bg);
+}
+
+/* Admin-specific icon colors */
+.icon-admin-primary {
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.icon-admin-secondary {
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.icon-admin-tertiary {
+    background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+}
+
+.icon-admin-accent {
+    background: linear-gradient(135deg, #e879f9 0%, #d946ef 100%);
+    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.4);
+}
+
+/* Logo gradient for admin */
+.logo-gradient-admin {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+}
+
+/* Progress bar for admin */
+.progress-bar-admin {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Text gradient for admin */
+.text-gradient-admin {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Admin upgrade/feature banners */
+.feature-banner-admin {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
