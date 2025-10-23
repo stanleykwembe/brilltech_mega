@@ -1924,23 +1924,23 @@ def admin_api_test(request):
             'name': 'Exam Boards',
             'url': '/api/exam-boards/',
             'method': 'GET',
-            'description': 'List all exam boards (IEB, CAPS, Cambridge, etc.)',
-            'filters': ['search (name, abbreviation, country)'],
+            'description': 'List all exam boards (IEB, CAPS, Cambridge, etc.) - PUBLIC ACCESS',
+            'filters': ['search (name_full, abbreviation, region)'],
             'example_params': '?search=IEB'
         },
         {
             'name': 'Subjects',
             'url': '/api/subjects/',
             'method': 'GET',
-            'description': 'List all subjects',
-            'filters': ['search (name, code)'],
+            'description': 'List all subjects - PUBLIC ACCESS',
+            'filters': ['search (name)'],
             'example_params': '?search=Mathematics'
         },
         {
             'name': 'Grades',
             'url': '/api/grades/',
             'method': 'GET',
-            'description': 'List all grades',
+            'description': 'List all grades - PUBLIC ACCESS',
             'filters': ['ordering (number)'],
             'example_params': '?ordering=number'
         },
@@ -1948,7 +1948,7 @@ def admin_api_test(request):
             'name': 'Past Papers',
             'url': '/api/past-papers/',
             'method': 'GET',
-            'description': 'List all past papers with PDFs',
+            'description': 'List all government exam papers with PDFs - PUBLIC ACCESS',
             'filters': [
                 'exam_board (text)',
                 'subject (ID)',
@@ -1956,13 +1956,13 @@ def admin_api_test(request):
                 'year (number)',
                 'search (title, chapter, section)'
             ],
-            'example_params': '?exam_board=IEB&year=2023&subject=1'
+            'example_params': '?exam_board=1&year=2023&subject=1'
         },
         {
             'name': 'Formatted Papers',
             'url': '/api/formatted-papers/',
             'method': 'GET',
-            'description': 'List AI-formatted papers with questions and memos in JSON',
+            'description': 'List AI-formatted papers with questions and memos in JSON - REQUIRES AUTHENTICATION',
             'filters': [
                 'exam_board (text)',
                 'subject (ID)',
@@ -1978,7 +1978,7 @@ def admin_api_test(request):
             'name': 'Quizzes',
             'url': '/api/quizzes/',
             'method': 'GET',
-            'description': 'List all quizzes with Google Forms links',
+            'description': 'List quizzes with Google Forms links - PUBLIC for free quizzes, AUTH for premium',
             'filters': [
                 'exam_board (text)',
                 'subject (ID)',
@@ -1992,7 +1992,7 @@ def admin_api_test(request):
             'name': 'Assignments',
             'url': '/api/assignments/',
             'method': 'GET',
-            'description': 'List all assignments',
+            'description': 'List all assignments - REQUIRES AUTHENTICATION',
             'filters': [
                 'subject (ID)',
                 'grade (ID)',

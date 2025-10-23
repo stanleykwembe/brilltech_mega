@@ -8,13 +8,13 @@ from .models import (
 class ExamBoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamBoard
-        fields = ['id', 'name', 'abbreviation', 'country']
+        fields = ['id', 'name_full', 'abbreviation', 'region']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'code']
+        fields = ['id', 'name']
 
 
 class GradeSerializer(serializers.ModelSerializer):
