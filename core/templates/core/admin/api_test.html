@@ -1,0 +1,192 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}API Testing Dashboard - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">API Testing Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-600">Test all API endpoints for mobile app integration</p>
+</div>
+
+<!-- API Information -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">API Authentication</h3>
+            <div class="mt-2 text-sm text-blue-700">
+                <p class="mb-2">All endpoints require authentication. To use the API:</p>
+                <ol class="list-decimal ml-5 space-y-1">
+                    <li>Get your auth token by sending POST to <code class="bg-blue-100 px-1 rounded">/api/auth/token/</code> with your username and password</li>
+                    <li>Include the token in all requests: <code class="bg-blue-100 px-1 rounded">Authorization: Token YOUR_TOKEN</code></li>
+                    <li>Or use session authentication (already logged in via this dashboard)</li>
+                </ol>
+                <p class="mt-2"><strong>Base URL:</strong> <code class="bg-blue-100 px-1 rounded">{{ request.scheme }}://{{ request.get_host }}/api/</code></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Endpoints List -->
+<div class="space-y-6">
+    {% for endpoint in endpoints %}
+    <div class="bg-white shadow rounded-lg overflow-hidden" x-data="{ 
+        showTest: false, 
+        response: null, 
+        loading: false,
+        testParams: '',
+        
+        async testEndpoint() {
+            this.loading = true;
+            this.response = null;
+            
+            try {
+                let url = '{{ endpoint.url }}' + this.testParams;
+                let options = {
+                    method: '{{ endpoint.method }}',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                };
+                
+                {% if endpoint.method == 'POST' %}
+                if (this.testParams) {
+                    options.body = this.testParams;
+                }
+                {% endif %}
+                
+                const res = await fetch(url, options);
+                const data = await res.json();
+                
+                this.response = {
+                    status: res.status,
+                    statusText: res.statusText,
+                    data: JSON.stringify(data, null, 2)
+                };
+            } catch (error) {
+                this.response = {
+                    status: 'Error',
+                    statusText: error.message,
+                    data: 'Failed to fetch. Make sure you are authenticated.'
+                };
+            } finally {
+                this.loading = false;
+            }
+        }
+    }">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium {% if endpoint.method == 'GET' %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %} mr-2">
+                            {{ endpoint.method }}
+                        </span>
+                        {{ endpoint.name }}
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">{{ endpoint.description }}</p>
+                    <p class="text-sm font-mono text-indigo-600 mt-1">{{ endpoint.url }}</p>
+                </div>
+                <button @click="showTest = !showTest" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">
+                    <i class="fas fa-flask mr-2"></i>
+                    <span x-text="showTest ? 'Hide Test' : 'Test Endpoint'"></span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="px-6 py-4">
+            <!-- Filters -->
+            {% if endpoint.filters %}
+            <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-900 mb-2">Available Filters:</h4>
+                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    {% for filter in endpoint.filters %}
+                    <li><code class="bg-gray-100 px-1 rounded">{{ filter }}</code></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Example -->
+            <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-900 mb-1">Example:</h4>
+                <code class="block bg-gray-100 p-2 rounded text-sm text-gray-800 overflow-x-auto">
+                    {{ endpoint.method }} {{ endpoint.url }}{{ endpoint.example_params }}
+                </code>
+            </div>
+            
+            <!-- Test Interface -->
+            <div x-show="showTest" x-cloak class="mt-4 border-t border-gray-200 pt-4">
+                <h4 class="text-sm font-medium text-gray-900 mb-2">Test This Endpoint</h4>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        {% if endpoint.method == 'GET' %}Query Parameters (e.g., ?subject=1&year=2023){% else %}Request Body (JSON){% endif %}
+                    </label>
+                    <input type="text" x-model="testParams" 
+                           placeholder="{{ endpoint.example_params }}"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                
+                <button @click="testEndpoint()" :disabled="loading" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!loading"><i class="fas fa-play mr-2"></i>Send Request</span>
+                    <span x-show="loading"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</span>
+                </button>
+                
+                <!-- Response -->
+                <div x-show="response" class="mt-4">
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">Response:</h4>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <div class="flex items-center mb-2">
+                            <span class="text-sm font-medium text-gray-300">Status:</span>
+                            <span x-text="response ? response.status : ''" 
+                                  :class="response && response.status === 200 ? 'text-green-400' : 'text-red-400'"
+                                  class="ml-2 text-sm font-mono"></span>
+                            <span x-text="response ? response.statusText : ''" class="ml-2 text-sm text-gray-400"></span>
+                        </div>
+                        <pre class="text-sm text-green-400 overflow-x-auto"><code x-text="response ? response.data : ''"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Quick Reference -->
+<div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Reference</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <h4 class="text-sm font-medium text-gray-900 mb-2">Subjects</h4>
+            <div class="bg-white rounded border border-gray-200 p-3 max-h-40 overflow-y-auto">
+                <ul class="text-sm space-y-1">
+                    {% for subject in subjects %}
+                    <li class="text-gray-600">ID: <code class="bg-gray-100 px-1 rounded">{{ subject.id }}</code> - {{ subject.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <div>
+            <h4 class="text-sm font-medium text-gray-900 mb-2">Grades</h4>
+            <div class="bg-white rounded border border-gray-200 p-3 max-h-40 overflow-y-auto">
+                <ul class="text-sm space-y-1">
+                    {% for grade in grades %}
+                    <li class="text-gray-600">ID: <code class="bg-gray-100 px-1 rounded">{{ grade.id }}</code> - Grade {{ grade.number }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+
+{% endblock %}

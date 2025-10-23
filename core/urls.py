@@ -51,6 +51,7 @@ urlpatterns = [
     path('panel/users/<int:user_id>/change-subscription/', views.admin_change_subscription, name='admin_change_subscription'),
     path('panel/users/<int:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
     path('panel/subscriptions/', views.admin_subscriptions, name='admin_subscriptions'),
+    path('panel/api-test/', views.admin_api_test, name='admin_api_test'),
     # Content manager endpoints
     path('content/', views.content_dashboard, name='content_dashboard'),
     path('content/papers/', views.content_papers, name='content_papers'),

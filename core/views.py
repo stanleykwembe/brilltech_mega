@@ -1914,6 +1914,115 @@ def admin_subscriptions(request):
     
     return render(request, 'core/admin/subscriptions.html', context)
 
+@require_admin
+def admin_api_test(request):
+    """API Testing Dashboard"""
+    
+    # Define all available endpoints
+    endpoints = [
+        {
+            'name': 'Exam Boards',
+            'url': '/api/exam-boards/',
+            'method': 'GET',
+            'description': 'List all exam boards (IEB, CAPS, Cambridge, etc.)',
+            'filters': ['search (name, abbreviation, country)'],
+            'example_params': '?search=IEB'
+        },
+        {
+            'name': 'Subjects',
+            'url': '/api/subjects/',
+            'method': 'GET',
+            'description': 'List all subjects',
+            'filters': ['search (name, code)'],
+            'example_params': '?search=Mathematics'
+        },
+        {
+            'name': 'Grades',
+            'url': '/api/grades/',
+            'method': 'GET',
+            'description': 'List all grades',
+            'filters': ['ordering (number)'],
+            'example_params': '?ordering=number'
+        },
+        {
+            'name': 'Past Papers',
+            'url': '/api/past-papers/',
+            'method': 'GET',
+            'description': 'List all past papers with PDFs',
+            'filters': [
+                'exam_board (text)',
+                'subject (ID)',
+                'grade (ID)',
+                'year (number)',
+                'search (title, chapter, section)'
+            ],
+            'example_params': '?exam_board=IEB&year=2023&subject=1'
+        },
+        {
+            'name': 'Formatted Papers',
+            'url': '/api/formatted-papers/',
+            'method': 'GET',
+            'description': 'List AI-formatted papers with questions and memos in JSON',
+            'filters': [
+                'exam_board (text)',
+                'subject (ID)',
+                'grade (ID)',
+                'year (number)',
+                'processing_status (pending, processing, completed, failed)',
+                'is_published (true, false)',
+                'search (title)'
+            ],
+            'example_params': '?is_published=true&year=2023'
+        },
+        {
+            'name': 'Quizzes',
+            'url': '/api/quizzes/',
+            'method': 'GET',
+            'description': 'List all quizzes with Google Forms links',
+            'filters': [
+                'exam_board (text)',
+                'subject (ID)',
+                'grade (ID)',
+                'is_premium (true, false)',
+                'search (title, topic)'
+            ],
+            'example_params': '?is_premium=false&subject=1'
+        },
+        {
+            'name': 'Assignments',
+            'url': '/api/assignments/',
+            'method': 'GET',
+            'description': 'List all assignments',
+            'filters': [
+                'subject (ID)',
+                'grade (ID)',
+                'assignment_type (text)',
+                'search (topic, content)'
+            ],
+            'example_params': '?subject=1&grade=2'
+        },
+        {
+            'name': 'Get Auth Token',
+            'url': '/api/auth/token/',
+            'method': 'POST',
+            'description': 'Get authentication token for API access (send username and password)',
+            'filters': [],
+            'example_params': 'POST body: {"username": "your_username", "password": "your_password"}'
+        },
+    ]
+    
+    # Get subjects and grades for filter dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'endpoints': endpoints,
+        'subjects': subjects,
+        'grades': grades,
+    }
+    
+    return render(request, 'core/admin/api_test.html', context)
+
 # ===== CONTENT MANAGER VIEWS =====
 
 @require_content_manager
