@@ -6,6 +6,27 @@ This is a freemium educational technology platform designed for teachers and adm
 
 ## Recent Changes
 
+### October 23, 2025
+- **REST API for Mobile Apps**: Built comprehensive API for serving educational content to mobile applications
+  - Installed Django REST Framework 3.14.0 with Token Authentication
+  - Created serializers for all core models (PastPaper, FormattedPaper, Quiz, Subject, Grade, ExamBoard)
+  - Public API endpoints (no authentication required):
+    - `/api/exam-boards/` - List all exam boards with search/filter by name, abbreviation, region
+    - `/api/subjects/` - List all subjects with search capability
+    - `/api/grades/` - List all grades (1-12)
+    - `/api/past-papers/` - Government exam papers with PDF URLs, filter by board/subject/grade/year
+    - `/api/quizzes/` - Free quizzes publicly accessible, premium quizzes require authentication
+  - Authentication-required endpoints:
+    - `/api/formatted-papers/` - AI-formatted papers with JSON questions/memos (premium content)
+    - `/api/assignments/` - User-specific assignments
+    - `/api/auth/token/` - POST endpoint to obtain authentication tokens
+  - Comprehensive filtering: DjangoFilter integration for filtering by board, subject, grade, year
+  - Pagination enabled for all list endpoints
+  - CORS configured for mobile app origins
+  - API Testing Dashboard in admin panel with interactive endpoint testing, JSON response viewer
+  - Smart quiz access: Unauthenticated users only see free quizzes, authenticated users see all
+  - Full file URLs with proper media serving for PDFs and documents
+
 ### October 22, 2025
 - **Bulk Upload System**: Content managers can efficiently upload folders of educational materials
   - Added "Bulk Upload" menu item in content manager sidebar navigation
