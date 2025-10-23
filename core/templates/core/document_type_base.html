@@ -18,39 +18,41 @@
 </div>
 
 <!-- Tab Navigation -->
-<div class="bg-white shadow rounded-lg mb-6 animate-scale-in opacity-0 delay-100" x-data="{ activeTab: 'admin_library' }">
-    <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-            <button @click="activeTab = 'admin_library'" 
-                :class="activeTab === 'admin_library' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                <i class="fas fa-book-reader mr-2"></i>
-                Admin Library
-            </button>
-            {% if user.userprofile.can_use_ai %}
-            <button @click="activeTab = 'ai_generate'" 
-                :class="activeTab === 'ai_generate' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                <i class="fas fa-magic mr-2"></i>
-                AI Generate
-            </button>
-            {% endif %}
-            <button @click="activeTab = 'my_uploads'" 
-                :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                <i class="fas fa-upload mr-2"></i>
-                My Uploads
-            </button>
-            <button @click="activeTab = 'shared'" 
-                :class="activeTab === 'shared' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                <i class="fas fa-share-alt mr-2"></i>
-                Shared Assignments
-            </button>
-        </nav>
+<div x-data="{ activeTab: 'admin_library' }">
+    <div class="bg-white shadow rounded-lg mb-6 animate-scale-in opacity-0 delay-100">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                <button @click="activeTab = 'admin_library'" 
+                    :class="activeTab === 'admin_library' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    <i class="fas fa-book-reader mr-2"></i>
+                    Admin Library
+                </button>
+                {% if user.userprofile.can_use_ai %}
+                <button @click="activeTab = 'ai_generate'" 
+                    :class="activeTab === 'ai_generate' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    <i class="fas fa-magic mr-2"></i>
+                    AI Generate
+                </button>
+                {% endif %}
+                <button @click="activeTab = 'my_uploads'" 
+                    :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    <i class="fas fa-upload mr-2"></i>
+                    My Uploads
+                </button>
+                <button @click="activeTab = 'shared'" 
+                    :class="activeTab === 'shared' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    <i class="fas fa-share-alt mr-2"></i>
+                    Shared Assignments
+                </button>
+            </nav>
+        </div>
     </div>
 
-<!-- Admin Library Tab -->
+    <!-- Admin Library Tab -->
 <div x-show="activeTab === 'admin_library'" x-cloak class="tab-content mt-6">
     <div class="action-card text-center group">
         <div class="action-icon-wrapper bg-gray-50 mx-auto">
