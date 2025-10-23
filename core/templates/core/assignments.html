@@ -485,7 +485,7 @@ function confirmDelete(documentId) {
 }
 
 function copyShareLink(token) {
-    const link = `${window.location.origin}/assignment/shared/${token}/`;
+    const link = `${window.location.origin}/share/a/${token}/`;
     const tempInput = document.createElement('input');
     tempInput.value = link;
     document.body.appendChild(tempInput);
