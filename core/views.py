@@ -2023,6 +2023,346 @@ def admin_api_test(request):
     
     return render(request, 'core/admin/api_test.html', context)
 
+@require_admin
+def admin_features(request):
+    """Feature Management dashboard"""
+    
+    # Get counts for each feature type
+    exam_boards_count = ExamBoard.objects.count()
+    subjects_count = Subject.objects.count()
+    grades_count = Grade.objects.count()
+    plans_count = SubscriptionPlan.objects.count()
+    
+    context = {
+        'exam_boards_count': exam_boards_count,
+        'subjects_count': subjects_count,
+        'grades_count': grades_count,
+        'plans_count': plans_count,
+    }
+    
+    return render(request, 'core/admin/features.html', context)
+
+@require_admin
+def admin_exam_boards(request):
+    """Exam Boards CRUD interface"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            ExamBoard.objects.create(
+                name_full=request.POST.get('name_full'),
+                abbreviation=request.POST.get('abbreviation'),
+                region=request.POST.get('region', '')
+            )
+            messages.success(request, 'Exam board created successfully.')
+        
+        elif action == 'update':
+            board_id = request.POST.get('board_id')
+            board = get_object_or_404(ExamBoard, id=board_id)
+            board.name_full = request.POST.get('name_full')
+            board.abbreviation = request.POST.get('abbreviation')
+            board.region = request.POST.get('region', '')
+            board.save()
+            messages.success(request, 'Exam board updated successfully.')
+        
+        elif action == 'delete':
+            board_id = request.POST.get('board_id')
+            board = get_object_or_404(ExamBoard, id=board_id)
+            board.delete()
+            messages.success(request, 'Exam board deleted successfully.')
+        
+        return redirect('admin_exam_boards')
+    
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    context = {
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/admin/exam_boards.html', context)
+
+@require_admin
+def admin_subjects(request):
+    """Subjects CRUD interface"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            Subject.objects.create(name=request.POST.get('name'))
+            messages.success(request, 'Subject created successfully.')
+        
+        elif action == 'update':
+            subject_id = request.POST.get('subject_id')
+            subject = get_object_or_404(Subject, id=subject_id)
+            subject.name = request.POST.get('name')
+            subject.save()
+            messages.success(request, 'Subject updated successfully.')
+        
+        elif action == 'delete':
+            subject_id = request.POST.get('subject_id')
+            subject = get_object_or_404(Subject, id=subject_id)
+            subject.delete()
+            messages.success(request, 'Subject deleted successfully.')
+        
+        return redirect('admin_subjects')
+    
+    subjects = Subject.objects.all().order_by('name')
+    
+    context = {
+        'subjects': subjects,
+    }
+    
+    return render(request, 'core/admin/subjects.html', context)
+
+@require_admin
+def admin_grades(request):
+    """Grades CRUD interface"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            Grade.objects.create(number=request.POST.get('number'))
+            messages.success(request, 'Grade created successfully.')
+        
+        elif action == 'update':
+            grade_id = request.POST.get('grade_id')
+            grade = get_object_or_404(Grade, id=grade_id)
+            grade.number = request.POST.get('number')
+            grade.save()
+            messages.success(request, 'Grade updated successfully.')
+        
+        elif action == 'delete':
+            grade_id = request.POST.get('grade_id')
+            grade = get_object_or_404(Grade, id=grade_id)
+            grade.delete()
+            messages.success(request, 'Grade deleted successfully.')
+        
+        return redirect('admin_grades')
+    
+    grades = Grade.objects.all().order_by('number')
+    
+    context = {
+        'grades': grades,
+    }
+    
+    return render(request, 'core/admin/grades.html', context)
+
+@require_admin
+def admin_subscription_plans(request):
+    """Subscription Plans management interface"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update':
+            plan_id = request.POST.get('plan_id')
+            plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+            plan.price = request.POST.get('price')
+            plan.max_subjects = request.POST.get('max_subjects')
+            plan.lesson_plan_quota = request.POST.get('lesson_plan_quota')
+            plan.ai_model = request.POST.get('ai_model', '')
+            plan.save()
+            messages.success(request, f'{plan.name} plan updated successfully.')
+        
+        return redirect('admin_subscription_plans')
+    
+    plans = SubscriptionPlan.objects.all().order_by('price')
+    
+    context = {
+        'plans': plans,
+    }
+    
+    return render(request, 'core/admin/subscription_plans.html', context)
+
+@require_admin
+def admin_communications(request):
+    """Communications dashboard"""
+    
+    from .models import Announcement, EmailBlast
+    
+    # Get counts
+    active_announcements = Announcement.objects.filter(is_active=True).count()
+    total_announcements = Announcement.objects.count()
+    sent_emails = EmailBlast.objects.filter(status='sent').count()
+    draft_emails = EmailBlast.objects.filter(status='draft').count()
+    
+    context = {
+        'active_announcements': active_announcements,
+        'total_announcements': total_announcements,
+        'sent_emails': sent_emails,
+        'draft_emails': draft_emails,
+    }
+    
+    return render(request, 'core/admin/communications.html', context)
+
+@require_admin
+def admin_announcements(request):
+    """Announcements CRUD interface"""
+    
+    from .models import Announcement
+    from django.utils import timezone
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            announcement = Announcement.objects.create(
+                title=request.POST.get('title'),
+                message=request.POST.get('message'),
+                target_audience=request.POST.get('target_audience'),
+                priority=request.POST.get('priority'),
+                display_type=request.POST.get('display_type'),
+                created_by=request.user,
+                is_active=True
+            )
+            
+            # Set expiry if provided
+            expires_at = request.POST.get('expires_at')
+            if expires_at:
+                announcement.expires_at = expires_at
+                announcement.save()
+            
+            messages.success(request, 'Announcement created successfully.')
+        
+        elif action == 'update':
+            announcement_id = request.POST.get('announcement_id')
+            announcement = get_object_or_404(Announcement, id=announcement_id)
+            announcement.title = request.POST.get('title')
+            announcement.message = request.POST.get('message')
+            announcement.target_audience = request.POST.get('target_audience')
+            announcement.priority = request.POST.get('priority')
+            announcement.display_type = request.POST.get('display_type')
+            
+            expires_at = request.POST.get('expires_at')
+            if expires_at:
+                announcement.expires_at = expires_at
+            else:
+                announcement.expires_at = None
+            
+            announcement.save()
+            messages.success(request, 'Announcement updated successfully.')
+        
+        elif action == 'toggle':
+            announcement_id = request.POST.get('announcement_id')
+            announcement = get_object_or_404(Announcement, id=announcement_id)
+            announcement.is_active = not announcement.is_active
+            announcement.save()
+            status = 'activated' if announcement.is_active else 'deactivated'
+            messages.success(request, f'Announcement {status}.')
+        
+        elif action == 'delete':
+            announcement_id = request.POST.get('announcement_id')
+            announcement = get_object_or_404(Announcement, id=announcement_id)
+            announcement.delete()
+            messages.success(request, 'Announcement deleted successfully.')
+        
+        return redirect('admin_announcements')
+    
+    announcements = Announcement.objects.all().order_by('-created_at')
+    
+    context = {
+        'announcements': announcements,
+    }
+    
+    return render(request, 'core/admin/announcements.html', context)
+
+@login_required
+def dismiss_announcement(request, announcement_id):
+    """Dismiss an announcement for the current user"""
+    from .models import Announcement
+    
+    if request.method == 'POST':
+        announcement = get_object_or_404(Announcement, id=announcement_id)
+        announcement.dismissed_by.add(request.user)
+        return JsonResponse({'status': 'success'})
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
+@require_admin
+def admin_email_blasts(request):
+    """Email blast management interface"""
+    
+    from .models import EmailBlast
+    
+    email_blasts = EmailBlast.objects.all().order_by('-created_at')
+    
+    context = {
+        'email_blasts': email_blasts,
+    }
+    
+    return render(request, 'core/admin/email_blasts.html', context)
+
+@require_admin
+def send_email_blast(request):
+    """Send or schedule an email blast"""
+    
+    from .models import EmailBlast
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.utils import timezone
+    
+    if request.method == 'POST':
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        target_audience = request.POST.get('target_audience')
+        
+        # Create email blast record
+        email_blast = EmailBlast.objects.create(
+            subject=subject,
+            message=message,
+            target_audience=target_audience,
+            created_by=request.user,
+            status='sending'
+        )
+        
+        # Get recipient list
+        recipients = []
+        if target_audience == 'all':
+            recipients = User.objects.filter(is_active=True).values_list('email', flat=True)
+        elif target_audience == 'teachers':
+            recipients = User.objects.filter(is_active=True, is_staff=False).values_list('email', flat=True)
+        elif target_audience == 'content_managers':
+            recipients = User.objects.filter(is_active=True, groups__name='content_manager').values_list('email', flat=True)
+        
+        email_blast.recipient_count = len(recipients)
+        email_blast.save()
+        
+        # Send emails
+        sent_count = 0
+        failed_count = 0
+        
+        for recipient_email in recipients:
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[recipient_email],
+                    fail_silently=False,
+                )
+                sent_count += 1
+            except Exception as e:
+                failed_count += 1
+        
+        # Update email blast status
+        email_blast.sent_count = sent_count
+        email_blast.failed_count = failed_count
+        email_blast.status = 'sent' if failed_count == 0 else 'failed'
+        email_blast.sent_at = timezone.now()
+        email_blast.save()
+        
+        if failed_count == 0:
+            messages.success(request, f'Email sent to {sent_count} recipients successfully.')
+        else:
+            messages.warning(request, f'Email sent to {sent_count} recipients. {failed_count} failed.')
+        
+        return redirect('admin_email_blasts')
+    
+    return render(request, 'core/admin/send_email.html')
+
 # ===== CONTENT MANAGER VIEWS =====
 
 @require_content_manager

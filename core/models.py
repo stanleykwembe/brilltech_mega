@@ -585,3 +585,108 @@ class PayFastPayment(models.Model):
     
     def __str__(self):
         return f"Payment {self.payfast_payment_id} - {self.user.username} - R{self.amount_gross}"
+
+class Announcement(models.Model):
+    """Platform announcements and notifications"""
+    TARGET_CHOICES = [
+        ('all', 'All Users'),
+        ('teachers', 'Teachers Only'),
+        ('content_managers', 'Content Managers Only'),
+        ('admins', 'Admins Only'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('info', 'Info'),
+        ('warning', 'Warning'),
+        ('critical', 'Critical'),
+    ]
+    
+    DISPLAY_CHOICES = [
+        ('banner', 'Banner'),
+        ('modal', 'Modal'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    target_audience = models.CharField(max_length=20, choices=TARGET_CHOICES, default='all')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='info')
+    display_type = models.CharField(max_length=10, choices=DISPLAY_CHOICES, default='banner')
+    
+    # Scheduling
+    is_active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    # Tracking
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Track which users have dismissed this announcement
+    dismissed_by = models.ManyToManyField(User, related_name='dismissed_announcements', blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.target_audience})"
+    
+    def is_visible_to(self, user):
+        """Check if announcement should be shown to this user"""
+        from django.utils import timezone
+        
+        # Check if active and not expired
+        if not self.is_active:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        
+        # Check if user has dismissed it
+        if user in self.dismissed_by.all():
+            return False
+        
+        # Check target audience
+        if self.target_audience == 'all':
+            return True
+        elif self.target_audience == 'teachers':
+            return not user.is_staff
+        elif self.target_audience == 'content_managers':
+            return user.groups.filter(name='content_manager').exists()
+        elif self.target_audience == 'admins':
+            return user.is_staff
+        
+        return False
+
+class EmailBlast(models.Model):
+    """Email campaigns and bulk communications"""
+    TARGET_CHOICES = [
+        ('all', 'All Users'),
+        ('teachers', 'Teachers Only'),
+        ('content_managers', 'Content Managers Only'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sending', 'Sending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    ]
+    
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    target_audience = models.CharField(max_length=20, choices=TARGET_CHOICES, default='all')
+    
+    # Tracking
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    recipient_count = models.IntegerField(default=0)
+    sent_count = models.IntegerField(default=0)
+    failed_count = models.IntegerField(default=0)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.subject} - {self.target_audience} ({self.status})"

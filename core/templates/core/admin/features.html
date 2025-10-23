@@ -1,0 +1,139 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Feature Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Feature Management</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage platform features, exam boards, subjects, grades, and subscription plans</p>
+</div>
+
+<!-- Feature Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Exam Boards -->
+    <a href="{% url 'admin_exam_boards' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-purple-500 p-3">
+                        <i class="fas fa-building text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Exam Boards</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ exam_boards_count }}</div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-purple-600 hover:text-purple-700">Manage boards <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+
+    <!-- Subjects -->
+    <a href="{% url 'admin_subjects' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-blue-500 p-3">
+                        <i class="fas fa-book text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Subjects</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ subjects_count }}</div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-blue-600 hover:text-blue-700">Manage subjects <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+
+    <!-- Grades -->
+    <a href="{% url 'admin_grades' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-green-500 p-3">
+                        <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Grades</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ grades_count }}</div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-green-600 hover:text-green-700">Manage grades <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+
+    <!-- Subscription Plans -->
+    <a href="{% url 'admin_subscription_plans' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-orange-500 p-3">
+                        <i class="fas fa-crown text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Subscription Plans</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ plans_count }}</div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-orange-600 hover:text-orange-700">Manage plans <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- Quick Info -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">About Feature Management</h3>
+            <div class="mt-2 text-sm text-blue-700">
+                <p>Use this section to configure your platform's core features:</p>
+                <ul class="list-disc ml-5 mt-2 space-y-1">
+                    <li><strong>Exam Boards</strong> - Educational systems like IEB, CAPS, Cambridge</li>
+                    <li><strong>Subjects</strong> - Available subjects for teachers</li>
+                    <li><strong>Grades</strong> - Grade levels (1-12)</li>
+                    <li><strong>Subscription Plans</strong> - Pricing tiers and quotas</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

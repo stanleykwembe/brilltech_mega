@@ -1,0 +1,127 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Subscription Plans - Feature Management{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Subscription Plans</h1>
+    <p class="mt-1 text-sm text-gray-600">Manage pricing tiers, quotas, and AI model assignments</p>
+</div>
+
+<!-- Plans Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" x-data="{ editingPlan: null }">
+    {% for plan in plans %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden {% if plan.name == 'premium' %}ring-2 ring-orange-500{% endif %}">
+        <div class="px-6 py-8">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-2xl font-bold text-gray-900 capitalize">{{ plan.name }}</h3>
+                <button @click="editingPlan = {{ plan.id }}" class="text-indigo-600 hover:text-indigo-800">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+            <div class="flex items-baseline mb-8">
+                <span class="text-5xl font-extrabold text-gray-900">R{{ plan.price }}</span>
+                <span class="ml-1 text-xl text-gray-500">/month</span>
+            </div>
+            <ul class="space-y-3 text-sm">
+                <li class="flex items-center">
+                    <i class="fas fa-check text-green-500 mr-2"></i>
+                    <span class="text-gray-700">{{ plan.max_subjects }} subject{% if plan.max_subjects != 1 %}s{% endif %}</span>
+                </li>
+                <li class="flex items-center">
+                    <i class="fas fa-check text-green-500 mr-2"></i>
+                    <span class="text-gray-700">
+                        {% if plan.lesson_plan_quota == 0 %}
+                            Unlimited lesson plans
+                        {% else %}
+                            {{ plan.lesson_plan_quota }} lesson plans/subject
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="flex items-center">
+                    <i class="fas fa-check text-green-500 mr-2"></i>
+                    <span class="text-gray-700">
+                        {% if plan.ai_model %}
+                            {{ plan.ai_model }} AI
+                        {% else %}
+                            No AI access
+                        {% endif %}
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Edit Modal for each plan -->
+    <div x-show="editingPlan === {{ plan.id }}" x-cloak class="fixed z-10 inset-0 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="editingPlan = null"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Edit {{ plan.name|title }} Plan</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Price (R) *</label>
+                                <input type="number" name="price" required min="0" step="0.01" value="{{ plan.price }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Max Subjects *</label>
+                                <input type="number" name="max_subjects" required min="1" value="{{ plan.max_subjects }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                <p class="mt-1 text-xs text-gray-500">Number of subjects users can subscribe to</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Lesson Plan Quota *</label>
+                                <input type="number" name="lesson_plan_quota" required min="0" value="{{ plan.lesson_plan_quota }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                <p class="mt-1 text-xs text-gray-500">0 = unlimited, otherwise per subject per month</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">AI Model</label>
+                                <select name="ai_model" class="w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                    <option value="" {% if not plan.ai_model %}selected{% endif %}>No AI</option>
+                                    <option value="gpt-3.5-turbo" {% if plan.ai_model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo (Basic)</option>
+                                    <option value="gpt-4" {% if plan.ai_model == 'gpt-4' %}selected{% endif %}>GPT-4 (Advanced)</option>
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">AI model for content generation</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                            Update Plan
+                        </button>
+                        <button type="button" @click="editingPlan = null" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Info Banner -->
+<div class="mt-8 bg-orange-50 border border-orange-200 rounded-lg p-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-orange-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-orange-800">Important Notes</h3>
+            <div class="mt-2 text-sm text-orange-700">
+                <ul class="list-disc ml-5 space-y-1">
+                    <li>Changes affect new subscriptions immediately</li>
+                    <li>Existing subscriptions keep their original quotas until renewal</li>
+                    <li>Lesson plan quota: 0 = unlimited, otherwise per subject per month</li>
+                    <li>AI models: Growth tier uses GPT-3.5, Premium uses GPT-4</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
