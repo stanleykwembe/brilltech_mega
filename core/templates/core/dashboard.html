@@ -1,161 +1,227 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Dashboard - EduTech Platform{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/modern-dashboard.css' %}">
+{% endblock %}
+
 {% block content %}
+<!-- Hero Section -->
+<div class="mb-8 animate-fade-in-up">
+    <h1 class="heading-primary">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
+    <p class="mt-2 text-base text-gray-600 font-medium">Here's what's happening with your teaching today.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <!-- Lesson Plans Card -->
+    <div class="stat-card animate-scale-in opacity-0 delay-100">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="stat-icon-wrapper icon-indigo">
+                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">Lesson Plans</p>
+                    <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_documents }}</p>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" style="width: {% if user_profile.subscription == 'free' %}40{% else %}65{% endif %}%;"></div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">
+                        {% if user_profile.subscription == 'free' %}
+                            <span class="text-indigo-600 font-semibold">2/5 used</span> this month
+                        {% else %}
+                            <span class="text-indigo-600 font-semibold">Great progress!</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments Card -->
+    <div class="stat-card animate-scale-in opacity-0 delay-200">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="stat-icon-wrapper icon-green">
+                    <i class="fas fa-tasks text-white text-xl"></i>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">Assignments</p>
+                    <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_assignments }}</p>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" style="width: 75%; background: linear-gradient(135deg, #34d399 0%, #10b981 100%);"></div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">
+                        <span class="text-green-600 font-semibold">↑ 12%</span> from last month
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Plan Card -->
+    <div class="stat-card animate-scale-in opacity-0 delay-300">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="stat-icon-wrapper icon-yellow">
+                    <i class="fas fa-crown text-white text-xl"></i>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">Subscription</p>
+                    <p class="mt-2 text-2xl font-bold text-gray-900">{{ user_profile.subscription|title }}</p>
+                    {% if user_profile.subscription == 'free' %}
+                    <p class="mt-3 text-xs text-gray-500">
+                        <a href="{% url 'subscription' %}" class="text-yellow-600 hover:text-yellow-700 font-semibold inline-flex items-center group">
+                            Upgrade now 
+                            <i class="fas fa-arrow-right ml-1 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </p>
+                    {% else %}
+                    <p class="mt-3 text-xs text-green-600 font-semibold flex items-center">
+                        <i class="fas fa-check-circle mr-1"></i> Premium Active
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Card -->
+    <div class="stat-card animate-scale-in opacity-0 delay-400">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="stat-icon-wrapper icon-purple">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">Activity</p>
+                    <p class="mt-2 text-3xl font-bold text-gray-900">
+                        <span class="text-gradient">Active</span>
+                    </p>
+                    <p class="mt-3 text-xs text-gray-500">
+                        <span class="text-purple-600 font-semibold">Last login:</span> Today
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Section -->
 <div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-    <p class="mt-1 text-sm text-gray-600">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
-</div>
-
-<!-- Stats -->
-<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-clipboard-list text-indigo-600 text-2xl"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Lesson Plans</dt>
-                        <dd class="text-lg font-medium text-gray-900">{{ total_documents }}</dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="heading-secondary">Quick Actions</h2>
+        <span class="text-sm text-gray-500 font-medium">Everything you need, right here</span>
     </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-tasks text-green-600 text-2xl"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Assignments</dt>
-                        <dd class="text-lg font-medium text-gray-900">{{ total_assignments }}</dd>
-                    </dl>
-                </div>
+    
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Create Lesson Plan -->
+        <a href="{% url 'lesson_plans' %}" class="action-card group">
+            <div class="action-icon-wrapper bg-indigo-50">
+                <i class="fas fa-clipboard-list text-indigo-600 text-2xl"></i>
             </div>
-        </div>
-    </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-crown text-yellow-600 text-2xl"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Plan</dt>
-                        <dd class="text-lg font-medium text-gray-900">{{ user_profile.subscription|title }}</dd>
-                    </dl>
-                </div>
+            <div class="mt-5">
+                <h3 class="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                    Create Lesson Plan
+                </h3>
+                <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                    Generate AI-powered lesson plans with learning objectives, activities, and assessments tailored to your curriculum.
+                </p>
             </div>
-        </div>
-    </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-chart-bar text-purple-600 text-2xl"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Usage</dt>
-                        <dd class="text-lg font-medium text-gray-900">Active</dd>
-                    </dl>
-                </div>
+            <div class="mt-4 flex items-center text-indigo-600 font-semibold text-sm">
+                <span>Get started</span>
+                <i class="fas fa-arrow-right ml-2 action-arrow"></i>
             </div>
-        </div>
+        </a>
+
+        <!-- Generate Questions -->
+        <a href="{% url 'questions' %}" class="action-card group">
+            <div class="action-icon-wrapper bg-green-50">
+                <i class="fas fa-question-circle text-green-600 text-2xl"></i>
+            </div>
+            <div class="mt-5">
+                <h3 class="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                    Generate Questions
+                </h3>
+                <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                    Create MCQ, structured, or Cambridge-style questions with AI assistance to assess student understanding.
+                </p>
+            </div>
+            <div class="mt-4 flex items-center text-green-600 font-semibold text-sm">
+                <span>Create now</span>
+                <i class="fas fa-arrow-right ml-2 action-arrow"></i>
+            </div>
+        </a>
+
+        <!-- Upload Documents -->
+        <a href="{% url 'documents' %}" class="action-card group">
+            <div class="action-icon-wrapper bg-purple-50">
+                <i class="fas fa-cloud-upload-alt text-purple-600 text-2xl"></i>
+            </div>
+            <div class="mt-5">
+                <h3 class="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                    Upload Documents
+                </h3>
+                <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                    Upload and organize your teaching materials, past papers, and educational resources in one place.
+                </p>
+            </div>
+            <div class="mt-4 flex items-center text-purple-600 font-semibold text-sm">
+                <span>Upload files</span>
+                <i class="fas fa-arrow-right ml-2 action-arrow"></i>
+            </div>
+        </a>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="bg-white shadow rounded-lg mb-8">
-    <div class="px-6 py-5 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
-    </div>
-    <div class="px-6 py-5">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <a href="{% url 'lesson_plans' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-indigo-300 transition-all duration-200">
-                <div>
-                    <span class="rounded-lg inline-flex p-3 bg-indigo-50 text-indigo-600 ring-4 ring-white">
-                        <i class="fas fa-clipboard-list text-xl"></i>
-                    </span>
-                </div>
-                <div class="mt-4">
-                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600">
-                        Create Lesson Plan
-                    </h3>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Generate AI-powered lesson plans with objectives, activities, and assessments.
-                    </p>
-                </div>
-                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-indigo-400">
-                    <i class="fas fa-arrow-right"></i>
-                </span>
-            </a>
-
-            <a href="{% url 'questions' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-green-300 transition-all duration-200">
-                <div>
-                    <span class="rounded-lg inline-flex p-3 bg-green-50 text-green-600 ring-4 ring-white">
-                        <i class="fas fa-question-circle text-xl"></i>
-                    </span>
-                </div>
-                <div class="mt-4">
-                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-green-600">
-                        Generate Questions
-                    </h3>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Create MCQ, structured, or Cambridge-style questions with AI assistance.
-                    </p>
-                </div>
-                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-green-400">
-                    <i class="fas fa-arrow-right"></i>
-                </span>
-            </a>
-
-            <a href="{% url 'documents' %}" class="group relative rounded-lg p-6 bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md hover:ring-purple-300 transition-all duration-200">
-                <div>
-                    <span class="rounded-lg inline-flex p-3 bg-purple-50 text-purple-600 ring-4 ring-white">
-                        <i class="fas fa-upload text-xl"></i>
-                    </span>
-                </div>
-                <div class="mt-4">
-                    <h3 class="text-lg font-medium text-gray-900 group-hover:text-purple-600">
-                        Upload Documents
-                    </h3>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Upload and manage your teaching materials, past papers, and resources.
-                    </p>
-                </div>
-                <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-purple-400">
-                    <i class="fas fa-arrow-right"></i>
-                </span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Subscription Status -->
+<!-- Upgrade Banner (Free users only) -->
 {% if user_profile.subscription == 'free' %}
-<div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg">
-    <div class="px-6 py-5 text-white">
-        <div class="flex items-center justify-between">
-            <div>
-                <h3 class="text-lg font-semibold">Unlock Premium Features</h3>
-                <p class="mt-1 text-indigo-100">Upgrade to access unlimited lesson plans, advanced AI features, and priority support.</p>
+<div class="upgrade-banner animate-fade-in-up">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="fas fa-star text-yellow-300 text-xl"></i>
+                <h3 class="text-2xl font-bold text-white">Unlock Premium Features</h3>
             </div>
-            <a href="{% url 'subscription' %}" class="bg-white text-indigo-600 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition duration-150">
-                Upgrade Now
+            <p class="text-indigo-100 text-base leading-relaxed">
+                Get unlimited lesson plans, access to GPT-4 powered AI, advanced question generation, and priority support. 
+                <span class="font-semibold text-white">Starting from just R50/month.</span>
+            </p>
+            <div class="mt-4 flex flex-wrap gap-4 text-sm text-indigo-100">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-300"></i> Unlimited AI Generation
+                </span>
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-300"></i> GPT-4 Access
+                </span>
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-300"></i> Priority Support
+                </span>
+            </div>
+        </div>
+        <div class="flex-shrink-0">
+            <a href="{% url 'subscription' %}" class="inline-block btn-gradient">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-rocket"></i>
+                    <span>Upgrade Now</span>
+                </span>
             </a>
         </div>
     </div>
 </div>
 {% endif %}
+
+<!-- Recent Activity (Optional future enhancement) -->
+<!--
+<div class="mt-8">
+    <h2 class="heading-secondary mb-6">Recent Activity</h2>
+    <div class="glass-card p-6">
+        <p class="text-gray-500 text-center py-8">Your recent activity will appear here</p>
+    </div>
+</div>
+-->
+
 {% endblock %}

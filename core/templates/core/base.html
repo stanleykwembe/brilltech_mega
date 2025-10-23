@@ -7,59 +7,77 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
     <style>
         [x-cloak] { display: none !important; }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Better text rendering */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
     </style>
 </head>
-<body class="h-full">
+<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
     {% include 'core/includes/announcements.html' %}
     
     {% if user.is_authenticated %}
     <div class="min-h-full">
         <!-- Sidebar -->
         <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-            <div class="flex-1 flex flex-col min-h-0 bg-gray-800">
+            <div class="flex-1 flex flex-col min-h-0 sidebar">
                 <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-                    <div class="flex items-center flex-shrink-0 px-4">
-                        <i class="fas fa-graduation-cap text-white text-2xl mr-3"></i>
-                        <h1 class="text-white text-xl font-semibold">EduTech Platform</h1>
+                    <div class="flex items-center flex-shrink-0 px-4 mb-8">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg mr-3">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-white text-xl font-bold tracking-tight">EduTech</h1>
                     </div>
-                    <nav class="mt-5 flex-1 px-2 bg-gray-800 space-y-1">
-                        <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-tachometer-alt mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Dashboard
+                    <nav class="flex-1 px-3 space-y-1">
+                        <a href="{% url 'dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-th-large mr-3 text-lg"></i>
+                            <span class="font-semibold">Dashboard</span>
                         </a>
-                        <a href="{% url 'lesson_plans' %}" class="{% if request.resolver_match.url_name == 'lesson_plans' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-clipboard-list mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Lesson Plans
+                        <a href="{% url 'lesson_plans' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'lesson_plans' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                            <span>Lesson Plans</span>
                         </a>
-                        <a href="{% url 'classwork' %}" class="{% if request.resolver_match.url_name == 'classwork' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-book-open mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Classwork
+                        <a href="{% url 'classwork' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'classwork' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-book-open mr-3 text-lg"></i>
+                            <span>Classwork</span>
                         </a>
-                        <a href="{% url 'homework' %}" class="{% if request.resolver_match.url_name == 'homework' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-home mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Homework
+                        <a href="{% url 'homework' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'homework' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-home mr-3 text-lg"></i>
+                            <span>Homework</span>
                         </a>
-                        <a href="{% url 'assignments' %}" class="{% if request.resolver_match.url_name == 'assignments' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-tasks mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Assignments
+                        <a href="{% url 'assignments' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'assignments' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-tasks mr-3 text-lg"></i>
+                            <span>Assignments</span>
                         </a>
-                        <a href="{% url 'tests' %}" class="{% if request.resolver_match.url_name == 'tests' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-file-alt mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Tests
+                        <a href="{% url 'tests' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'tests' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-file-alt mr-3 text-lg"></i>
+                            <span>Tests</span>
                         </a>
-                        <a href="{% url 'exams' %}" class="{% if request.resolver_match.url_name == 'exams' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-graduation-cap mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Exams
+                        <a href="{% url 'exams' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'exams' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-graduation-cap mr-3 text-lg"></i>
+                            <span>Exams</span>
                         </a>
-                        <a href="{% url 'documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-folder mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            My Documents
+                        
+                        <!-- Divider -->
+                        <div class="my-4 border-t border-gray-700"></div>
+                        
+                        <a href="{% url 'documents' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'documents' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-folder mr-3 text-lg"></i>
+                            <span>My Documents</span>
                         </a>
-                        <a href="{% url 'subscription_dashboard' %}" class="{% if request.resolver_match.url_name == 'subscription_dashboard' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <i class="fas fa-crown mr-3 text-gray-400 group-hover:text-gray-300"></i>
-                            Subscription
+                        <a href="{% url 'subscription_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'subscription_dashboard' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                            <i class="fas fa-crown mr-3 text-lg"></i>
+                            <span>Subscription</span>
                         </a>
                     </nav>
                 </div>
