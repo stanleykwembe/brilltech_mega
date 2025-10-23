@@ -1,0 +1,86 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Send Email Blast{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Send Email Blast</h1>
+        <p class="mt-2 text-gray-600">Compose and send a targeted email to platform users.</p>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Target Audience *</label>
+                <select name="target_audience" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                    <option value="all">All Users</option>
+                    <option value="teachers">Teachers Only</option>
+                    <option value="content_managers">Content Managers Only</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">Select which user group will receive this email.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Subject Line *</label>
+                <input type="text" name="subject" required maxlength="200" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="e.g., New Features Now Available!">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email Message *</label>
+                <textarea name="message" rows="12" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="Compose your email message here..."></textarea>
+                <p class="mt-1 text-sm text-gray-500">Plain text emails are sent. Keep your message clear and concise.</p>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            <strong>Important:</strong> Emails will be sent immediately after submission. Please double-check your message and target audience before sending.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4">
+                <a href="{% url 'admin_email_blasts' %}" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">
+                    <i class="fas fa-paper-plane mr-2"></i> Send Email Blast
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-blue-900 mb-3">
+            <i class="fas fa-info-circle mr-2"></i> Email Best Practices
+        </h3>
+        <ul class="space-y-2 text-sm text-blue-800">
+            <li class="flex items-start">
+                <i class="fas fa-check text-blue-600 mr-2 mt-1"></i>
+                <span>Keep subject lines under 50 characters for better open rates</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-blue-600 mr-2 mt-1"></i>
+                <span>Personalize your message to the target audience</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-blue-600 mr-2 mt-1"></i>
+                <span>Include a clear call-to-action (what you want recipients to do)</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-blue-600 mr-2 mt-1"></i>
+                <span>Test your message by sending to yourself first if possible</span>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

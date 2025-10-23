@@ -1,0 +1,100 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Communications & Announcements{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Communications & Announcements</h1>
+        <p class="mt-2 text-gray-600">Manage platform announcements and send email blasts to users.</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Active Announcements</p>
+                    <p class="text-2xl font-bold text-indigo-600">{{ active_announcements }}</p>
+                </div>
+                <div class="bg-indigo-100 rounded-full p-3">
+                    <i class="fas fa-bullhorn text-indigo-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Total Announcements</p>
+                    <p class="text-2xl font-bold text-gray-700">{{ total_announcements }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <i class="fas fa-bell text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Sent Emails</p>
+                    <p class="text-2xl font-bold text-green-600">{{ sent_emails }}</p>
+                </div>
+                <div class="bg-green-100 rounded-full p-3">
+                    <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Draft Emails</p>
+                    <p class="text-2xl font-bold text-yellow-600">{{ draft_emails }}</p>
+                </div>
+                <div class="bg-yellow-100 rounded-full p-3">
+                    <i class="fas fa-envelope-open-text text-yellow-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="{% url 'admin_announcements' %}" class="block bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="bg-indigo-100 rounded-lg p-3">
+                        <i class="fas fa-bullhorn text-indigo-600 text-2xl"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Manage Announcements</h3>
+                    <p class="mt-1 text-gray-600">Create, edit, and schedule platform announcements for different user groups.</p>
+                    <div class="mt-3 text-indigo-600 font-medium">
+                        Manage Announcements <i class="fas fa-arrow-right ml-1"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'admin_email_blasts' %}" class="block bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="bg-green-100 rounded-lg p-3">
+                        <i class="fas fa-paper-plane text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Email Blasts</h3>
+                    <p class="mt-1 text-gray-600">Send targeted email campaigns to teachers, content managers, or all users.</p>
+                    <div class="mt-3 text-green-600 font-medium">
+                        Send Email Blast <i class="fas fa-arrow-right ml-1"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
