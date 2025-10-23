@@ -2,146 +2,7 @@
 
 ## Overview
 
-This is a freemium educational technology platform designed for teachers and administrators to create, manage, and share educational content. The application combines AI-powered content generation with document management capabilities, offering features like lesson plan creation, homework/assignment generation, question generation in multiple formats, and document upload/sharing functionality. The platform operates on a freemium model with usage quotas and subscription tiers.
-
-## Recent Changes
-
-### October 23, 2025
-- **REST API for Mobile Apps**: Built comprehensive API for serving educational content to mobile applications
-  - Installed Django REST Framework 3.14.0 with Token Authentication
-  - Created serializers for all core models (PastPaper, FormattedPaper, Quiz, Subject, Grade, ExamBoard)
-  - Public API endpoints (no authentication required):
-    - `/api/exam-boards/` - List all exam boards with search/filter by name, abbreviation, region
-    - `/api/subjects/` - List all subjects with search capability
-    - `/api/grades/` - List all grades (1-12)
-    - `/api/past-papers/` - Government exam papers with PDF URLs, filter by board/subject/grade/year
-    - `/api/quizzes/` - Free quizzes publicly accessible, premium quizzes require authentication
-  - Authentication-required endpoints:
-    - `/api/formatted-papers/` - AI-formatted papers with JSON questions/memos (premium content)
-    - `/api/assignments/` - User-specific assignments
-    - `/api/auth/token/` - POST endpoint to obtain authentication tokens
-  - Comprehensive filtering: DjangoFilter integration for filtering by board, subject, grade, year
-  - Pagination enabled for all list endpoints
-  - CORS configured for mobile app origins
-  - API Testing Dashboard in admin panel with interactive endpoint testing, JSON response viewer
-  - Smart quiz access: Unauthenticated users only see free quizzes, authenticated users see all
-  - Full file URLs with proper media serving for PDFs and documents
-
-### October 22, 2025
-- **Bulk Upload System**: Content managers can efficiently upload folders of educational materials
-  - Added "Bulk Upload" menu item in content manager sidebar navigation
-  - Upload type selector: Past Papers, Quizzes, or Assignments
-  - Dynamic metadata form using Alpine.js shows different fields based on upload type:
-    - Past Papers: exam board, year, subject, grade, chapter (optional), section (optional)
-    - Quizzes: exam board, grade, subject, topic, premium/free status, Google Forms links (from .txt files)
-    - Assignments: subject, grade, topic
-  - Multiple file upload with drag-and-drop support and folder selection
-  - File validation: 10MB size limit, PDF/DOCX/TXT formats only
-  - Auto-title generation from filenames for all uploaded files
-  - Shared metadata applies to all files in the batch upload
-  - Upload results summary showing success/failure status for each file
-  - JSON response with detailed error messages and upload statistics
-
-- **AI Document Reformatting System**: Content managers can now AI-reformat uploaded exam papers
-  - Created FormattedPaper model with JSONField for questions/memo storage
-  - AI extraction service using GPT-4 for question extraction and memo generation
-  - PDF text extraction using PyPDF2 for exam paper analysis
-  - Questions stored as JSON with support for sub-questions, marks, diagrams/images
-  - Memo includes marking points, common mistakes, and model answers
-  - Review interface for editing AI-extracted content before publishing
-  - Processing status tracking (pending, processing, completed, failed)
-  - Formatted Papers management page with filtering by subject/grade/status
-  - Images referenced by description in JSON (extraction handled separately)
-  - Database uses indexed JSONField in SQLite for efficient question storage
-  - Added "AI Reformat" action button to Past Papers table
-
-- **Content Portal UI Update**: Sidebar redesigned to match teacher dashboard
-  - Changed from orange horizontal layout to gray-800 vertical sidebar (teacher style)
-  - Orange accent color on icon and profile avatar for brand distinction
-  - Added "Formatted Papers" navigation link with magic wand icon
-  - Consistent Portal Switcher section with proper hierarchy
-  - Improved visual consistency across all three portals
-
-- **Content Management Portal**: Built separate portal for content managers to upload educational materials
-  - New role: content_manager (in addition to admin and teacher)
-  - 3-way login routing: admin→/panel/, content_manager→/content/, teacher→/dashboard/
-  - Content dashboard with analytics: total papers, total quizzes, premium vs free breakdown
-  - Past paper upload: exam board, grade, subject, year, chapter, section, file upload
-  - Past paper management: search, filter by board/subject/grade, view all papers
-  - Quiz creation: manual builder with premium/free toggle
-  - Quiz management: filter by type/subject/grade, view all quizzes with Google Forms links
-  - Role-based access: admins can access all 3 portals, content managers can access content + teacher portals
-  - Custom @require_content_manager decorator for security
-  - Cross-portal navigation in sidebars for admins and content managers
-
-- **Admin Panel Implementation**: Created comprehensive admin interface for platform management
-  - Role-based login redirect (admins → admin dashboard, teachers → teacher dashboard)
-  - Admin dashboard with analytics: total users, revenue, subscription breakdown, recent activity
-  - User management: search, filter, change subscriptions, activate/deactivate accounts
-  - Subscription management: view active subscriptions, payment history, revenue by plan
-  - Custom @require_admin decorator ensures only staff/superusers can access admin views
-  - Admin interface uses purple/indigo theme to visually distinguish from teacher interface
-  - Quick actions for managing users: change plan, toggle status directly from user list
-  - Dedicated admin navigation sidebar separate from teacher navigation
-  - Added link to content portal for admins
-
-### October 22, 2025 (Earlier)
-- **Document Sharing Extended**: Enabled sharing for all 6 document types
-  - Share modal added to Classwork, Homework, Tests, and Exams pages
-  - All document types now support shareable links with teacher code
-  - Due dates and expiry dates work across all shared documents
-  - Shared tabs show view counts and status for each document type
-
-- **PayFast Signature Fix**: Resolved payment gateway signature error
-  - Fixed signature generation to use PayFast's required field ordering
-  - Added CHECKOUT_SIGNATURE_FIELD_ORDER constant for proper field sequence
-  - Implemented whitespace stripping and proper URL encoding
-  - Signature now matches PayFast's validation requirements
-
-- **Subscription System Overhaul**: Implemented subject-based resource allocation system
-  - Updated subscription tiers: Free (R0), Starter (R50), Growth (R100), Premium (R250)
-  - Subject limits per tier: 1/1/2/3 subjects respectively
-  - Lesson plan quotas: 2/10/20/unlimited per subject per month
-  - Created SubscribedSubject model for multi-subject support
-  - Added teacher_code generation for Google Forms integration
-  
-- **Subject Selection UI**: Built comprehensive subject management
-  - Subject selection during signup (1 subject for free tier)
-  - Subject management in account settings with dynamic tier-based limits
-  - Real-time validation and upgrade prompts using Alpine.js
-  
-- **Resource Filtering**: Implemented subject-based filtering across platform
-  - All resources (lesson plans, assignments, documents) filtered by user's subscribed subjects
-  - Validation prevents creating resources for non-subscribed subjects
-  - Only subscribed subjects shown in dropdowns and selection interfaces
-  
-- **Quota Enforcement**: Added per-subject AI generation limits
-  - Pre-generation checks validate quota before AI calls
-  - Per-subject usage tracking with JSONField storage
-  - Clear error messages with upgrade prompts when limits reached
-  - Treats 0 limit as unlimited for Premium tier
-  
-- **AI Model Differentiation**: Tier-based AI model selection
-  - Growth tier uses GPT-3.5-turbo (basic AI)
-  - Premium tier uses GPT-4 (advanced AI)
-  - Applied across all AI features (lesson plans, homework, questions)
-  
-- **Question Bank Models**: Created admin question management system
-  - PastPaper model with exam board, grade, subject, chapter, section hierarchy
-  - Quiz model with free/premium status and Google Forms integration
-  - QuizResponse model for tracking student performance
-
-### October 21, 2025
-- **Enhanced Login Experience**: Updated login to accept both username and email for authentication
-  - Smart detection of email vs username (checks for "@" symbol with fallback)
-  - Updated UI label to "Username or Email" with helpful placeholder text
-  - Improved error messaging for better UX without compromising security
-- **Improved Message System**: Enhanced Django messages framework display
-  - Auto-dismiss messages after 5 seconds
-  - Manual close buttons with smooth transitions
-  - Better visual styling with icons (check/exclamation/info)
-  - Prevents message accumulation in the UI
-- **Session Cleanup**: Cleared accumulated test messages from development
+This is a freemium educational technology platform for teachers and administrators to create, manage, and share educational content. It offers AI-powered content generation (lesson plans, assignments, questions), document management, and sharing functionalities. The platform operates on a freemium model with usage quotas and subscription tiers, aiming to empower educators with advanced tools.
 
 ## User Preferences
 
@@ -150,73 +11,62 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: Streamlit for the main application interface with Django templates for web views
-- **UI Framework**: Tailwind CSS for responsive design and styling
-- **JavaScript**: Alpine.js for interactive components and form handling
-- **Icons**: Font Awesome for consistent iconography
+- **Frameworks**: Streamlit (main application), Django templates (web views), Tailwind CSS (styling), Alpine.js (interactivity).
+- **Icons**: Font Awesome.
+- **UI/UX Decisions**: Consistent visual design across portals (Admin, Content, Teacher) with distinct color themes for role differentiation (e.g., purple/indigo for Admin, gray-800 sidebar with orange accents for Content/Teacher). Interactive modals and forms using Alpine.js.
 
 ### Backend Architecture
-- **Framework**: Django 5.0 with Python as the primary backend technology
-- **Application Structure**: Single Django app called 'core' containing all business logic
-- **Authentication**: Django's built-in authentication system with custom UserProfile model
-- **File Handling**: Django's default file storage for document uploads
-- **API Design**: Django views handling both web pages and AJAX endpoints for AI generation
+- **Framework**: Django 5.0 (Python).
+- **Application Structure**: Monolithic 'core' Django app.
+- **Authentication**: Django's built-in system with custom UserProfile; supports username or email login; token-based email verification.
+- **Role-Based Access Control**: `admin`, `content_manager`, `teacher` roles with dedicated portal routing and security decorators.
+- **Content Management**: Dedicated Content Portal for content managers to upload (bulk upload with dynamic metadata forms) and manage educational materials.
+- **AI Reformatting System**: Extracts and reformats content from PDFs using GPT-4, storing questions/memos in JSON format for review.
+- **REST API**: Django REST Framework for mobile app integration, providing public and authentication-required endpoints for content access with filtering and pagination.
+- **Feature Management**: Admin interface for managing exam boards, subjects, grades, and subscription plans (pricing, quotas, AI models).
+- **Communications System**: Platform-wide announcements (targeted, scheduled, dismissible) and email blast functionality.
 
 ### Data Storage Solutions
-- **Primary Database**: SQLite (development) with Django ORM
-- **Models Structure**:
-  - User management (UserProfile with subscription and teacher_code, UsageQuota with per-subject tracking)
-  - Subscription management (SubscribedSubject for multi-subject support, SubscriptionPlan with tier definitions)
-  - Educational metadata (Subject, Grade, ExamBoard)
-  - Content management (UploadedDocument, GeneratedAssignment)
-  - Question Bank (PastPaper, Quiz, QuizResponse with hierarchical organization)
-- **File Storage**: Local file system with organized directory structure for uploaded documents
-- **Quota Tracking**: JSONField-based per-subject quota storage in UsageQuota model
+- **Primary Database**: SQLite (development), designed for PostgreSQL compatibility.
+- **Models**: Comprehensive models for user profiles, subscriptions (including `SubscribedSubject` for multi-subject support), educational metadata (`Subject`, `Grade`, `ExamBoard`), content (`PastPaper`, `Quiz`, `FormattedPaper`, `Assignment`), and usage tracking (`UsageQuota` with JSONField for per-subject quotas).
+- **File Storage**: Local file system for uploaded documents, with organized directory structures.
 
 ### Authentication and Authorization
-- **User Types**: Teachers and Admins with role-based access control
-- **Email Verification**: Token-based email verification system for new accounts
-- **Session Management**: Django's built-in session framework
-- **Subscription Control**: Subject-based freemium model with four tiers
-  - Free (R0): 1 subject, 2 lesson plans/month, no AI
-  - Starter (R50): 1 subject, 10 lesson plans/month, no AI
-  - Growth (R100): 2 subjects, 20 lesson plans/subject/month, GPT-3.5 AI
-  - Premium (R250): 3 subjects, unlimited lesson plans, GPT-4 AI
-- **Teacher Codes**: Unique 6-character codes for Google Forms integration and analytics
+- **User Types**: Teachers and Admins, with Content Managers as an additional role.
+- **Subscription Model**: Freemium with four tiers (Free, Starter, Growth, Premium) dictating subject limits, lesson plan quotas, and AI model access.
+  - **Free (R0)**: 1 subject, 2 lesson plans/month, no AI.
+  - **Starter (R50)**: 1 subject, 10 lesson plans/month, no AI.
+  - **Growth (R100)**: 2 subjects, 20 lesson plans/subject/month, GPT-3.5 AI.
+  - **Premium (R250)**: 3 subjects, unlimited lesson plans, GPT-4 AI.
+- **Quota Enforcement**: Per-subject, monthly AI generation limits with upgrade prompts.
+- **Teacher Codes**: Unique 6-character codes for Google Forms integration.
 
 ### AI Integration Architecture
-- **Service Layer**: Dedicated OpenAI service module (core/openai_service.py)
-- **Model Selection**: Tier-based AI model differentiation
-  - Growth tier: GPT-3.5-turbo (basic AI with quotas)
-  - Premium tier: GPT-4 (advanced AI, unlimited)
-  - Free/Starter tiers: No AI access
-- **Content Types**: Lesson plans, homework assignments, and questions in multiple formats (MCQ, Structured, Free Response, Cambridge-style)
-- **Response Format**: Structured JSON responses for consistent data handling
-- **Quota Management**: Per-subject monthly limits with automatic enforcement
+- **Service Layer**: `core/openai_service.py` for all AI interactions.
+- **Model Selection**: Tier-based (GPT-3.5-turbo for Growth, GPT-4 for Premium).
+- **Content Generation**: Supports lesson plans, homework, and questions (MCQ, Structured, Free Response, Cambridge-style).
+- **Response Format**: Structured JSON for AI-generated content.
 
 ## External Dependencies
 
 ### Third-Party Services
-- **OpenAI API**: Tier-based AI integration (GPT-3.5-turbo for Growth, GPT-4 for Premium)
-- **Email Service**: Django's email backend for user verification and notifications
-- **PayFast** (pending): Payment gateway integration for R50/R100/R250 subscriptions
+- **OpenAI API**: For AI content generation (GPT-3.5-turbo, GPT-4).
+- **PayFast**: Payment gateway for subscriptions.
+- **Google Forms**: Integration via teacher codes for quizzes.
 
 ### Frontend Libraries
-- **Tailwind CSS**: Utility-first CSS framework for styling
-- **Alpine.js**: Lightweight JavaScript framework for interactivity
-- **Font Awesome**: Icon library for UI elements
+- **Tailwind CSS**: For styling.
+- **Alpine.js**: For interactive UI elements.
+- **Font Awesome**: For iconography.
 
 ### Python Packages
-- **Django 5.0**: Web framework and ORM
-- **Streamlit**: Alternative interface framework
-- **OpenAI Python SDK**: Official OpenAI API client library
+- **Django**: Web framework.
+- **Streamlit**: Alternative interface framework.
+- **OpenAI Python SDK**: For OpenAI API communication.
+- **Django REST Framework**: For API development.
+- **PyPDF2**: For PDF text extraction.
 
 ### File Format Support
-- **Document Formats**: PDF and DOCX for uploads and downloads
-- **Image Support**: Standard web formats for document previews
-- **Export Formats**: JSON for AI-generated content structure
-
-### Development Environment
-- **Hosting Platform**: Replit with specific CSRF and domain configurations
-- **Database**: SQLite for development (designed to be PostgreSQL-compatible for production)
-- **Static Files**: Django's static file handling for CSS, JavaScript, and media assets
+- **Document Formats**: PDF, DOCX, TXT (for bulk uploads).
+- **Image Support**: Standard web formats.
+- **Export Formats**: JSON for AI-generated content.

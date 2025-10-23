@@ -2219,11 +2219,17 @@ def admin_announcements(request):
                 is_active=True
             )
             
+            # Set start time if provided
+            starts_at = request.POST.get('starts_at')
+            if starts_at:
+                announcement.starts_at = starts_at
+            
             # Set expiry if provided
             expires_at = request.POST.get('expires_at')
             if expires_at:
                 announcement.expires_at = expires_at
-                announcement.save()
+            
+            announcement.save()
             
             messages.success(request, 'Announcement created successfully.')
         
@@ -2236,11 +2242,14 @@ def admin_announcements(request):
             announcement.priority = request.POST.get('priority')
             announcement.display_type = request.POST.get('display_type')
             
+            # Only update schedule if provided (preserve existing if empty)
+            starts_at = request.POST.get('starts_at')
+            if starts_at:
+                announcement.starts_at = starts_at
+            
             expires_at = request.POST.get('expires_at')
             if expires_at:
                 announcement.expires_at = expires_at
-            else:
-                announcement.expires_at = None
             
             announcement.save()
             messages.success(request, 'Announcement updated successfully.')

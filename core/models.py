@@ -614,6 +614,7 @@ class Announcement(models.Model):
     
     # Scheduling
     is_active = models.BooleanField(default=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     
     # Tracking
