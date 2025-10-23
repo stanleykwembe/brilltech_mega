@@ -113,61 +113,22 @@
     
     <!-- My Uploads Tab -->
     <div x-show="activeTab === 'my_uploads'" x-cloak class="mt-6">
-        <!-- Upload Form -->
-        <div class="bg-white shadow rounded-lg p-6 mb-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Upload {{ document_type_display }}</h3>
-            <form method="POST" action="{% url 'upload_document' %}" enctype="multipart/form-data" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="document_type" value="{{ document_type }}">
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                           placeholder="Enter document title">
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                        <select name="subject" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select subject...</option>
-                            {% for subject in subscribed_subjects %}
-                            <option value="{{ subject.subject.id }}">{{ subject.subject.name }}</option>
-                            {% endfor %}
-                        </select>
+        <!-- Upload Button -->
+        <div class="mb-6">
+            <button onclick="openUploadModal()" class="modern-card p-6 w-full text-left hover:shadow-xl transition-all duration-300 group cursor-pointer border-2 border-dashed border-indigo-200 hover:border-indigo-400">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="icon-gradient w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-cloud-upload-alt text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">Upload New {{ document_type_display }}</h3>
+                            <p class="text-sm text-gray-500 mt-1">Click to upload documents from your computer</p>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
-                        <select name="grade" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select grade...</option>
-                            {% for grade in grades %}
-                            <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Exam Board</label>
-                        <select name="board" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select board...</option>
-                            {% for board in boards %}
-                            <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <i class="fas fa-arrow-right text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-2 transition-all duration-300"></i>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
-                    <input type="file" name="file" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                    <p class="mt-1 text-xs text-gray-500">Supported formats: PDF, DOCX</p>
-                </div>
-                
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition duration-150">
-                    <i class="fas fa-upload mr-2"></i>Upload {{ document_type_display }}
-                </button>
-            </form>
+            </button>
         </div>
         
         <!-- My Uploaded Documents -->
@@ -280,7 +241,101 @@ function openShareModal(assignmentType, assignmentId, assignmentTitle) {
 function closeShareModal() {
     document.getElementById('shareModal').classList.add('hidden');
 }
+
+function openUploadModal() {
+    document.getElementById('uploadModal').classList.remove('hidden');
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').classList.add('hidden');
+}
 </script>
+
+<!-- Upload Document Modal -->
+<div id="uploadModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeUploadModal()"></div>
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <form method="POST" action="{% url 'upload_document' %}" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                <input type="hidden" name="document_type" value="{{ document_type }}">
+                
+                <div class="bg-white px-6 pt-6 pb-4">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">Upload {{ document_type_display }}</h3>
+                        <p class="mt-1 text-sm text-gray-600">Fill in the details below to upload your document</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Document Title *</label>
+                            <input type="text" name="title" required 
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                   placeholder="Enter a descriptive title">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                                <select name="subject" required 
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                    <option value="">Select subject...</option>
+                                    {% for subject in subscribed_subjects %}
+                                    <option value="{{ subject.subject.id }}">{{ subject.subject.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Grade *</label>
+                                <select name="grade" required 
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                    <option value="">Select grade...</option>
+                                    {% for grade in grades %}
+                                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board *</label>
+                                <select name="board" required 
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                    <option value="">Select board...</option>
+                                    {% for board in boards %}
+                                    <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Choose File *</label>
+                            <input type="file" name="file" required 
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p class="mt-2 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Supported formats: PDF, DOCX (Max 10MB)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse gap-3">
+                    <button type="submit" 
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-5 py-2.5 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-all">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i>
+                        Upload Document
+                    </button>
+                    <button type="button" onclick="closeUploadModal()" 
+                            class="mt-3 w-full inline-flex justify-center items-center rounded-lg border border-gray-300 shadow-sm px-5 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Share Document Modal -->
 <div id="shareModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
