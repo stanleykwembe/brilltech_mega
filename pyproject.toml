@@ -4,7 +4,7 @@ description = ""
 name = "django-template"
 version = "0.1.0"
 [tool.poetry.dependencies]
-Django = "^5.0"
+Django = "5.0.2"
 python = "^3.10"
 streamlit = "^1.49.1"
 psycopg2-binary = "^2.9.10"
@@ -16,6 +16,9 @@ python-dotenv = "^1.1.1"
 pillow = "^11.3.0"
 requests = "^2.32.5"
 openai = "^1.108.1"
+djangorestframework = "3.14.0"
+django-cors-headers = "4.3.1"
+django-filter = "23.5"
 [tool.poetry.dev-dependencies]
 
 [tool.pyright]
