@@ -2027,6 +2027,8 @@ def admin_api_test(request):
 def admin_features(request):
     """Feature Management dashboard"""
     
+    from .models import SubscriptionPlan
+    
     # Get counts for each feature type
     exam_boards_count = ExamBoard.objects.count()
     subjects_count = Subject.objects.count()
@@ -2184,16 +2186,16 @@ def admin_communications(request):
     from .models import Announcement, EmailBlast
     
     # Get counts
-    active_announcements = Announcement.objects.filter(is_active=True).count()
-    total_announcements = Announcement.objects.count()
-    sent_emails = EmailBlast.objects.filter(status='sent').count()
-    draft_emails = EmailBlast.objects.filter(status='draft').count()
+    active_announcements_count = Announcement.objects.filter(is_active=True).count()
+    total_announcements_count = Announcement.objects.count()
+    sent_emails_count = EmailBlast.objects.filter(status='sent').count()
+    draft_emails_count = EmailBlast.objects.filter(status='draft').count()
     
     context = {
-        'active_announcements': active_announcements,
-        'total_announcements': total_announcements,
-        'sent_emails': sent_emails,
-        'draft_emails': draft_emails,
+        'active_announcements_count': active_announcements_count,
+        'total_announcements_count': total_announcements_count,
+        'sent_emails_count': sent_emails_count,
+        'draft_emails_count': draft_emails_count,
     }
     
     return render(request, 'core/admin/communications.html', context)
