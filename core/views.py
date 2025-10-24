@@ -2935,3 +2935,723 @@ def content_bulk_upload(request):
     }
     
     return render(request, 'core/content/bulk_upload.html', context)
+
+
+# ===== STUDENT CONTENT MANAGEMENT VIEWS =====
+
+@require_content_manager
+def create_interactive_question(request):
+    """Create new interactive question"""
+    from .models import InteractiveQuestion
+    import json
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        topic = request.POST.get('topic')
+        question_type = request.POST.get('question_type')
+        difficulty = request.POST.get('difficulty')
+        question_text = request.POST.get('question_text')
+        explanation = request.POST.get('explanation', '')
+        points = request.POST.get('points', 1)
+        question_image = request.FILES.get('question_image')
+        
+        # Validation
+        if not all([subject_id, exam_board_id, grade_id, topic, question_type, difficulty, question_text]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('create_interactive_question')
+        
+        # Get correct answer and options based on question type
+        correct_answer = ''
+        options = None
+        matching_pairs = None
+        
+        if question_type == 'mcq':
+            # Get options and correct answer
+            option_count = int(request.POST.get('option_count', 4))
+            options = []
+            for i in range(option_count):
+                option_text = request.POST.get(f'option_{i}')
+                if option_text:
+                    options.append(option_text)
+            correct_answer = request.POST.get('correct_answer_mcq', '')
+            
+        elif question_type == 'true_false':
+            correct_answer = request.POST.get('correct_answer_tf', '')
+            
+        elif question_type == 'fill_blank':
+            correct_answer = request.POST.get('correct_answer_fill', '')
+            
+        elif question_type == 'matching':
+            # Get matching pairs
+            pair_count = int(request.POST.get('pair_count', 4))
+            matching_pairs = []
+            for i in range(pair_count):
+                left = request.POST.get(f'pair_left_{i}')
+                right = request.POST.get(f'pair_right_{i}')
+                if left and right:
+                    matching_pairs.append({'left': left, 'right': right})
+            correct_answer = json.dumps(matching_pairs)
+            
+        elif question_type == 'essay':
+            correct_answer = ''  # No correct answer for essay questions
+        
+        # Create question
+        question = InteractiveQuestion.objects.create(
+            subject_id=subject_id,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id,
+            topic=topic,
+            question_type=question_type,
+            difficulty=difficulty,
+            question_text=question_text,
+            question_image=question_image,
+            options=options,
+            correct_answer=correct_answer,
+            matching_pairs=matching_pairs,
+            explanation=explanation,
+            points=int(points),
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Question created successfully!')
+        return redirect('manage_interactive_questions')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/interactive_question_form.html', context)
+
+
+@require_content_manager
+def manage_interactive_questions(request):
+    """List and manage interactive questions"""
+    from .models import InteractiveQuestion
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    question_type_filter = request.GET.get('question_type', '')
+    difficulty_filter = request.GET.get('difficulty', '')
+    search_query = request.GET.get('search', '')
+    
+    # Filter questions
+    questions = InteractiveQuestion.objects.all().select_related('subject', 'grade', 'exam_board')
+    
+    if subject_filter:
+        questions = questions.filter(subject_id=subject_filter)
+    if grade_filter:
+        questions = questions.filter(grade_id=grade_filter)
+    if question_type_filter:
+        questions = questions.filter(question_type=question_type_filter)
+    if difficulty_filter:
+        questions = questions.filter(difficulty=difficulty_filter)
+    if search_query:
+        questions = questions.filter(
+            Q(question_text__icontains=search_query) |
+            Q(topic__icontains=search_query)
+        )
+    
+    questions = questions.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'questions': questions,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'question_type_filter': question_type_filter,
+        'difficulty_filter': difficulty_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/content/interactive_questions_list.html', context)
+
+
+@require_content_manager
+def edit_interactive_question(request, question_id):
+    """Edit interactive question"""
+    from .models import InteractiveQuestion
+    import json
+    
+    question = get_object_or_404(InteractiveQuestion, id=question_id)
+    
+    if request.method == 'POST':
+        question.subject_id = request.POST.get('subject')
+        question.exam_board_id = request.POST.get('exam_board')
+        question.grade_id = request.POST.get('grade')
+        question.topic = request.POST.get('topic')
+        question.question_type = request.POST.get('question_type')
+        question.difficulty = request.POST.get('difficulty')
+        question.question_text = request.POST.get('question_text')
+        question.explanation = request.POST.get('explanation', '')
+        question.points = int(request.POST.get('points', 1))
+        
+        if request.FILES.get('question_image'):
+            question.question_image = request.FILES.get('question_image')
+        
+        # Update correct answer and options based on question type
+        if question.question_type == 'mcq':
+            option_count = int(request.POST.get('option_count', 4))
+            options = []
+            for i in range(option_count):
+                option_text = request.POST.get(f'option_{i}')
+                if option_text:
+                    options.append(option_text)
+            question.options = options
+            question.correct_answer = request.POST.get('correct_answer_mcq', '')
+            
+        elif question.question_type == 'true_false':
+            question.correct_answer = request.POST.get('correct_answer_tf', '')
+            
+        elif question.question_type == 'fill_blank':
+            question.correct_answer = request.POST.get('correct_answer_fill', '')
+            
+        elif question.question_type == 'matching':
+            pair_count = int(request.POST.get('pair_count', 4))
+            matching_pairs = []
+            for i in range(pair_count):
+                left = request.POST.get(f'pair_left_{i}')
+                right = request.POST.get(f'pair_right_{i}')
+                if left and right:
+                    matching_pairs.append({'left': left, 'right': right})
+            question.matching_pairs = matching_pairs
+            question.correct_answer = json.dumps(matching_pairs)
+        
+        question.save()
+        messages.success(request, 'Question updated successfully!')
+        return redirect('manage_interactive_questions')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'question': question,
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+        'editing': True,
+    }
+    
+    return render(request, 'core/content/interactive_question_form.html', context)
+
+
+@require_content_manager
+def delete_interactive_question(request, question_id):
+    """Delete interactive question"""
+    from .models import InteractiveQuestion
+    
+    if request.method == 'POST':
+        question = get_object_or_404(InteractiveQuestion, id=question_id)
+        question.delete()
+        messages.success(request, 'Question deleted successfully!')
+    
+    return redirect('manage_interactive_questions')
+
+
+@require_content_manager
+def create_student_quiz(request):
+    """Create new student quiz with multi-step builder"""
+    from .models import StudentQuiz, InteractiveQuestion
+    import json
+    
+    if request.method == 'POST':
+        # Check which step we're on
+        step = request.POST.get('step', '1')
+        
+        if step == 'final':
+            # Final step - create quiz
+            title = request.POST.get('title')
+            subject_id = request.POST.get('subject')
+            exam_board_id = request.POST.get('exam_board')
+            grade_id = request.POST.get('grade')
+            topic = request.POST.get('topic')
+            difficulty = request.POST.get('difficulty')
+            length = int(request.POST.get('length', 10))
+            is_pro_content = request.POST.get('is_pro_content') == 'on'
+            selected_questions = json.loads(request.POST.get('selected_questions', '[]'))
+            
+            # Validation
+            if not all([title, subject_id, exam_board_id, grade_id, topic, difficulty]):
+                messages.error(request, 'Please fill in all required fields.')
+                return redirect('create_student_quiz')
+            
+            # Create quiz
+            quiz = StudentQuiz.objects.create(
+                title=title,
+                subject_id=subject_id,
+                exam_board_id=exam_board_id,
+                grade_id=grade_id,
+                topic=topic,
+                difficulty=difficulty,
+                length=length,
+                is_pro_content=is_pro_content,
+                created_by=request.user
+            )
+            
+            # Add questions to quiz
+            for question_id in selected_questions:
+                try:
+                    question = InteractiveQuestion.objects.get(id=question_id)
+                    quiz.questions.add(question)
+                except InteractiveQuestion.DoesNotExist:
+                    pass
+            
+            messages.success(request, f'Quiz "{title}" created successfully with {len(selected_questions)} questions!')
+            return redirect('manage_student_quizzes')
+    
+    # GET request - show multi-step form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/student_quiz_form.html', context)
+
+
+@require_content_manager
+def manage_student_quizzes(request):
+    """List and manage student quizzes"""
+    from .models import StudentQuiz
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    status_filter = request.GET.get('status', '')  # free or pro
+    search_query = request.GET.get('search', '')
+    
+    # Filter quizzes
+    quizzes = StudentQuiz.objects.all().select_related('subject', 'grade', 'exam_board').prefetch_related('questions')
+    
+    if subject_filter:
+        quizzes = quizzes.filter(subject_id=subject_filter)
+    if grade_filter:
+        quizzes = quizzes.filter(grade_id=grade_filter)
+    if status_filter == 'free':
+        quizzes = quizzes.filter(is_pro_content=False)
+    elif status_filter == 'pro':
+        quizzes = quizzes.filter(is_pro_content=True)
+    if search_query:
+        quizzes = quizzes.filter(
+            Q(title__icontains=search_query) |
+            Q(topic__icontains=search_query)
+        )
+    
+    quizzes = quizzes.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'quizzes': quizzes,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/content/student_quizzes_list.html', context)
+
+
+@require_content_manager
+def delete_student_quiz(request, quiz_id):
+    """Delete student quiz"""
+    from .models import StudentQuiz
+    
+    if request.method == 'POST':
+        quiz = get_object_or_404(StudentQuiz, id=quiz_id)
+        quiz.delete()
+        messages.success(request, 'Quiz deleted successfully!')
+    
+    return redirect('manage_student_quizzes')
+
+
+@require_content_manager
+def create_note(request):
+    """Create new study note"""
+    from .models import Note
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        topic = request.POST.get('topic')
+        
+        full_version_file = request.FILES.get('full_version')
+        summary_version_file = request.FILES.get('summary_version')
+        full_version_text = request.POST.get('full_version_text', '')
+        summary_version_text = request.POST.get('summary_version_text', '')
+        
+        # Validation
+        if not all([title, subject_id, exam_board_id, grade_id, topic]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('create_note')
+        
+        # Create note
+        note = Note.objects.create(
+            title=title,
+            subject_id=subject_id,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id,
+            topic=topic,
+            full_version=full_version_file,
+            summary_version=summary_version_file,
+            full_version_text=full_version_text,
+            summary_version_text=summary_version_text,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Note "{title}" created successfully!')
+        return redirect('manage_notes')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/note_form.html', context)
+
+
+@require_content_manager
+def manage_notes(request):
+    """List and manage study notes"""
+    from .models import Note
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    search_query = request.GET.get('search', '')
+    
+    # Filter notes
+    notes = Note.objects.all().select_related('subject', 'grade', 'exam_board')
+    
+    if subject_filter:
+        notes = notes.filter(subject_id=subject_filter)
+    if grade_filter:
+        notes = notes.filter(grade_id=grade_filter)
+    if search_query:
+        notes = notes.filter(
+            Q(title__icontains=search_query) |
+            Q(topic__icontains=search_query)
+        )
+    
+    notes = notes.order_by('-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'notes': notes,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/content/notes_list.html', context)
+
+
+@require_content_manager
+def delete_note(request, note_id):
+    """Delete study note"""
+    from .models import Note
+    
+    if request.method == 'POST':
+        note = get_object_or_404(Note, id=note_id)
+        note.delete()
+        messages.success(request, 'Note deleted successfully!')
+    
+    return redirect('manage_notes')
+
+
+@require_content_manager
+def create_flashcard(request):
+    """Create new flashcard"""
+    from .models import Flashcard
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        topic = request.POST.get('topic')
+        front_text = request.POST.get('front_text')
+        back_text = request.POST.get('back_text')
+        image_front = request.FILES.get('image_front')
+        image_back = request.FILES.get('image_back')
+        
+        # Validation
+        if not all([subject_id, exam_board_id, grade_id, topic, front_text, back_text]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('create_flashcard')
+        
+        # Create flashcard
+        flashcard = Flashcard.objects.create(
+            subject_id=subject_id,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id,
+            topic=topic,
+            front_text=front_text,
+            back_text=back_text,
+            image_front=image_front,
+            image_back=image_back,
+            created_by=request.user
+        )
+        
+        messages.success(request, 'Flashcard created successfully!')
+        return redirect('manage_flashcards')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/flashcard_form.html', context)
+
+
+@require_content_manager
+def manage_flashcards(request):
+    """List and manage flashcards"""
+    from .models import Flashcard
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    topic_filter = request.GET.get('topic', '')
+    
+    # Filter flashcards
+    flashcards = Flashcard.objects.all().select_related('subject', 'grade', 'exam_board')
+    
+    if subject_filter:
+        flashcards = flashcards.filter(subject_id=subject_filter)
+    if grade_filter:
+        flashcards = flashcards.filter(grade_id=grade_filter)
+    if topic_filter:
+        flashcards = flashcards.filter(topic__icontains=topic_filter)
+    
+    flashcards = flashcards.order_by('subject', 'topic', '-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'flashcards': flashcards,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'topic_filter': topic_filter,
+    }
+    
+    return render(request, 'core/content/flashcards_list.html', context)
+
+
+@require_content_manager
+def delete_flashcard(request, flashcard_id):
+    """Delete flashcard"""
+    from .models import Flashcard
+    
+    if request.method == 'POST':
+        flashcard = get_object_or_404(Flashcard, id=flashcard_id)
+        flashcard.delete()
+        messages.success(request, 'Flashcard deleted successfully!')
+    
+    return redirect('manage_flashcards')
+
+
+@require_content_manager
+def upload_exam_paper(request):
+    """Upload new exam paper"""
+    from .models import ExamPaper, InteractiveQuestion
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        year = request.POST.get('year')
+        paper_file = request.FILES.get('paper_file')
+        marking_scheme = request.FILES.get('marking_scheme')
+        is_pro_content = request.POST.get('is_pro_content') == 'on'
+        interactive_questions = request.POST.getlist('interactive_questions')
+        
+        # Validation
+        if not all([title, subject_id, exam_board_id, grade_id, paper_file]):
+            messages.error(request, 'Please fill in all required fields and upload the paper file.')
+            return redirect('upload_exam_paper')
+        
+        # Create exam paper
+        exam_paper = ExamPaper.objects.create(
+            title=title,
+            subject_id=subject_id,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id,
+            year=int(year) if year else None,
+            paper_file=paper_file,
+            marking_scheme=marking_scheme,
+            has_interactive_version=bool(interactive_questions),
+            is_pro_content=is_pro_content,
+            created_by=request.user
+        )
+        
+        # Link interactive questions if provided
+        if interactive_questions:
+            for question_id in interactive_questions:
+                try:
+                    question = InteractiveQuestion.objects.get(id=question_id)
+                    exam_paper.interactive_questions.add(question)
+                except InteractiveQuestion.DoesNotExist:
+                    pass
+        
+        messages.success(request, f'Exam paper "{title}" uploaded successfully!')
+        return redirect('manage_exam_papers')
+    
+    # GET request - show form
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/exam_paper_form.html', context)
+
+
+@require_content_manager
+def manage_exam_papers(request):
+    """List and manage exam papers"""
+    from .models import ExamPaper
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject', '')
+    grade_filter = request.GET.get('grade', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    
+    # Filter exam papers
+    papers = ExamPaper.objects.all().select_related('subject', 'grade', 'exam_board')
+    
+    if subject_filter:
+        papers = papers.filter(subject_id=subject_filter)
+    if grade_filter:
+        papers = papers.filter(grade_id=grade_filter)
+    if status_filter == 'free':
+        papers = papers.filter(is_pro_content=False)
+    elif status_filter == 'pro':
+        papers = papers.filter(is_pro_content=True)
+    if search_query:
+        papers = papers.filter(title__icontains=search_query)
+    
+    papers = papers.order_by('-year', '-created_at')
+    
+    # Get filters for dropdowns
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    
+    context = {
+        'papers': papers,
+        'subjects': subjects,
+        'grades': grades,
+        'subject_filter': subject_filter,
+        'grade_filter': grade_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/content/exam_papers_list.html', context)
+
+
+@require_content_manager
+def delete_exam_paper(request, paper_id):
+    """Delete exam paper"""
+    from .models import ExamPaper
+    
+    if request.method == 'POST':
+        paper = get_object_or_404(ExamPaper, id=paper_id)
+        paper.delete()
+        messages.success(request, 'Exam paper deleted successfully!')
+    
+    return redirect('manage_exam_papers')
+
+
+@require_content_manager
+def get_questions_ajax(request):
+    """AJAX endpoint to get filtered questions for quiz builder"""
+    from .models import InteractiveQuestion
+    import json
+    
+    subject_id = request.GET.get('subject')
+    grade_id = request.GET.get('grade')
+    topic = request.GET.get('topic')
+    difficulty = request.GET.get('difficulty')
+    question_type = request.GET.get('question_type')
+    
+    questions = InteractiveQuestion.objects.all()
+    
+    if subject_id:
+        questions = questions.filter(subject_id=subject_id)
+    if grade_id:
+        questions = questions.filter(grade_id=grade_id)
+    if topic:
+        questions = questions.filter(topic__icontains=topic)
+    if difficulty:
+        questions = questions.filter(difficulty=difficulty)
+    if question_type:
+        questions = questions.filter(question_type=question_type)
+    
+    questions = questions.select_related('subject', 'grade').order_by('-created_at')[:50]
+    
+    # Serialize questions
+    questions_data = []
+    for q in questions:
+        questions_data.append({
+            'id': q.id,
+            'question_text': q.question_text[:100],
+            'question_type': q.get_question_type_display(),
+            'difficulty': q.get_difficulty_display(),
+            'topic': q.topic,
+            'points': q.points,
+        })
+    
+    return JsonResponse({'questions': questions_data})

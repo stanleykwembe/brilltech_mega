@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz History - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <header class="bg-white shadow-sm border-b-4 border-emerald-500">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900">EduTech</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'student_dashboard' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-home mr-1"></i> Dashboard
+                        </a>
+                        <a href="{% url 'student_quizzes_list' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-brain mr-1"></i> Browse Quizzes
+                        </a>
+                        <a href="{% url 'student_logout' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-history text-emerald-500 mr-2"></i>
+                    Quiz History
+                </h2>
+                <p class="text-gray-600">View all your past quiz attempts and track your progress</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-filter mr-2 text-emerald-500"></i>
+                    Filter History
+                </h3>
+                <form method="get" class="flex items-end space-x-4">
+                    <div class="flex-1">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                        <select name="subject" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none">
+                            <option value="">All Subjects</option>
+                            {% for subject in student_subjects %}
+                                <option value="{{ subject.subject_id }}" {% if selected_subject == subject.subject_id|stringformat:"s" %}selected{% endif %}>
+                                    {{ subject.subject__name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="px-6 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
+                        <i class="fas fa-search mr-2"></i> Filter
+                    </button>
+                </form>
+            </div>
+
+            {% if attempts %}
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Quiz
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Subject
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Score
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Performance
+                                </th>
+                                <th class="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for attempt in attempts %}
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4">
+                                    <div class="font-semibold text-gray-900">{{ attempt.quiz.title }}</div>
+                                    <div class="text-sm text-gray-600">{{ attempt.quiz.topic }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ attempt.quiz.subject.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ attempt.quiz.exam_board.abbreviation }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ attempt.completed_at|date:"M d, Y" }}</div>
+                                    <div class="text-xs text-gray-500">{{ attempt.completed_at|time:"g:i A" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-gray-900">{{ attempt.percentage|floatformat:0 }}%</div>
+                                    <div class="text-xs text-gray-500">{{ attempt.score }} points</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if attempt.percentage >= 80 %}
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        <i class="fas fa-medal mr-1"></i> Excellent
+                                    </span>
+                                    {% elif attempt.percentage >= 60 %}
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        <i class="fas fa-thumbs-up mr-1"></i> Good
+                                    </span>
+                                    {% elif attempt.percentage >= 40 %}
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-check mr-1"></i> Fair
+                                    </span>
+                                    {% else %}
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        <i class="fas fa-book mr-1"></i> Needs Review
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'student_quiz_results' attempt.id %}" class="text-emerald-600 hover:text-emerald-900 mr-3">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                    <a href="{% url 'student_quiz_start' attempt.quiz.id %}" class="text-blue-600 hover:text-blue-900">
+                                        <i class="fas fa-redo mr-1"></i> Retry
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line mr-2 text-emerald-500"></i>
+                    Overall Statistics
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4 text-center border-2 border-emerald-200">
+                        <div class="text-3xl font-bold text-emerald-600 mb-1">{{ attempts.count }}</div>
+                        <div class="text-sm text-gray-600">Total Attempts</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center border-2 border-blue-200">
+                        {% with avg=attempts|length %}
+                        {% if avg > 0 %}
+                        <div class="text-3xl font-bold text-blue-600 mb-1">
+                            {% widthratio attempts.0.percentage 1 1 %}%
+                        </div>
+                        {% else %}
+                        <div class="text-3xl font-bold text-blue-600 mb-1">0%</div>
+                        {% endif %}
+                        {% endwith %}
+                        <div class="text-sm text-gray-600">Average Score</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 text-center border-2 border-purple-200">
+                        {% with highest=attempts.first %}
+                        <div class="text-3xl font-bold text-purple-600 mb-1">
+                            {% if highest %}{{ highest.percentage|floatformat:0 }}%{% else %}0%{% endif %}
+                        </div>
+                        {% endwith %}
+                        <div class="text-sm text-gray-600">Highest Score</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 text-center border-2 border-orange-200">
+                        {% with passed=attempts|length %}
+                        <div class="text-3xl font-bold text-orange-600 mb-1">
+                            {{ passed }}
+                        </div>
+                        {% endwith %}
+                        <div class="text-sm text-gray-600">Quizzes Passed (70%+)</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">No Quiz History Yet</h3>
+                <p class="text-gray-600 mb-6">You haven't completed any quizzes yet. Start practicing to see your progress here!</p>
+                <a href="{% url 'student_quizzes_list' %}" class="inline-block px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-lg hover:shadow-lg transition">
+                    <i class="fas fa-brain mr-2"></i> Browse Quizzes
+                </a>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

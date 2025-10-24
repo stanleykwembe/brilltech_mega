@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results - {{ quiz.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <header class="bg-white shadow-sm border-b-4 border-emerald-500">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900">EduTech</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'student_quizzes_list' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-list mr-1"></i> All Quizzes
+                        </a>
+                        <a href="{% url 'student_quiz_history' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-history mr-1"></i> History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+                <div class="p-8 text-center" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                    <i class="fas fa-trophy text-6xl text-white mb-4"></i>
+                    <h2 class="text-3xl font-bold text-white mb-2">Quiz Complete!</h2>
+                    <p class="text-emerald-100 text-lg">{{ quiz.title }}</p>
+                </div>
+
+                <div class="p-8">
+                    <div class="flex items-center justify-center mb-8">
+                        <div class="relative">
+                            <svg class="transform -rotate-90" width="200" height="200">
+                                <circle cx="100" cy="100" r="90" stroke="#e5e7eb" stroke-width="12" fill="none"/>
+                                <circle cx="100" cy="100" r="90" 
+                                    stroke="{% if attempt.percentage >= 80 %}#10b981{% elif attempt.percentage >= 60 %}#3b82f6{% elif attempt.percentage >= 40 %}#f59e0b{% else %}#ef4444{% endif %}" 
+                                    stroke-width="12" 
+                                    fill="none" 
+                                    stroke-dasharray="565.48" 
+                                    stroke-dashoffset="{{ 565.48|add:attempt.percentage|floatformat:0|slice:':-2' }}"
+                                    class="transition-all duration-1000"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                <div class="text-5xl font-bold {% if attempt.percentage >= 80 %}text-green-600{% elif attempt.percentage >= 60 %}text-blue-600{% elif attempt.percentage >= 40 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ attempt.percentage|floatformat:0 }}%
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">Your Score</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-emerald-50 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-emerald-600 mb-1">{{ attempt.score }}</div>
+                            <div class="text-sm text-gray-600">Points Earned</div>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-blue-600 mb-1">{{ question_results|length }}</div>
+                            <div class="text-sm text-gray-600">Total Questions</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 text-center">
+                            {% with correct_count=question_results|length|add:attempt.percentage|floatformat:0|slice:':-2' %}
+                            <div class="text-3xl font-bold text-purple-600 mb-1">
+                                {% widthratio attempt.percentage 100 question_results|length %}
+                            </div>
+                            {% endwith %}
+                            <div class="text-sm text-gray-600">Correct Answers</div>
+                        </div>
+                    </div>
+
+                    {% if attempt.percentage >= 80 %}
+                    <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-8 text-center">
+                        <i class="fas fa-medal text-4xl text-green-600 mb-3"></i>
+                        <h3 class="text-xl font-bold text-green-900 mb-2">Excellent Work!</h3>
+                        <p class="text-green-700">You've demonstrated strong understanding of this topic. Keep up the great work!</p>
+                    </div>
+                    {% elif attempt.percentage >= 60 %}
+                    <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 mb-8 text-center">
+                        <i class="fas fa-thumbs-up text-4xl text-blue-600 mb-3"></i>
+                        <h3 class="text-xl font-bold text-blue-900 mb-2">Good Job!</h3>
+                        <p class="text-blue-700">You're on the right track. Review the explanations below to strengthen your understanding.</p>
+                    </div>
+                    {% else %}
+                    <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8 text-center">
+                        <i class="fas fa-book-reader text-4xl text-amber-600 mb-3"></i>
+                        <h3 class="text-xl font-bold text-amber-900 mb-2">Keep Learning!</h3>
+                        <p class="text-amber-700">Don't give up! Review the material and try again. Practice makes perfect!</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-center justify-center space-x-4 mb-8">
+                        <a href="{% url 'student_quiz_start' quiz.id %}" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-lg hover:shadow-lg transition">
+                            <i class="fas fa-redo mr-2"></i> Retry Quiz
+                        </a>
+                        <a href="{% url 'student_quizzes_list' %}" class="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                            <i class="fas fa-list mr-2"></i> Browse Quizzes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="p-6 bg-gray-50 border-b-2 border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-clipboard-list mr-2 text-emerald-500"></i>
+                        Detailed Review
+                    </h3>
+                </div>
+
+                <div class="divide-y divide-gray-200">
+                    {% for result in question_results %}
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-bold rounded-full">
+                                        Question {{ forloop.counter }}
+                                    </span>
+                                    {% if result.is_correct %}
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-bold rounded-full">
+                                        <i class="fas fa-check mr-1"></i> Correct
+                                    </span>
+                                    {% elif result.is_correct == False %}
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 text-sm font-bold rounded-full">
+                                        <i class="fas fa-times mr-1"></i> Incorrect
+                                    </span>
+                                    {% else %}
+                                    <span class="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-bold rounded-full">
+                                        <i class="fas fa-clock mr-1"></i> Requires Grading
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ result.question.question_text }}</h4>
+                                
+                                {% if result.question.question_image %}
+                                <img src="{{ result.question.question_image.url }}" alt="Question image" class="max-w-sm rounded-lg shadow-md mb-4">
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 text-sm font-semibold text-gray-600">
+                                {{ result.points_earned }}/{{ result.question.points }} pts
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            {% if result.question.question_type == 'mcq' %}
+                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <div class="text-sm font-semibold text-blue-900 mb-1">Your Answer:</div>
+                                <div class="text-blue-800">
+                                    {% if result.student_answer %}
+                                        {{ result.question.options|slice:result.student_answer }}
+                                    {% else %}
+                                        <em>No answer provided</em>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if not result.is_correct %}
+                            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <div class="text-sm font-semibold text-green-900 mb-1">Correct Answer:</div>
+                                <div class="text-green-800">{{ result.question.options|slice:result.question.correct_answer }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% elif result.question.question_type == 'true_false' %}
+                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <div class="text-sm font-semibold text-blue-900 mb-1">Your Answer:</div>
+                                <div class="text-blue-800 capitalize">{{ result.student_answer|default:"No answer provided" }}</div>
+                            </div>
+                            {% if not result.is_correct %}
+                            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <div class="text-sm font-semibold text-green-900 mb-1">Correct Answer:</div>
+                                <div class="text-green-800 capitalize">{{ result.question.correct_answer }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% elif result.question.question_type == 'fill_blank' %}
+                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <div class="text-sm font-semibold text-blue-900 mb-1">Your Answer:</div>
+                                <div class="text-blue-800">{{ result.student_answer|default:"No answer provided" }}</div>
+                            </div>
+                            {% if not result.is_correct %}
+                            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <div class="text-sm font-semibold text-green-900 mb-1">Correct Answer:</div>
+                                <div class="text-green-800">{{ result.question.correct_answer }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% elif result.question.question_type == 'essay' %}
+                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <div class="text-sm font-semibold text-blue-900 mb-1">Your Response:</div>
+                                <div class="text-blue-800 whitespace-pre-wrap">{{ result.student_answer|default:"No answer provided" }}</div>
+                            </div>
+                            <div class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                                <div class="text-sm text-amber-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    This question will be graded manually by your instructor.
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if result.question.explanation %}
+                            <div class="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                                <div class="text-sm font-semibold text-purple-900 mb-2">
+                                    <i class="fas fa-lightbulb mr-1"></i> Explanation:
+                                </div>
+                                <div class="text-purple-800">{{ result.question.explanation }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <a href="{% url 'student_dashboard' %}" class="text-emerald-600 hover:text-emerald-700 font-semibold">
+                    <i class="fas fa-home mr-2"></i> Return to Dashboard
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    const percentage = {{ attempt.percentage }};
+    const circle = document.querySelector('circle[stroke-dashoffset]');
+    const circumference = 565.48;
+    const offset = circumference - (percentage / 100 * circumference);
+    
+    setTimeout(() => {
+        circle.style.strokeDashoffset = offset;
+    }, 100);
+    </script>
+</body>
+</html>

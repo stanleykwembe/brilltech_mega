@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <a href="{% url 'student_dashboard' %}" class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </a>
+                        <h1 class="text-2xl font-bold text-gray-900">Flashcards</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'student_dashboard' %}" class="text-sm text-gray-600 hover:text-purple-600">
+                            <i class="fas fa-home mr-1"></i> Dashboard
+                        </a>
+                        <a href="{% url 'student_logout' %}" class="text-sm text-gray-600 hover:text-purple-600">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-6">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-layer-group text-blue-600 mr-2"></i>
+                    Study Flashcards
+                </h2>
+                <p class="text-gray-600">Master your subjects with interactive flashcards</p>
+            </div>
+
+            {% if flashcard_groups %}
+                <div class="space-y-6">
+                    {% for subject_name, topics in flashcard_groups.items %}
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
+                                <h3 class="text-2xl font-bold text-white">
+                                    <i class="fas fa-book mr-2"></i> {{ subject_name }}
+                                </h3>
+                            </div>
+                            
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {% for topic, cards in topics.items %}
+                                        <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition-all duration-200">
+                                            <div class="flex items-start justify-between mb-3">
+                                                <h4 class="font-bold text-gray-900 flex-1">{{ topic }}</h4>
+                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                                                    {{ cards|length }}
+                                                </span>
+                                            </div>
+                                            
+                                            <div class="text-sm text-gray-600 mb-4">
+                                                <i class="fas fa-layer-group mr-1"></i> {{ cards|length }} card{{ cards|length|pluralize }}
+                                                {% with key=subject_name|add:"_"|add:topic %}
+                                                    {% if key in progress_data %}
+                                                        <br>
+                                                        <i class="fas fa-check-circle text-green-600 mr-1"></i> {{ progress_data|get_item:key }} reviewed
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                            
+                                            {% for student_subject in student_subjects %}
+                                                {% if student_subject.subject.name == subject_name %}
+                                                    <a href="{% url 'student_flashcard_study' student_subject.subject.id %}?topic={{ topic|urlencode }}" class="block w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center rounded-lg font-semibold hover:shadow-lg transition-all duration-200">
+                                                        <i class="fas fa-play mr-2"></i> Study Now
+                                                    </a>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-layer-group text-gray-400 text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">No Flashcards Available</h3>
+                    <p class="text-gray-600 mb-4">There are no flashcards available for your selected subjects yet.</p>
+                    <a href="{% url 'student_dashboard' %}" class="inline-block px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

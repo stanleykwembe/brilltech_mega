@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upgrade to PRO - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900">EduTech</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'student_subscription' %}" class="text-sm text-gray-600 hover:text-purple-600">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Subscription
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-bold text-gray-900 mb-3">
+                    <i class="fas fa-rocket text-yellow-500 mr-2"></i>
+                    Upgrade to PRO
+                </h2>
+                <p class="text-lg text-gray-600">Join thousands of students excelling with EduTech PRO</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Order Summary</h3>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold text-gray-900">EduTech PRO Subscription</p>
+                                <p class="text-sm text-gray-600">Monthly recurring</p>
+                            </div>
+                            <p class="text-xl font-bold text-gray-900">R100</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t-2 border-gray-200 pt-4 mb-6">
+                        <div class="flex justify-between items-center">
+                            <p class="text-lg font-semibold text-gray-900">Total Due Today</p>
+                            <p class="text-3xl font-bold text-purple-600">R100</p>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">Then R100/month until cancelled</p>
+                    </div>
+
+                    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-gift text-green-600 mr-2"></i>
+                            What You'll Get:
+                        </h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Unlimited quizzes on all topics</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Access to 5 exam boards (up from 2)</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>All PRO-exclusive exam papers</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Priority support</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Early access to new features</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-lg p-8 border-2 border-purple-200">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-shield-alt text-green-600 text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Secure Payment</h3>
+                        <p class="text-gray-600">Powered by PayFast - South Africa's trusted payment gateway</p>
+                    </div>
+
+                    <form action="{{ payfast_url }}" method="POST" id="paymentForm">
+                        {% for key, value in payment_data.items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-white rounded-lg p-4">
+                                <div class="flex items-start mb-3">
+                                    <i class="fas fa-user text-purple-600 mr-3 mt-1"></i>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-700">Account</p>
+                                        <p class="text-sm text-gray-600">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-credit-card text-purple-600 mr-3 mt-1"></i>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-700">Payment Method</p>
+                                        <p class="text-sm text-gray-600">Card, EFT, or Instant EFT via PayFast</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mr-2 mt-0.5"></i>
+                                    <div class="text-sm text-gray-700">
+                                        <p class="font-semibold mb-1">Secure & Encrypted</p>
+                                        <p>Your payment information is encrypted and never stored on our servers. PayFast uses bank-level security.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-sync text-yellow-600 mr-2 mt-0.5"></i>
+                                    <div class="text-sm text-gray-700">
+                                        <p class="font-semibold mb-1">Auto-Renewal</p>
+                                        <p>Your subscription will automatically renew monthly. Cancel anytime from your subscription page.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-lg text-white text-lg font-bold hover:shadow-lg transition-all duration-200 transform hover:scale-105" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class="fas fa-lock mr-2"></i>
+                            Proceed to Secure Payment - R100
+                        </button>
+
+                        <p class="text-xs text-center text-gray-500 mt-4">
+                            By clicking above, you agree to our Terms of Service and authorize recurring monthly charges to your payment method.
+                        </p>
+                    </form>
+
+                    <div class="mt-6 pt-6 border-t-2 border-gray-200">
+                        <div class="flex items-center justify-center space-x-4 text-gray-400">
+                            <i class="fab fa-cc-visa text-3xl"></i>
+                            <i class="fab fa-cc-mastercard text-3xl"></i>
+                            <i class="fas fa-university text-3xl"></i>
+                            <i class="fas fa-shield-alt text-3xl"></i>
+                        </div>
+                        <p class="text-xs text-center text-gray-500 mt-3">
+                            256-bit SSL encryption • PCI DSS compliant
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-question-circle mr-2 text-purple-600"></i>
+                    Common Questions
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">When will I be charged?</h4>
+                        <p class="text-sm text-gray-600">You'll be charged R100 today, then R100 on the same date each month until you cancel.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Can I cancel anytime?</h4>
+                        <p class="text-sm text-gray-600">Yes! Cancel from your subscription page anytime. You'll keep PRO access until the end of your billing period.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Is this a one-time payment?</h4>
+                        <p class="text-sm text-gray-600">No, this is a monthly subscription that renews automatically. You can cancel anytime.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">What payment methods are accepted?</h4>
+                        <p class="text-sm text-gray-600">PayFast accepts all major credit cards, debit cards, EFT, and Instant EFT payments.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Redirecting to PayFast...';
+        });
+    </script>
+</body>
+</html>

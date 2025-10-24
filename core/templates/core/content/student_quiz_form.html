@@ -1,0 +1,264 @@
+{% extends 'core/content/base.html' %}
+{% load static %}
+
+{% block title %}Create Student Quiz - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="heading-primary">Create Student Quiz</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">Build interactive quizzes for students</p>
+        </div>
+        <a href="{% url 'manage_student_quizzes' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Quizzes
+        </a>
+    </div>
+</div>
+
+<div class="stat-card max-w-6xl" x-data="quizBuilder()">
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <template x-for="(stepName, index) in steps" :key="index">
+                <div class="flex items-center" :class="index < steps.length - 1 ? 'flex-1' : ''">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full transition" :class="currentStep >= index ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-600'">
+                            <span class="font-bold text-sm" x-text="index + 1"></span>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium" :class="currentStep >= index ? 'text-orange-600' : 'text-gray-500'" x-text="stepName"></p>
+                        </div>
+                    </div>
+                    <div x-show="index < steps.length - 1" class="flex-1 h-0.5 mx-4 transition" :class="currentStep > index ? 'bg-orange-500' : 'bg-gray-200'"></div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <form method="POST" @submit="handleSubmit">
+        {% csrf_token %}
+        <input type="hidden" name="step" x-model="step">
+        <input type="hidden" name="selected_questions" x-model="JSON.stringify(selectedQuestions)">
+        
+        <!-- Step 1: Quiz Metadata -->
+        <div x-show="currentStep === 0" x-cloak>
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Quiz Information</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quiz Title *</label>
+                    <input type="text" name="title" x-model="quizData.title" required placeholder="e.g., Algebra Practice Quiz" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
+                    <select name="subject" x-model="quizData.subject" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Exam Board *</label>
+                    <select name="exam_board" x-model="quizData.exam_board" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Board</option>
+                        {% for board in exam_boards %}
+                        <option value="{{ board.id }}">{{ board.name_full }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Grade *</label>
+                    <select name="grade" x-model="quizData.grade" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Grade</option>
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Topic *</label>
+                    <input type="text" name="topic" x-model="quizData.topic" required placeholder="e.g., Quadratic Equations" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button type="button" @click="nextStep()" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+                    Next: Select Questions
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 2: Select Questions -->
+        <div x-show="currentStep === 1" x-cloak>
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Select Questions</h2>
+            
+            <div class="mb-6">
+                <button type="button" @click="loadQuestions()" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition">
+                    <i class="fas fa-sync mr-2"></i>
+                    Load Questions
+                </button>
+            </div>
+            
+            <div x-show="availableQuestions.length > 0" class="space-y-3">
+                <template x-for="question in availableQuestions" :key="question.id">
+                    <div class="border border-gray-300 rounded-md p-4 hover:bg-gray-50 transition">
+                        <div class="flex items-start gap-4">
+                            <input type="checkbox" :value="question.id" @change="toggleQuestion(question.id)" class="mt-1 w-5 h-5 text-orange-600">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900" x-text="question.question_text"></p>
+                                <div class="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                                    <span x-text="question.question_type"></span>
+                                    <span x-text="question.difficulty"></span>
+                                    <span x-text="question.topic"></span>
+                                    <span x-text="question.points + ' pts'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="mt-6 flex justify-between">
+                <button type="button" @click="prevStep()" class="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition font-semibold">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Previous
+                </button>
+                <button type="button" @click="nextStep()" :disabled="selectedQuestions.length === 0" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold disabled:opacity-50">
+                    Next: Quiz Settings
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Quiz Settings -->
+        <div x-show="currentStep === 2" x-cloak>
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Quiz Settings</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Difficulty *</label>
+                    <select name="difficulty" x-model="quizData.difficulty" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Length</label>
+                    <select name="length" x-model="quizData.length" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="5">5 Questions</option>
+                        <option value="10">10 Questions</option>
+                        <option value="20">20 Questions</option>
+                        <option value="50">50 Questions</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Access Level</label>
+                    <label class="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer">
+                        <input type="checkbox" name="is_pro_content" x-model="quizData.is_pro_content" class="w-5 h-5 text-orange-600">
+                        <span class="ml-3 text-sm font-medium text-gray-900">Pro Content</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    You have selected <strong x-text="selectedQuestions.length"></strong> question(s) for this quiz.
+                </p>
+            </div>
+            
+            <div class="mt-6 flex justify-between">
+                <button type="button" @click="prevStep()" class="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition font-semibold">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Previous
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+                    <i class="fas fa-check mr-2"></i>
+                    Create Quiz
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function quizBuilder() {
+    return {
+        currentStep: 0,
+        steps: ['Quiz Info', 'Select Questions', 'Settings'],
+        step: 'final',
+        quizData: {
+            title: '',
+            subject: '',
+            exam_board: '',
+            grade: '',
+            topic: '',
+            difficulty: 'medium',
+            length: 10,
+            is_pro_content: false
+        },
+        availableQuestions: [],
+        selectedQuestions: [],
+        
+        nextStep() {
+            if (this.currentStep < this.steps.length - 1) {
+                this.currentStep++;
+            }
+        },
+        
+        prevStep() {
+            if (this.currentStep > 0) {
+                this.currentStep--;
+            }
+        },
+        
+        async loadQuestions() {
+            const params = new URLSearchParams({
+                subject: this.quizData.subject,
+                grade: this.quizData.grade,
+                topic: this.quizData.topic
+            });
+            
+            try {
+                const response = await fetch(`{% url 'get_questions_ajax' %}?${params}`);
+                const data = await response.json();
+                this.availableQuestions = data.questions;
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                alert('Failed to load questions');
+            }
+        },
+        
+        toggleQuestion(questionId) {
+            const index = this.selectedQuestions.indexOf(questionId);
+            if (index > -1) {
+                this.selectedQuestions.splice(index, 1);
+            } else {
+                this.selectedQuestions.push(questionId);
+            }
+        },
+        
+        handleSubmit(e) {
+            if (this.selectedQuestions.length === 0) {
+                alert('Please select at least one question');
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+    }
+}
+</script>
+{% endblock %}

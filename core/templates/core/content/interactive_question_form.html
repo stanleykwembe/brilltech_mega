@@ -1,0 +1,265 @@
+{% extends 'core/content/base.html' %}
+{% load static %}
+
+{% block title %}{% if editing %}Edit{% else %}Create{% endif %} Interactive Question - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="heading-primary">{% if editing %}Edit{% else %}Create{% endif %} Interactive Question</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">Build interactive questions for student quizzes</p>
+        </div>
+        <a href="{% url 'manage_interactive_questions' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Questions
+        </a>
+    </div>
+</div>
+
+<div class="stat-card max-w-4xl" x-data="questionForm()">
+    <form method="POST" enctype="multipart/form-data" @submit="handleSubmit">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Basic Information</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
+                    <select name="subject" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if editing and question.subject.id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Exam Board *</label>
+                    <select name="exam_board" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Board</option>
+                        {% for board in exam_boards %}
+                        <option value="{{ board.id }}" {% if editing and question.exam_board.id == board.id %}selected{% endif %}>{{ board.name_full }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Grade *</label>
+                    <select name="grade" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Grade</option>
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}" {% if editing and question.grade.id == grade.id %}selected{% endif %}>Grade {{ grade.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Topic *</label>
+                    <input type="text" name="topic" required value="{% if editing %}{{ question.topic }}{% endif %}" placeholder="e.g., Quadratic Equations" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Question Details -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Question Details</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Question Type *</label>
+                    <select name="question_type" x-model="questionType" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Type</option>
+                        <option value="mcq" {% if editing and question.question_type == 'mcq' %}selected{% endif %}>Multiple Choice</option>
+                        <option value="true_false" {% if editing and question.question_type == 'true_false' %}selected{% endif %}>True/False</option>
+                        <option value="fill_blank" {% if editing and question.question_type == 'fill_blank' %}selected{% endif %}>Fill in the Blank</option>
+                        <option value="matching" {% if editing and question.question_type == 'matching' %}selected{% endif %}>Matching</option>
+                        <option value="essay" {% if editing and question.question_type == 'essay' %}selected{% endif %}>Essay/Free Response</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Difficulty *</label>
+                    <select name="difficulty" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Difficulty</option>
+                        <option value="easy" {% if editing and question.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                        <option value="medium" {% if editing and question.difficulty == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="hard" {% if editing and question.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Points *</label>
+                    <input type="number" name="points" required value="{% if editing %}{{ question.points }}{% else %}1{% endif %}" min="1" max="100" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Question Text *</label>
+                <textarea name="question_text" required rows="4" placeholder="Enter your question here..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{% if editing %}{{ question.question_text }}{% endif %}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Write a clear and concise question</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Question Image (Optional)</label>
+                <input type="file" name="question_image" accept="image/*" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                {% if editing and question.question_image %}
+                <p class="mt-2 text-sm text-gray-600">Current image: <a href="{{ question.question_image.url }}" target="_blank" class="text-orange-600 hover:underline">View</a></p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Multiple Choice Options -->
+        <div x-show="questionType === 'mcq'" x-cloak class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Answer Options</h2>
+            
+            <input type="hidden" name="option_count" :value="options.length">
+            
+            <div class="space-y-3">
+                <template x-for="(option, index) in options" :key="index">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 mt-2">
+                            <input type="radio" name="correct_answer_mcq" :value="index" required class="w-5 h-5 text-orange-600 focus:ring-orange-500">
+                        </div>
+                        <div class="flex-1">
+                            <input type="text" :name="'option_' + index" x-model="options[index]" required placeholder="Enter option text" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                        <button type="button" @click="removeOption(index)" x-show="options.length > 2" class="flex-shrink-0 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </template>
+            </div>
+            
+            <button type="button" @click="addOption()" class="mt-4 inline-flex items-center px-4 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 transition">
+                <i class="fas fa-plus mr-2"></i>
+                Add Option
+            </button>
+        </div>
+        
+        <!-- True/False -->
+        <div x-show="questionType === 'true_false'" x-cloak class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Correct Answer</h2>
+            
+            <div class="space-y-3">
+                <label class="flex items-center p-4 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition">
+                    <input type="radio" name="correct_answer_tf" value="true" required class="w-5 h-5 text-orange-600 focus:ring-orange-500">
+                    <span class="ml-3 text-sm font-medium text-gray-900">True</span>
+                </label>
+                <label class="flex items-center p-4 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition">
+                    <input type="radio" name="correct_answer_tf" value="false" required class="w-5 h-5 text-orange-600 focus:ring-orange-500">
+                    <span class="ml-3 text-sm font-medium text-gray-900">False</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Fill in the Blank -->
+        <div x-show="questionType === 'fill_blank'" x-cloak class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Correct Answer</h2>
+            
+            <div>
+                <input type="text" name="correct_answer_fill" placeholder="Enter the correct answer" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <p class="mt-1 text-xs text-gray-500">Answer matching will be case-insensitive</p>
+            </div>
+        </div>
+        
+        <!-- Matching Pairs -->
+        <div x-show="questionType === 'matching'" x-cloak class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Matching Pairs</h2>
+            
+            <input type="hidden" name="pair_count" :value="matchingPairs.length">
+            
+            <div class="space-y-3">
+                <template x-for="(pair, index) in matchingPairs" :key="index">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <input type="text" :name="'pair_left_' + index" x-model="matchingPairs[index].left" required placeholder="Left item" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="text" :name="'pair_right_' + index" x-model="matchingPairs[index].right" required placeholder="Right item" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <button type="button" @click="removePair(index)" x-show="matchingPairs.length > 2" class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <button type="button" @click="addPair()" class="mt-4 inline-flex items-center px-4 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 transition">
+                <i class="fas fa-plus mr-2"></i>
+                Add Pair
+            </button>
+        </div>
+        
+        <!-- Essay (no answer fields needed) -->
+        <div x-show="questionType === 'essay'" x-cloak class="mb-8">
+            <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Essay questions don't require a correct answer. Students will write free-form responses.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Explanation -->
+        <div class="mb-8">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Explanation (Optional)</label>
+            <textarea name="explanation" rows="3" placeholder="Explain the correct answer or provide additional context..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{% if editing %}{{ question.explanation }}{% endif %}</textarea>
+            <p class="mt-1 text-xs text-gray-500">This will be shown to students after they answer</p>
+        </div>
+        
+        <!-- Submit Buttons -->
+        <div class="flex items-center justify-end gap-4 pt-6 border-t">
+            <a href="{% url 'manage_interactive_questions' %}" class="px-6 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                Cancel
+            </a>
+            <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+                <i class="fas fa-save mr-2"></i>
+                {% if editing %}Update{% else %}Create{% endif %} Question
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function questionForm() {
+    return {
+        questionType: '{% if editing %}{{ question.question_type }}{% endif %}',
+        options: {% if editing and question.question_type == 'mcq' %}{{ question.options|safe }}{% else %}['', '', '', '']{% endif %},
+        matchingPairs: {% if editing and question.question_type == 'matching' %}{{ question.matching_pairs|safe }}{% else %}[{left: '', right: ''}, {left: '', right: ''}, {left: '', right: ''}, {left: '', right: ''}]{% endif %},
+        
+        addOption() {
+            this.options.push('');
+        },
+        
+        removeOption(index) {
+            if (this.options.length > 2) {
+                this.options.splice(index, 1);
+            }
+        },
+        
+        addPair() {
+            this.matchingPairs.push({left: '', right: ''});
+        },
+        
+        removePair(index) {
+            if (this.matchingPairs.length > 2) {
+                this.matchingPairs.splice(index, 1);
+            }
+        },
+        
+        handleSubmit(e) {
+            // Validate based on question type
+            if (this.questionType === '') {
+                alert('Please select a question type');
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+    }
+}
+</script>
+{% endblock %}
