@@ -1,8 +1,13 @@
-# EduTech Freemium Teacher Platform
+# EduTech Freemium Multi-Portal Platform
 
 ## Overview
 
-This is a freemium educational technology platform for teachers and administrators to create, manage, and share educational content. It offers AI-powered content generation (lesson plans, assignments, questions), document management, and sharing functionalities. The platform operates on a freemium model with usage quotas and subscription tiers, aiming to empower educators with advanced tools.
+This is a comprehensive freemium educational technology platform serving three distinct user groups:
+1. **Teachers & Admins**: Create, manage, and share educational content with AI-powered generation
+2. **Students**: Interactive learning platform with quizzes, notes, flashcards, and exam preparation
+3. **Content Managers**: Create and curate educational materials for both teacher and student portals
+
+The platform operates on a freemium model with separate subscription tiers for teachers and students, offering generous free access while providing premium features for enhanced learning and teaching.
 
 ## User Preferences
 
@@ -19,28 +24,49 @@ Preferred communication style: Simple, everyday language.
     - **Admin Portal**: Purple/indigo theme (indigo-800, purple gradients) for administrative authority
     - **Content Management Portal**: Orange/teal theme (orange-500, teal accents) for content creation
     - **Teacher Portal**: Gray-800 with indigo/purple accents for daily teaching workflows
+    - **Student Portal**: Green/blue theme (emerald-500 #10b981, blue-500 #3b82f6) for engaging interactive learning
   - **Modern Components**: Stat cards with gradient icons, progress bars, action cards with hover effects, modern form styling with rounded inputs.
   - **Animation System**: Scale-in animations with staggered delays (delay-100 through delay-400), smooth hover transitions, gradient text effects.
-  - **CSS Architecture**: Base modern-dashboard.css for shared design system + portal-specific theme files (admin-theme.css, content-theme.css) for color overrides.
+  - **CSS Architecture**: Base modern-dashboard.css for shared design system + portal-specific theme files (admin-theme.css, content-theme.css, student-theme.css) for color overrides.
 - **Interactive Elements**: Modals, forms, and dropdowns using Alpine.js with smooth transitions.
 
 ### Backend Architecture
 - **Framework**: Django 5.0 (Python).
 - **Application Structure**: Monolithic 'core' Django app.
-- **Authentication**: Django's built-in system with custom UserProfile; supports username or email login; token-based email verification.
-- **Role-Based Access Control**: `admin`, `content_manager`, `teacher` roles with dedicated portal routing and security decorators.
-- **Content Management**: Dedicated Content Portal for content managers to upload (bulk upload with dynamic metadata forms) and manage educational materials.
-- **AI Reformatting System**: Extracts and reformats content from PDFs using GPT-4, storing questions/memos in JSON format for review.
-- **REST API**: Django REST Framework for mobile app integration, providing public and authentication-required endpoints for content access with filtering and pagination.
-- **Feature Management**: Admin interface for managing exam boards, subjects, grades, and subscription plans (pricing, quotas, AI models).
+- **Authentication Systems**: 
+  - Teachers/Admins: Django's built-in with custom UserProfile; username/email login; token-based email verification
+  - Students: Separate StudentProfile system with independent registration, parent email notifications, multi-step onboarding
+- **Role-Based Access Control**: `admin`, `content_manager`, `teacher` roles with dedicated portal routing and security decorators. Students have separate access control via `@student_login_required`.
+- **Content Management**: Dedicated Content Portal for content managers to:
+  - Teacher Content: Upload/manage past papers, formatted papers, teacher quizzes (bulk upload with dynamic metadata forms)
+  - Student Content: Create interactive questions (MCQ/True-False/Fill-blank/Matching/Essay), build quizzes, upload notes (full + summary versions), create flashcards, upload exam papers
+- **AI Integration**: 
+  - Teacher Portal: Extracts and reformats content from PDFs using GPT-4, generates lesson plans and assignments
+  - Content Creation: AI-powered question generation for interactive quizzes
+- **REST API**: Comprehensive Django REST Framework API for mobile app:
+  - Student endpoints: Authentication, quiz engine, notes, flashcards, exam papers, progress tracking
+  - Teacher endpoints: Content access, document sharing
+  - Offline support: Bulk download and sync endpoints
+  - Documentation: Swagger UI and ReDoc
+- **Feature Management**: Admin interface for managing exam boards, subjects, grades, subscription plans (pricing, quotas, AI models).
 - **Communications System**: Platform-wide announcements (targeted, scheduled, dismissible) and email blast functionality.
 
 ### Data Storage Solutions
 - **Primary Database**: SQLite (development), designed for PostgreSQL compatibility.
-- **Models**: Comprehensive models for user profiles, subscriptions (including `SubscribedSubject` for multi-subject support), educational metadata (`Subject`, `Grade`, `ExamBoard`), content (`PastPaper`, `Quiz`, `FormattedPaper`, `Assignment`), and usage tracking (`UsageQuota` with JSONField for per-subject quotas).
-- **File Storage**: Local file system for uploaded documents, with organized directory structures.
+- **Models**: 
+  - **Teacher System**: UserProfile, SubscribedSubject, UploadedDocument, Assignment, AssignmentShare, Quiz (Google Forms), QuizResponse, PastPaper, FormattedPaper, UsageQuota
+  - **Student System**: StudentProfile, StudentExamBoard, StudentSubject, StudentQuiz, StudentQuizAttempt, StudentQuizQuota, InteractiveQuestion, Note, Flashcard, ExamPaper, StudentProgress
+  - **Shared**: Subject, Grade, ExamBoard, Announcement, EmailBlast
+- **File Storage**: Local file system with organized directories:
+  - documents/%Y/%m/ - Teacher uploaded documents
+  - notes/full/%Y/%m/ and notes/summary/%Y/%m/ - Student study notes
+  - flashcards/images/ - Flashcard images
+  - exam_papers/%Y/%m/ - Full exam papers and marking schemes
+  - questions/images/ - Interactive question images
 
 ### Authentication and Authorization
+
+#### Teacher System
 - **User Types**: Teachers and Admins, with Content Managers as an additional role.
 - **Subscription Model**: Freemium with four tiers (Free, Starter, Growth, Premium) dictating subject limits, lesson plan quotas, and AI model access.
   - **Free (R0)**: 1 subject, 2 lesson plans/month, no AI.
@@ -49,6 +75,16 @@ Preferred communication style: Simple, everyday language.
   - **Premium (R250)**: 3 subjects, unlimited lesson plans, GPT-4 AI.
 - **Quota Enforcement**: Per-subject, monthly AI generation limits with upgrade prompts.
 - **Teacher Codes**: Unique 6-character codes for Google Forms integration.
+
+#### Student System
+- **Independent Registration**: Students register separately from teachers with email/parent email verification.
+- **Onboarding Flow**: Multi-step wizard for selecting grade, exam boards, and subjects (up to 10 per board).
+- **Subscription Tiers**:
+  - **Free (R0)**: 2 exam boards, 2 different quizzes per topic (lifetime), unlimited retries, all subjects access, full notes/flashcards.
+  - **Pro (R100/month)**: 5 exam boards, unlimited quizzes, all subjects, early access to new features.
+- **Quota System**: StudentQuizQuota tracks quiz attempts per topic. Free users can take 2 different quizzes per topic but retry unlimited times. Pro users have unlimited access.
+- **Progress Tracking**: StudentProgress tracks quizzes attempted/passed, average scores, notes viewed, flashcards reviewed per subject/topic.
+- **Payment Integration**: PayFast integration for Pro subscriptions with IPN handling, signature verification, and automatic subscription activation.
 
 ### AI Integration Architecture
 - **Service Layer**: `core/openai_service.py` for all AI interactions.
