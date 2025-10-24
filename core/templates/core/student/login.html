@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div class="bg-white rounded-2xl shadow-2xl p-8">
+                <div class="text-center mb-8">
+                    <div class="flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-graduation-cap text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-gray-900">
+                        Student Login
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Welcome back! Continue your learning journey
+                    </p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                            <div class="flex items-start">
+                                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mt-0.5 mr-3"></i>
+                                <span class="text-sm">{{ message }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                            Username or Email
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input 
+                                type="text" 
+                                name="username" 
+                                id="username" 
+                                required
+                                class="pl-10 block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+                                placeholder="Enter your username or email"
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                            Password
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input 
+                                type="password" 
+                                name="password" 
+                                id="password" 
+                                required
+                                class="pl-10 block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+                                placeholder="Enter your password"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <button 
+                            type="submit" 
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+                        >
+                            <i class="fas fa-sign-in-alt mr-2 mt-0.5"></i>
+                            Sign In
+                        </button>
+                    </div>
+
+                    <div class="text-center text-sm">
+                        <span class="text-gray-600">Don't have an account?</span>
+                        <a href="{% url 'student_register' %}" class="font-medium text-purple-600 hover:text-purple-500 ml-1">
+                            Sign up
+                        </a>
+                    </div>
+
+                    <div class="text-center text-sm pt-4 border-t border-gray-200">
+                        <span class="text-gray-600">Are you a teacher?</span>
+                        <a href="{% url 'login' %}" class="font-medium text-purple-600 hover:text-purple-500 ml-1">
+                            Teacher Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <p class="text-center text-xs text-white">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Your credentials are encrypted and secure
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900">EduTech</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600">Welcome, <strong>{{ user.username }}</strong></span>
+                        <a href="{% url 'student_logout' %}" class="text-sm text-gray-600 hover:text-purple-600">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg p-6 mb-8 text-white">
+                <h2 class="text-3xl font-bold mb-2">Welcome to Your Learning Dashboard! 🎓</h2>
+                <p class="text-purple-100">You're all set to start your learning journey. Explore resources, practice quizzes, and track your progress.</p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Your Grade</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ student_profile.grade.number }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-school text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Exam Boards</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ student_boards.count }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Subjects</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ student_subjects.count }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Exam Boards & Subjects -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-graduation-cap mr-2 text-purple-600"></i>
+                    Your Exam Boards & Subjects
+                </h3>
+
+                {% if student_boards %}
+                    <div class="space-y-6">
+                        {% for student_board in student_boards %}
+                            <div class="border-2 border-gray-200 rounded-lg p-4">
+                                <h4 class="font-bold text-gray-900 mb-3">
+                                    {{ student_board.exam_board.name_full }}
+                                    <span class="text-sm font-normal text-gray-600">({{ student_board.exam_board.abbreviation }})</span>
+                                </h4>
+                                
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {% for student_subject in student_subjects %}
+                                        {% if student_subject.exam_board.id == student_board.exam_board.id %}
+                                            <div class="px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-center">
+                                                {{ student_subject.subject.name }}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-600">No exam boards selected yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- Subscription Info -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">
+                            <i class="fas fa-crown mr-2 text-yellow-500"></i>
+                            Your Subscription
+                        </h3>
+                        <p class="text-gray-600">
+                            Current Plan: <strong class="text-purple-600">{{ student_profile.get_subscription_display }}</strong>
+                        </p>
+                    </div>
+                    {% if student_profile.subscription == 'free' %}
+                        <a href="#" class="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-arrow-up mr-2"></i>
+                            Upgrade to Pro
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="flex items-start p-3 bg-gray-50 rounded-lg">
+                        <i class="fas fa-check-circle text-green-500 mr-3 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Exam Boards</p>
+                            <p class="text-xs text-gray-600">Up to {{ student_profile.get_exam_board_limit }} boards</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start p-3 bg-gray-50 rounded-lg">
+                        <i class="fas fa-check-circle text-green-500 mr-3 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Subjects</p>
+                            <p class="text-xs text-gray-600">Up to {{ student_profile.get_subject_limit_per_board }} subjects per board</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coming Soon Features -->
+            <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                <h3 class="text-lg font-bold text-blue-900 mb-3">
+                    <i class="fas fa-rocket mr-2"></i>
+                    Coming Soon
+                </h3>
+                <ul class="space-y-2 text-sm text-blue-800">
+                    <li><i class="fas fa-check-circle mr-2 text-blue-600"></i> Practice quizzes and interactive questions</li>
+                    <li><i class="fas fa-check-circle mr-2 text-blue-600"></i> Study notes and flashcards</li>
+                    <li><i class="fas fa-check-circle mr-2 text-blue-600"></i> Past exam papers</li>
+                    <li><i class="fas fa-check-circle mr-2 text-blue-600"></i> Progress tracking and analytics</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

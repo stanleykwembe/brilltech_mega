@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl w-full" x-data="onboardingWizard()">
+            <div class="bg-white rounded-2xl shadow-2xl p-8">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div class="flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-user-check text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-gray-900">
+                        Complete Your Profile
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Let's personalize your learning experience
+                    </p>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Step <span x-text="currentStep"></span> of 3</span>
+                        <span class="text-sm font-medium text-purple-600" x-text="Math.round((currentStep / 3) * 100) + '%'"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-2 rounded-full transition-all duration-300" 
+                             :style="'width: ' + ((currentStep / 3) * 100) + '%'"></div>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div x-show="errorMessage" x-cloak class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-circle text-red-600 mt-0.5 mr-3"></i>
+                        <span class="text-sm text-red-800" x-text="errorMessage"></span>
+                    </div>
+                </div>
+
+                <form @submit.prevent="handleSubmit">
+                    {% csrf_token %}
+
+                    <!-- Step 1: Select Grade -->
+                    <div x-show="currentStep === 1" x-cloak>
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-school mr-2 text-purple-600"></i>
+                            Select Your Grade Level
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Choose the grade you're currently in
+                        </p>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {% for grade in grades %}
+                            <label class="relative cursor-pointer">
+                                <input 
+                                    type="radio" 
+                                    name="grade" 
+                                    value="{{ grade.id }}"
+                                    x-model="formData.grade"
+                                    class="peer sr-only"
+                                >
+                                <div class="p-4 border-2 border-gray-300 rounded-lg text-center transition-all peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400">
+                                    <div class="text-2xl font-bold text-gray-900">{{ grade.number }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Grade {{ grade.number }}</div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Select Exam Boards -->
+                    <div x-show="currentStep === 2" x-cloak>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-gray-900">
+                                <i class="fas fa-clipboard-list mr-2 text-purple-600"></i>
+                                Select Your Exam Boards
+                            </h3>
+                            <span class="text-sm px-3 py-1 rounded-full" 
+                                  :class="formData.examBoards.length >= {{ board_limit }} ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">
+                                <span x-text="formData.examBoards.length"></span> / {{ board_limit }}
+                            </span>
+                        </div>
+                        
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-purple-600 mt-0.5 mr-3"></i>
+                                <div class="text-sm text-purple-800">
+                                    <strong>Your Plan:</strong> {{ student_profile.get_subscription_display }}
+                                    <p class="mt-1">You can select up to <strong>{{ board_limit }} exam board{{ board_limit|pluralize }}</strong>. 
+                                    {% if student_profile.subscription == 'free' %}
+                                    <a href="#" class="underline font-semibold">Upgrade to Pro</a> to select up to 5 boards!
+                                    {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                            {% for board in exam_boards %}
+                            <label class="relative cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    name="exam_boards[]"
+                                    value="{{ board.id }}"
+                                    x-model="formData.examBoards"
+                                    :disabled="!formData.examBoards.includes('{{ board.id }}') && formData.examBoards.length >= {{ board_limit }}"
+                                    class="peer sr-only"
+                                >
+                                <div class="p-4 border-2 border-gray-300 rounded-lg transition-all peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-graduation-cap text-purple-600 mr-3 mt-1"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">{{ board.name_full }}</div>
+                                            <div class="text-sm text-gray-600">{{ board.abbreviation }}{% if board.region %} - {{ board.region }}{% endif %}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Select Subjects -->
+                    <div x-show="currentStep === 3" x-cloak>
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-book mr-2 text-purple-600"></i>
+                            Select Your Subjects
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Choose up to {{ subject_limit }} subjects per exam board
+                        </p>
+
+                        <div class="space-y-6">
+                            <template x-for="boardId in formData.examBoards" :key="boardId">
+                                <div class="border-2 border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h4 class="font-bold text-gray-900" x-text="getBoardName(boardId)"></h4>
+                                        <span class="text-sm px-3 py-1 rounded-full" 
+                                              :class="getSubjectCount(boardId) >= {{ subject_limit }} ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">
+                                            <span x-text="getSubjectCount(boardId)"></span> / {{ subject_limit }}
+                                        </span>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {% for subject in subjects %}
+                                        <label class="relative cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                :name="'subjects_board_' + boardId + '[]'"
+                                                value="{{ subject.id }}"
+                                                @change="toggleSubject(boardId, '{{ subject.id }}')"
+                                                :checked="isSubjectSelected(boardId, '{{ subject.id }}')"
+                                                :disabled="!isSubjectSelected(boardId, '{{ subject.id }}') && getSubjectCount(boardId) >= {{ subject_limit }}"
+                                                class="peer sr-only"
+                                            >
+                                            <div class="p-3 border-2 border-gray-300 rounded-lg text-center text-sm transition-all peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed">
+                                                {{ subject.name }}
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                        <button 
+                            type="button"
+                            @click="previousStep"
+                            x-show="currentStep > 1"
+                            class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                        >
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back
+                        </button>
+
+                        <div class="ml-auto">
+                            <button 
+                                type="button"
+                                @click="nextStep"
+                                x-show="currentStep < 3"
+                                class="px-6 py-2.5 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+                            >
+                                Next
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+
+                            <button 
+                                type="submit"
+                                x-show="currentStep === 3"
+                                :disabled="isSubmitting"
+                                class="px-6 py-2.5 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+                            >
+                                <span x-show="!isSubmitting">
+                                    <i class="fas fa-check mr-2"></i>
+                                    Complete Setup
+                                </span>
+                                <span x-show="isSubmitting">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                                    Saving...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function onboardingWizard() {
+            return {
+                currentStep: 1,
+                isSubmitting: false,
+                errorMessage: '',
+                formData: {
+                    grade: '',
+                    examBoards: [],
+                    subjects: {}
+                },
+                examBoardNames: {
+                    {% for board in exam_boards %}
+                    '{{ board.id }}': '{{ board.name_full }}',
+                    {% endfor %}
+                },
+                
+                nextStep() {
+                    this.errorMessage = '';
+                    
+                    if (this.currentStep === 1 && !this.formData.grade) {
+                        this.errorMessage = 'Please select your grade level.';
+                        return;
+                    }
+                    
+                    if (this.currentStep === 2 && this.formData.examBoards.length === 0) {
+                        this.errorMessage = 'Please select at least one exam board.';
+                        return;
+                    }
+                    
+                    this.currentStep++;
+                },
+                
+                previousStep() {
+                    this.errorMessage = '';
+                    this.currentStep--;
+                },
+                
+                getBoardName(boardId) {
+                    return this.examBoardNames[boardId] || 'Unknown Board';
+                },
+                
+                toggleSubject(boardId, subjectId) {
+                    if (!this.formData.subjects[boardId]) {
+                        this.formData.subjects[boardId] = [];
+                    }
+                    
+                    const index = this.formData.subjects[boardId].indexOf(subjectId);
+                    if (index > -1) {
+                        this.formData.subjects[boardId].splice(index, 1);
+                    } else {
+                        if (this.formData.subjects[boardId].length < {{ subject_limit }}) {
+                            this.formData.subjects[boardId].push(subjectId);
+                        }
+                    }
+                },
+                
+                isSubjectSelected(boardId, subjectId) {
+                    return this.formData.subjects[boardId] && this.formData.subjects[boardId].includes(subjectId);
+                },
+                
+                getSubjectCount(boardId) {
+                    return this.formData.subjects[boardId] ? this.formData.subjects[boardId].length : 0;
+                },
+                
+                async handleSubmit() {
+                    this.errorMessage = '';
+                    
+                    // Validate at least one subject per board
+                    for (const boardId of this.formData.examBoards) {
+                        if (!this.formData.subjects[boardId] || this.formData.subjects[boardId].length === 0) {
+                            this.errorMessage = `Please select at least one subject for ${this.getBoardName(boardId)}.`;
+                            return;
+                        }
+                    }
+                    
+                    this.isSubmitting = true;
+                    
+                    const formData = new FormData();
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                    formData.append('grade', this.formData.grade);
+                    
+                    this.formData.examBoards.forEach(boardId => {
+                        formData.append('exam_boards[]', boardId);
+                    });
+                    
+                    for (const [boardId, subjects] of Object.entries(this.formData.subjects)) {
+                        subjects.forEach(subjectId => {
+                            formData.append(`subjects_board_${boardId}[]`, subjectId);
+                        });
+                    }
+                    
+                    try {
+                        const response = await fetch('{% url "student_onboarding" %}', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            window.location.href = data.redirect;
+                        } else {
+                            this.errorMessage = data.error || 'An error occurred. Please try again.';
+                            this.isSubmitting = false;
+                        }
+                    } catch (error) {
+                        this.errorMessage = 'Network error. Please check your connection and try again.';
+                        this.isSubmitting = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
