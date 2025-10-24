@@ -691,3 +691,301 @@ class EmailBlast(models.Model):
     
     def __str__(self):
         return f"{self.subject} - {self.target_audience} ({self.status})"
+
+
+class StudentProfile(models.Model):
+    """Student user profile - independent from teacher system"""
+    SUBSCRIPTION_CHOICES = [
+        ('free', 'Free'),
+        ('pro', 'Pro - R100/month'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    subscription = models.CharField(max_length=20, choices=SUBSCRIPTION_CHOICES, default='free')
+    parent_email = models.EmailField(blank=True)
+    grade = models.ForeignKey(Grade, on_delete=models.SET_NULL, null=True)
+    email_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, blank=True)
+    verification_token_created = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    onboarding_completed = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Student: {self.user.username}"
+    
+    def get_exam_board_limit(self):
+        """Free: 2 boards, Pro: 5 boards"""
+        return 2 if self.subscription == 'free' else 5
+    
+    def get_subject_limit_per_board(self):
+        """Maximum 10 subjects per board"""
+        return 10
+
+
+class StudentExamBoard(models.Model):
+    """Student's selected exam boards"""
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='exam_boards')
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    selected_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('student', 'exam_board')
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.exam_board.abbreviation}"
+
+
+class StudentSubject(models.Model):
+    """Student's selected subjects per exam board"""
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='subjects')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    selected_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('student', 'subject', 'exam_board')
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.subject.name} ({self.exam_board.abbreviation})"
+
+
+class Note(models.Model):
+    """Study notes uploaded by content managers"""
+    title = models.CharField(max_length=200)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    full_version = models.FileField(upload_to='notes/full/%Y/%m/', null=True, blank=True)
+    summary_version = models.FileField(upload_to='notes/summary/%Y/%m/', null=True, blank=True)
+    full_version_text = models.TextField(blank=True)
+    summary_version_text = models.TextField(blank=True)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['subject', 'topic']
+    
+    def __str__(self):
+        return f"{self.title} - {self.subject.name}"
+
+
+class Flashcard(models.Model):
+    """Flashcards for memorization"""
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    front_text = models.TextField()
+    back_text = models.TextField()
+    image_front = models.ImageField(upload_to='flashcards/images/', null=True, blank=True)
+    image_back = models.ImageField(upload_to='flashcards/images/', null=True, blank=True)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['subject', 'topic']
+    
+    def __str__(self):
+        return f"{self.subject.name} - {self.topic[:50]}"
+
+
+class InteractiveQuestion(models.Model):
+    """Interactive questions for quizzes"""
+    QUESTION_TYPES = [
+        ('mcq', 'Multiple Choice'),
+        ('true_false', 'True/False'),
+        ('fill_blank', 'Fill in the Blank'),
+        ('matching', 'Matching'),
+        ('essay', 'Essay/Free Response'),
+    ]
+    
+    DIFFICULTY_LEVELS = [
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard'),
+    ]
+    
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS)
+    
+    question_text = models.TextField()
+    question_image = models.ImageField(upload_to='questions/images/', null=True, blank=True)
+    
+    # For MCQ - JSON array of options
+    options = models.JSONField(null=True, blank=True)
+    
+    # Correct answer(s) - can be text, index, or JSON for complex types
+    correct_answer = models.TextField()
+    
+    # For matching questions - JSON with pairs
+    matching_pairs = models.JSONField(null=True, blank=True)
+    
+    explanation = models.TextField(blank=True)
+    points = models.IntegerField(default=1)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['subject', 'topic', 'difficulty']
+    
+    def __str__(self):
+        return f"{self.question_type} - {self.topic[:50]}"
+
+
+class StudentQuiz(models.Model):
+    """Interactive quiz collections for students"""
+    LENGTH_CHOICES = [
+        (5, '5 Questions'),
+        (10, '10 Questions'),
+        (20, '20 Questions'),
+        (50, '50 Questions'),
+    ]
+    
+    DIFFICULTY_LEVELS = [
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard'),
+        ('mixed', 'Mixed'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS)
+    length = models.IntegerField(choices=LENGTH_CHOICES, default=10)
+    
+    questions = models.ManyToManyField(InteractiveQuestion, related_name='student_quizzes')
+    
+    is_pro_content = models.BooleanField(default=False)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Student Quizzes'
+    
+    def __str__(self):
+        return f"{self.title} - {self.subject.name}"
+
+
+class StudentQuizAttempt(models.Model):
+    """Student quiz attempts and results"""
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(StudentQuiz, on_delete=models.CASCADE)
+    
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Student preferences
+    is_timed = models.BooleanField(default=False)
+    time_limit_minutes = models.IntegerField(null=True, blank=True)
+    show_instant_feedback = models.BooleanField(default=True)
+    
+    # Results
+    answers = models.JSONField(default=dict)
+    score = models.IntegerField(null=True, blank=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-started_at']
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.quiz.title}"
+
+
+class StudentQuizQuota(models.Model):
+    """Track free tier quiz quotas - 2 different quizzes per topic lifetime"""
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='quiz_quotas')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    quizzes_completed = models.ManyToManyField(StudentQuiz, blank=True)
+    attempt_count = models.IntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('student', 'subject', 'topic')
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.topic}"
+    
+    def has_free_attempts_left(self):
+        """Free users get 2 different quizzes per topic"""
+        return self.quizzes_completed.count() < 2
+    
+    def can_attempt_quiz(self, quiz, is_pro):
+        """Check if student can attempt this quiz"""
+        if is_pro:
+            return True
+        
+        # Free users: check if already attempted 2 different quizzes
+        if self.quizzes_completed.count() >= 2:
+            # Can only retry already attempted quizzes
+            return quiz in self.quizzes_completed.all()
+        
+        return True
+
+
+class ExamPaper(models.Model):
+    """Full exam papers for practice"""
+    title = models.CharField(max_length=200)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    year = models.IntegerField(null=True, blank=True)
+    
+    paper_file = models.FileField(upload_to='exam_papers/%Y/%m/')
+    marking_scheme = models.FileField(upload_to='exam_papers/marking/%Y/%m/', null=True, blank=True)
+    
+    # Interactive version (questions extracted)
+    has_interactive_version = models.BooleanField(default=False)
+    interactive_questions = models.ManyToManyField(InteractiveQuestion, blank=True)
+    
+    is_pro_content = models.BooleanField(default=False)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-year', 'subject']
+    
+    def __str__(self):
+        return f"{self.title} - {self.subject.name}"
+
+
+class StudentProgress(models.Model):
+    """Track student learning progress"""
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='progress')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    topic = models.CharField(max_length=200)
+    
+    quizzes_attempted = models.IntegerField(default=0)
+    quizzes_passed = models.IntegerField(default=0)
+    average_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    notes_viewed = models.BooleanField(default=False)
+    flashcards_reviewed = models.IntegerField(default=0)
+    
+    last_activity = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('student', 'subject', 'topic')
+        ordering = ['-last_activity']
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.subject.name} - {self.topic}"
