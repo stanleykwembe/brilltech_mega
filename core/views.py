@@ -2970,6 +2970,7 @@ def content_bulk_upload(request):
 def official_papers_bulk_upload(request):
     """Bulk upload official exam papers via folder structure with 2-step flow"""
     from .models import OfficialExamPaper
+    from django.db import IntegrityError
     import re
     from datetime import datetime
     from pathlib import PurePosixPath
@@ -3284,21 +3285,6 @@ def official_papers_bulk_upload(request):
                         'file_size': file.size,
                     })
                     
-                    # Check for duplicates
-                    existing = OfficialExamPaper.objects.filter(
-                        exam_board=exam_board,
-                        subject_code=subject_code,
-                        year=year,
-                        session=parsed['session'],
-                        paper_number=parsed['paper_number'],
-                        variant=parsed['variant'],
-                        paper_type=parsed['paper_type']
-                    ).first()
-                    
-                    if existing:
-                        paper_result['warnings'].append(f"Duplicate: Paper already exists (ID: {existing.id})")
-                        paper_result['duplicate'] = True
-                    
                     results['parseable_count'] += 1
                     
                 except Exception as e:
@@ -3343,13 +3329,13 @@ def official_papers_bulk_upload(request):
                     
                     paper_data = papers_data[idx]
                     
-                    # Skip if marked as duplicate or error
-                    if paper_data.get('duplicate') or paper_data.get('status') == 'error':
+                    # Skip if parsing failed (status is 'error')
+                    if paper_data.get('status') == 'error':
                         results['skipped_count'] += 1
                         results['details'].append({
                             'filename': file.name,
                             'status': 'skipped',
-                            'reason': 'Duplicate or error'
+                            'reason': 'Parsing error'
                         })
                         continue
                     
@@ -3366,33 +3352,43 @@ def official_papers_bulk_upload(request):
                         })
                         continue
                     
-                    # Create official exam paper with secure file handling
-                    paper = OfficialExamPaper.objects.create(
-                        exam_board=exam_board,
-                        subject_code=paper_data['subject_code'],
-                        subject_name=paper_data.get('subject_name', ''),
-                        year=paper_data['year'],
-                        session=paper_data['session'],
-                        paper_number=paper_data['paper_number'],
-                        variant=paper_data.get('variant', ''),
-                        paper_type=paper_data['paper_type'],
-                        original_filename=file.name,
-                        file=file,  # Django handles secure storage automatically
-                        metadata_json={
-                            'parsed_data': paper_data,
-                            'upload_date': datetime.now().isoformat(),
-                            'warnings': paper_data.get('warnings', [])
-                        },
-                        uploaded_by=request.user
-                    )
+                    # Try to create official exam paper - database will reject duplicates
+                    try:
+                        paper = OfficialExamPaper.objects.create(
+                            exam_board=exam_board,
+                            subject_code=paper_data['subject_code'],
+                            subject_name=paper_data.get('subject_name', ''),
+                            year=paper_data['year'],
+                            session=paper_data['session'],
+                            paper_number=paper_data['paper_number'],
+                            variant=paper_data.get('variant', ''),
+                            paper_type=paper_data['paper_type'],
+                            original_filename=file.name,
+                            file=file,  # Django handles secure storage automatically
+                            metadata_json={
+                                'parsed_data': paper_data,
+                                'upload_date': datetime.now().isoformat(),
+                                'warnings': paper_data.get('warnings', [])
+                            },
+                            uploaded_by=request.user
+                        )
+                        
+                        results['uploaded_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'status': 'success',
+                            'paper_id': paper.id,
+                            'display_name': paper.get_display_name()
+                        })
                     
-                    results['uploaded_count'] += 1
-                    results['details'].append({
-                        'filename': file.name,
-                        'status': 'success',
-                        'paper_id': paper.id,
-                        'display_name': paper.get_display_name()
-                    })
+                    except IntegrityError:
+                        # Database rejected duplicate - this is expected
+                        results['skipped_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'status': 'skipped',
+                            'reason': 'Duplicate paper already exists'
+                        })
                     
                 except Exception as e:
                     results['failed_count'] += 1
