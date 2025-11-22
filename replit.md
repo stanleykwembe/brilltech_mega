@@ -69,6 +69,33 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication and Authorization
 
+#### Portal Redirection System
+The platform uses intelligent role-based redirection to route users to their correct portal:
+
+**Login Redirection Rules:**
+1. **Student Account** (via teacher login) → Error message + redirect to student login page
+2. **Teacher Account** (via student login) → Error message + redirect to teacher login page
+3. **Admin/Staff Login** → `/panel/` (Admin Portal)
+4. **Content Manager Login** → `/content/` (Content Manager Portal)
+5. **Teacher Login** → `/` (Teacher Portal)
+6. **Student Login** → `/student/dashboard/` (or `/student/onboarding/` if incomplete)
+
+**Dashboard Access Protection:**
+- **Root URL (`/`)**: Automatically redirects based on user type:
+  - Students → Student Portal
+  - Admins → Admin Portal  
+  - Content Managers → Content Portal
+  - Teachers → Teacher Dashboard
+- **Admin Portal (`/panel/`)**: Requires admin/staff privileges (redirects others to their correct portal)
+- **Content Portal (`/content/`)**: Requires content_manager role or admin privileges
+- **Student Portal (`/student/`)**: Requires StudentProfile (blocks teachers/admins)
+
+**Security Features:**
+- Cross-portal protection prevents access to wrong dashboards
+- Automatic redirection ensures users always land on their intended portal
+- Clear error messages guide users to the correct login page
+- Onboarding flow enforcement for new students
+
 #### Teacher System
 - **User Types**: Teachers and Admins, with Content Managers as an additional role.
 - **Subscription Model**: Freemium with four tiers (Free, Starter, Growth, Premium) dictating subject limits, lesson plan quotas, and AI model access.

@@ -51,6 +51,11 @@ def login_view(request):
         # Authenticate active user
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            # Check if this is a student account
+            if hasattr(user, 'student_profile'):
+                messages.error(request, 'This is a student account. Please use the student login page.')
+                return render(request, 'core/login.html', {'show_student_link': True})
+            
             login(request, user)
             # Redirect based on user role (3-way routing)
             if user.is_superuser or user.is_staff:
@@ -70,8 +75,32 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required
+def require_teacher(view_func):
+    """Decorator to ensure user is a teacher (not admin, content manager, or student)"""
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        # Redirect students to their own portal
+        if hasattr(request.user, 'student_profile'):
+            messages.info(request, 'Redirecting you to the student portal.')
+            if not request.user.student_profile.onboarding_completed:
+                return redirect('student_onboarding')
+            return redirect('student_dashboard')
+        
+        # Redirect admins to admin panel
+        if request.user.is_superuser or request.user.is_staff:
+            return redirect('admin_dashboard')
+        
+        # Redirect content managers to content portal
+        if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'content_manager':
+            return redirect('content_dashboard')
+        
+        # Proceed with teacher view
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+@require_teacher
 def dashboard_view(request):
+    # All role checks passed - safe to run teacher-specific queries
     profile = UserProfile.objects.get_or_create(user=request.user)[0]
     quota = UsageQuota.objects.get_or_create(user=request.user)[0]
     
@@ -3280,6 +3309,19 @@ def official_papers_bulk_upload(request):
                             'filename': file.name,
                             'status': 'skipped',
                             'reason': 'Duplicate or error'
+                        })
+                        continue
+                    
+                    # SECURITY: Re-validate file path before saving (don't trust frontend data)
+                    file_path = file_paths[idx] if idx < len(file_paths) else file.name
+                    try:
+                        safe_path = sanitize_file_path(file_path)
+                    except ValueError as e:
+                        results['failed_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'status': 'error',
+                            'error': f"Path validation failed: {str(e)}"
                         })
                         continue
                     
