@@ -149,7 +149,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # File upload settings - Increase limits for bulk uploads
 DATA_UPLOAD_MAX_NUMBER_FILES = 5000  # Allow up to 5000 files in a single upload
-DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB per file in memory
+DATA_UPLOAD_MAX_MEMORY_SIZE = None  # No limit on total request size (handles 600+ GB uploads)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB - files larger than this stream to disk (not memory)
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
