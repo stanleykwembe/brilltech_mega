@@ -1,0 +1,313 @@
+{% extends 'core/content/base.html' %}
+
+{% block title %}Official Exam Papers Bulk Upload - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Official Exam Papers Bulk Upload</h1>
+    <p class="mt-1 text-sm text-gray-600">Upload entire folder structures with official exam papers from different boards</p>
+</div>
+
+<!-- Instructions -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+    <h3 class="text-lg font-medium text-blue-900 mb-3"><i class="fas fa-info-circle mr-2"></i>Folder Structure Guide</h3>
+    <p class="text-sm text-blue-800 mb-3">Organize your files in the following structure:</p>
+    <div class="bg-white rounded border border-blue-200 p-4 font-mono text-sm">
+        <div class="text-gray-700">
+            <div><i class="fas fa-folder text-orange-500"></i> SUBJECT_CODE (e.g., 0580, 9MA0)</div>
+            <div class="ml-4"><i class="fas fa-folder text-orange-500"></i> YEAR (e.g., 2023, 2024)</div>
+            <div class="ml-8"><i class="fas fa-file-pdf text-red-500"></i> filename.pdf (e.g., 0580_s23_qp_21.pdf)</div>
+            <div class="ml-8"><i class="fas fa-file-pdf text-red-500"></i> filename.pdf (e.g., June 2023 Paper 1.pdf)</div>
+        </div>
+    </div>
+    <div class="mt-4 text-sm text-blue-800">
+        <p class="font-medium mb-2">Filename Parser supports:</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+            <li><strong>Sessions:</strong> June, November, May, Summer, Winter (detected automatically)</li>
+            <li><strong>Paper Types:</strong> QP (Question Paper), MS (Marking Scheme), ER (Examiner Report)</li>
+            <li><strong>Paper Numbers:</strong> 1, 2, 3, 4H, 1F (extracted from filename)</li>
+            <li><strong>Variants:</strong> v1, v2, v3 (for Cambridge-style papers)</li>
+        </ul>
+    </div>
+</div>
+
+<div x-data="{
+    board: '',
+    files: [],
+    filePaths: [],
+    uploading: false,
+    results: null,
+    uploadProgress: 0,
+    
+    handleFolderSelect(e) {
+        const selectedFiles = Array.from(e.target.files);
+        this.files = selectedFiles.filter(f => f.name.endsWith('.pdf'));
+        this.filePaths = this.files.map(f => f.webkitRelativePath || f.name);
+        
+        // Show preview
+        console.log('Selected files:', this.files.length);
+        console.log('File paths:', this.filePaths);
+    },
+    
+    async submitUpload() {
+        if (!this.board) {
+            alert('Please select an exam board');
+            return;
+        }
+        
+        if (this.files.length === 0) {
+            alert('Please select a folder with PDF files');
+            return;
+        }
+        
+        this.uploading = true;
+        this.results = null;
+        this.uploadProgress = 0;
+        
+        const formData = new FormData();
+        formData.append('board', this.board);
+        
+        // Add files and their relative paths
+        this.files.forEach((file, index) => {
+            formData.append('files', file);
+            formData.append('file_paths', this.filePaths[index]);
+        });
+        
+        try {
+            const response = await fetch('{% url 'official_papers_bulk_upload' %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            this.results = data;
+            
+            if (data.success) {
+                // Show success message
+                this.uploadProgress = 100;
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        } finally {
+            this.uploading = false;
+        }
+    }
+}">
+
+    <form @submit.prevent="submitUpload">
+        {% csrf_token %}
+        
+        <!-- Exam Board Selection -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Select Exam Board</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'Cambridge' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="Cambridge" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-university text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">Cambridge</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'Edexcel' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="Edexcel" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-book text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">Edexcel</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'CAPS' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="CAPS" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-graduation-cap text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">CAPS</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'ZIMSEC' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="ZIMSEC" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-certificate text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">ZIMSEC</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'IEB' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="IEB" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-award text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">IEB</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'AQA' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="AQA" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-file-alt text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">AQA</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'OCR' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="OCR" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-scroll text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">OCR</p>
+                    </div>
+                </label>
+                
+                <label class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="board === 'Other' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'">
+                    <input type="radio" name="board" value="Other" x-model="board" class="sr-only">
+                    <div class="flex-1 text-center">
+                        <i class="fas fa-ellipsis-h text-2xl text-orange-500 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-900">Other</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Folder Upload Area -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Folder</h3>
+            
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition-colors">
+                <i class="fas fa-folder-open text-6xl text-gray-400 mb-4"></i>
+                <p class="text-sm text-gray-600 mb-4">Select a folder containing your exam papers</p>
+                
+                <input type="file" 
+                       webkitdirectory 
+                       directory 
+                       multiple 
+                       @change="handleFolderSelect" 
+                       accept=".pdf"
+                       class="hidden" 
+                       id="folderInput">
+                
+                <label for="folderInput" class="inline-flex items-center px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 cursor-pointer">
+                    <i class="fas fa-folder-plus mr-2"></i>Select Folder
+                </label>
+                
+                <p class="text-xs text-gray-500 mt-3">Only PDF files will be uploaded</p>
+            </div>
+            
+            <!-- File List Preview -->
+            <div x-show="files.length > 0" class="mt-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">
+                    <i class="fas fa-list mr-2"></i>
+                    <span x-text="files.length"></span> PDF file(s) selected
+                </h4>
+                
+                <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+                    <template x-for="(file, index) in files.slice(0, 50)" :key="index">
+                        <div class="px-4 py-2 hover:bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                            <div class="flex items-center flex-1 min-w-0">
+                                <i class="fas fa-file-pdf text-red-500 mr-3"></i>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-gray-900 truncate" x-text="filePaths[index]"></p>
+                                    <p class="text-xs text-gray-500" x-text="(file.size / 1024).toFixed(1) + ' KB'"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                
+                <div x-show="files.length > 50" class="px-4 py-2 bg-gray-50 text-xs text-gray-500 text-center">
+                    ... and <span x-text="files.length - 50"></span> more files
+                </div>
+            </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button type="submit" 
+                    :disabled="uploading || files.length === 0 || !board" 
+                    class="px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium">
+                <span x-show="!uploading">
+                    <i class="fas fa-upload mr-2"></i>Upload <span x-text="files.length"></span> Papers
+                </span>
+                <span x-show="uploading">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Uploading...
+                </span>
+            </button>
+        </div>
+    </form>
+    
+    <!-- Results -->
+    <div x-show="results" class="mt-6 bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Results</h3>
+        
+        <!-- Success Summary -->
+        <div x-show="results && results.success" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+            <p class="text-sm text-green-800">
+                <i class="fas fa-check-circle mr-2"></i>
+                Successfully uploaded <strong x-text="results.uploaded_count"></strong> paper(s)
+            </p>
+            <p x-show="results.failed_count > 0" class="text-sm text-orange-600 mt-1">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span x-text="results.failed_count"></span> paper(s) failed to upload
+            </p>
+        </div>
+        
+        <!-- Parsed Papers Preview -->
+        <div x-show="results && results.parsed_papers && results.parsed_papers.length > 0" class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Parsed Papers:</h4>
+            <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paper</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="(paper, index) in results.parsed_papers" :key="index">
+                            <tr>
+                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.filename"></td>
+                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.subject_code"></td>
+                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.year"></td>
+                                <td class="px-4 py-2 text-xs text-gray-600" x-text="paper.session"></td>
+                                <td class="px-4 py-2 text-xs text-gray-600" x-text="paper.paper_number"></td>
+                                <td class="px-4 py-2 text-xs">
+                                    <span class="px-2 py-1 text-xs font-medium rounded"
+                                          :class="paper.type === 'qp' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                                          x-text="paper.type.toUpperCase()"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Errors -->
+        <div x-show="results && results.failed_count > 0" class="mt-4">
+            <h4 class="text-sm font-medium text-red-700 mb-2">Failed Uploads:</h4>
+            <ul class="space-y-1">
+                <template x-for="(detail, index) in results.details.filter(d => !d.success)" :key="index">
+                    <li class="text-xs text-red-600">
+                        <i class="fas fa-times-circle mr-1"></i>
+                        <span x-text="detail.filename"></span>: <span x-text="detail.error"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

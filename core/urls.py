@@ -72,6 +72,7 @@ urlpatterns = [
     path('content/quizzes/', views.content_quizzes, name='content_quizzes'),
     path('content/quizzes/create/', views.content_create_quiz, name='content_create_quiz'),
     path('content/bulk-upload/', views.content_bulk_upload, name='content_bulk_upload'),
+    path('content/papers/official-bulk-upload/', views.official_papers_bulk_upload, name='official_papers_bulk_upload'),
     # Student content management endpoints
     path('content/interactive-question/create/', views.create_interactive_question, name='create_interactive_question'),
     path('content/interactive-questions/', views.manage_interactive_questions, name='manage_interactive_questions'),
