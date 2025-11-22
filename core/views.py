@@ -2975,7 +2975,8 @@ def official_papers_bulk_upload(request):
     from pathlib import PurePosixPath
     
     # Security: Sanitize file paths to prevent directory traversal
-    def sanitize_file_path(path, max_depth=5):
+    # Max depth is 3 to match the folder structure: Subject Name (CODE)/YEAR/filename.pdf
+    def sanitize_file_path(path, max_depth=3):
         """
         Sanitize and validate file paths to prevent security issues.
         Returns the sanitized path or raises ValueError.
@@ -3195,26 +3196,63 @@ def official_papers_bulk_upload(request):
                         results['papers'].append(paper_result)
                         continue
                     
-                    # Parse folder structure: SUBJECT_CODE/YEAR/filename.pdf
+                    # Parse folder structure: Subject Name (CODE)/YEAR/filename.pdf
+                    # Example: Chemistry (0620)/2011/0620_s11_qp_11.pdf
                     path_parts = safe_path.split('/')
                     subject_code = ''
+                    subject_name = ''
                     year_from_path = None
                     
-                    if len(path_parts) >= 2:
-                        subject_code = path_parts[0]
-                        year_str = path_parts[1]
-                        year_match = re.search(r'(20\d{2})', year_str)
+                    if len(path_parts) >= 3:
+                        # Expected format: "Subject Name (CODE)/YEAR/filename.pdf"
+                        subject_folder = path_parts[0]
+                        year_folder = path_parts[1]
+                        
+                        # Extract subject name and code from "Subject Name (CODE)"
+                        subject_match = re.match(r'^(.+?)\s*\(([^)]+)\)$', subject_folder)
+                        if subject_match:
+                            subject_name = subject_match.group(1).strip()
+                            subject_code = subject_match.group(2).strip()
+                        else:
+                            # MANDATORY FORMAT: Reject if format doesn't match
+                            paper_result['errors'].append(f"Subject folder must be in format 'Subject Name (CODE)', got: '{subject_folder}'")
+                            results['failed_count'] += 1
+                            results['papers'].append(paper_result)
+                            continue
+                        
+                        # Extract year from folder (MUST be exactly 4-digit year like "2011", "2023")
+                        year_match = re.match(r'^([12]\d{3})$', year_folder)
                         if year_match:
                             year_from_path = int(year_match.group(1))
-                    elif len(path_parts) == 1:
-                        # Just filename, try to extract subject code from it
-                        # Cambridge: 0580_s23_qp_21.pdf
-                        code_match = re.search(r'^(\d{4}|\w+\d+)', file.name)
-                        if code_match:
-                            subject_code = code_match.group(1)
+                        else:
+                            paper_result['errors'].append(
+                                f"Year folder must be exactly 4 digits (e.g., '2011', '2023'), got: '{year_folder}'"
+                            )
+                            results['failed_count'] += 1
+                            results['papers'].append(paper_result)
+                            continue
                     
-                    if not subject_code:
-                        paper_result['warnings'].append("Could not extract subject code from path")
+                    elif len(path_parts) < 3:
+                        # MANDATORY 3-LEVEL STRUCTURE: Reject if not properly organized
+                        paper_result['errors'].append(
+                            f"Invalid folder structure. Expected: 'Subject Name (CODE)/YEAR/filename.pdf' "
+                            f"(3 levels), but got {len(path_parts)} level(s). "
+                            f"Please organize files correctly."
+                        )
+                        results['failed_count'] += 1
+                        results['papers'].append(paper_result)
+                        continue
+                    
+                    else:
+                        # Too deep - path has more than 3 levels
+                        paper_result['errors'].append(
+                            f"Folder structure too deep ({len(path_parts)} levels). "
+                            f"Expected: 'Subject Name (CODE)/YEAR/filename.pdf' (3 levels only). "
+                            f"Remove extra nested folders."
+                        )
+                        results['failed_count'] += 1
+                        results['papers'].append(paper_result)
+                        continue
                     
                     # Parse filename
                     parsed, parse_warnings = parse_filename(file.name, safe_path)
@@ -3229,12 +3267,15 @@ def official_papers_bulk_upload(request):
                         paper_result['warnings'].append(f"Unusual year detected: {year}")
                     
                     # Build paper data
+                    # Prioritize subject_name from folder structure, fallback to filename parsing
+                    final_subject_name = subject_name or parsed.get('subject_name', '')
+                    
                     paper_result.update({
                         'status': 'ready',
                         'board': exam_board.name_full,
                         'board_id': exam_board.id,
                         'subject_code': subject_code,
-                        'subject_name': parsed.get('subject_name', ''),
+                        'subject_name': final_subject_name,
                         'year': year,
                         'session': parsed['session'],
                         'paper_number': parsed['paper_number'],
