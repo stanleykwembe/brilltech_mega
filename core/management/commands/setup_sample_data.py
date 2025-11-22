@@ -44,6 +44,37 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f'Created exam board: {full_name}')
 
+        # Create admin superuser
+        admin_user, created = User.objects.get_or_create(
+            username='admin',
+            defaults={
+                'email': 'admin@edutech.com',
+                'first_name': 'Admin',
+                'last_name': 'User',
+                'is_staff': True,
+                'is_superuser': True
+            }
+        )
+        if created:
+            admin_user.set_password('admin123')
+            admin_user.save()
+            self.stdout.write('Created admin user: admin (password: admin123)')
+        else:
+            admin_user.set_password('admin123')
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.save()
+            self.stdout.write('Updated admin user password to: admin123')
+
+        # Create admin profile
+        admin_profile, created = UserProfile.objects.get_or_create(
+            user=admin_user,
+            defaults={
+                'role': 'admin',
+                'subscription': 'premium'
+            }
+        )
+
         # Create demo user
         demo_user, created = User.objects.get_or_create(
             username='demo_teacher',
