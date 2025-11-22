@@ -1015,45 +1015,52 @@ class OfficialExamPaper(models.Model):
         ('other', 'Other'),
     ]
     
-    board = models.CharField(max_length=100, help_text="e.g., Cambridge, Edexcel, CAPS")
-    subject_code = models.CharField(max_length=50, help_text="e.g., 0580, 9MA0, PHYS-01")
+    # Board and Subject (with ForeignKeys for proper filtering)
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE, help_text="Exam board")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, help_text="Optional subject mapping")
+    subject_code = models.CharField(max_length=50, help_text="Official subject code (e.g., 0580, 9MA0, PHYS-01)")
     subject_name = models.CharField(max_length=200, blank=True, help_text="e.g., Mathematics, Physics")
     module_code = models.CharField(max_length=50, blank=True, help_text="Optional module/component code")
     
+    # Paper details
     year = models.IntegerField(help_text="e.g., 2023")
     session = models.CharField(max_length=20, choices=SESSION_CHOICES)
-    
     paper_number = models.CharField(max_length=20, help_text="e.g., 1, 2, 3, 4H, 1F")
     variant = models.CharField(max_length=10, blank=True, help_text="e.g., 1, 2, 3 for Cambridge variants")
     paper_type = models.CharField(max_length=20, choices=PAPER_TYPE_CHOICES, default='qp')
     
+    # File storage
     original_filename = models.CharField(max_length=255, help_text="Original file name for reference")
     file = models.FileField(upload_to='official_exam_papers/%Y/%m/')
-    folder_path = models.CharField(max_length=500, help_text="Relative path from upload root")
     
+    # Metadata and flags
     metadata_json = models.JSONField(default=dict, blank=True, help_text="Additional parsed metadata")
-    
     is_public = models.BooleanField(default=True, help_text="Visible on public download page")
     can_use_for_training = models.BooleanField(default=True, help_text="Use for AI training")
     
+    # Tracking
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['-year', 'board', 'subject_code', 'session', 'paper_number']
+        ordering = ['-year', 'exam_board', 'subject_code', 'session', 'paper_number']
+        unique_together = [
+            ('exam_board', 'subject_code', 'year', 'session', 'paper_number', 'variant', 'paper_type')
+        ]
         indexes = [
-            models.Index(fields=['board', 'subject_code', 'year']),
+            models.Index(fields=['exam_board', 'subject_code', 'year']),
             models.Index(fields=['is_public']),
+            models.Index(fields=['subject', 'year']),
         ]
     
     def __str__(self):
         variant_str = f"v{self.variant}" if self.variant else ""
-        return f"{self.board} {self.subject_code} {self.year} {self.session} Paper {self.paper_number}{variant_str}"
+        return f"{self.exam_board.abbreviation} {self.subject_code} {self.year} {self.session} Paper {self.paper_number}{variant_str}"
     
     def get_display_name(self):
         """Generate human-readable display name"""
-        parts = [self.board, self.subject_name or self.subject_code]
+        parts = [self.exam_board.name_full, self.subject_name or self.subject_code]
         parts.append(f"({self.year})")
         parts.append(self.get_session_display())
         parts.append(f"Paper {self.paper_number}")
@@ -1064,4 +1071,5 @@ class OfficialExamPaper(models.Model):
     
     def get_search_text(self):
         """Combined text for full-text search"""
-        return f"{self.board} {self.subject_code} {self.subject_name} {self.year} {self.session} {self.paper_number} {self.variant} {self.original_filename}"
+        board_name = self.exam_board.name_full if self.exam_board else ""
+        return f"{board_name} {self.subject_code} {self.subject_name} {self.year} {self.session} {self.paper_number} {self.variant} {self.original_filename}"

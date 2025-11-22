@@ -36,20 +36,23 @@
     files: [],
     filePaths: [],
     uploading: false,
-    results: null,
+    previewData: null,
+    confirmResults: null,
     uploadProgress: 0,
+    currentStep: 'upload', // 'upload', 'preview', 'confirmed'
     
     handleFolderSelect(e) {
         const selectedFiles = Array.from(e.target.files);
         this.files = selectedFiles.filter(f => f.name.endsWith('.pdf'));
         this.filePaths = this.files.map(f => f.webkitRelativePath || f.name);
         
-        // Show preview
-        console.log('Selected files:', this.files.length);
-        console.log('File paths:', this.filePaths);
+        // Reset state
+        this.previewData = null;
+        this.confirmResults = null;
+        this.currentStep = 'upload';
     },
     
-    async submitUpload() {
+    async previewUpload() {
         if (!this.board) {
             alert('Please select an exam board');
             return;
@@ -61,11 +64,11 @@
         }
         
         this.uploading = true;
-        this.results = null;
-        this.uploadProgress = 0;
+        this.previewData = null;
         
         const formData = new FormData();
         formData.append('board', this.board);
+        formData.append('action', 'preview');
         
         // Add files and their relative paths
         this.files.forEach((file, index) => {
@@ -83,21 +86,77 @@
             });
             
             const data = await response.json();
-            this.results = data;
             
-            if (data.success) {
-                // Show success message
-                this.uploadProgress = 100;
+            if (!response.ok) {
+                throw new Error(data.error || 'Preview failed');
             }
+            
+            this.previewData = data;
+            this.currentStep = 'preview';
+        } catch (error) {
+            alert('Preview failed: ' + error.message);
+        } finally {
+            this.uploading = false;
+        }
+    },
+    
+    async confirmUpload() {
+        if (!this.previewData || !this.previewData.papers || this.previewData.papers.length === 0) {
+            alert('No papers to upload');
+            return;
+        }
+        
+        this.uploading = true;
+        this.confirmResults = null;
+        
+        const formData = new FormData();
+        formData.append('board', this.board);
+        formData.append('action', 'confirm');
+        
+        // Re-add files for confirmation
+        this.files.forEach((file, index) => {
+            formData.append('files', file);
+            formData.append('file_paths', this.filePaths[index]);
+        });
+        
+        // Add preview data to validate against
+        formData.append('preview_data', JSON.stringify(this.previewData.papers));
+        
+        try {
+            const response = await fetch('{% url 'official_papers_bulk_upload' %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+            
+            this.confirmResults = data;
+            this.currentStep = 'confirmed';
         } catch (error) {
             alert('Upload failed: ' + error.message);
         } finally {
             this.uploading = false;
         }
+    },
+    
+    reset() {
+        this.files = [];
+        this.filePaths = [];
+        this.previewData = null;
+        this.confirmResults = null;
+        this.currentStep = 'upload';
+        this.board = '';
     }
 }">
 
-    <form @submit.prevent="submitUpload">
+    <form>
         {% csrf_token %}
         
         <!-- Exam Board Selection -->
@@ -230,82 +289,143 @@
         </div>
         
         <!-- Submit Button -->
-        <div class="flex justify-end">
-            <button type="submit" 
+        <div class="flex justify-end gap-3">
+            <button type="button" 
+                    x-show="currentStep === 'upload'"
+                    @click="previewUpload()"
                     :disabled="uploading || files.length === 0 || !board" 
                     class="px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium">
                 <span x-show="!uploading">
-                    <i class="fas fa-upload mr-2"></i>Upload <span x-text="files.length"></span> Papers
+                    <i class="fas fa-search mr-2"></i>Preview <span x-text="files.length"></span> Papers
+                </span>
+                <span x-show="uploading">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...
+                </span>
+            </button>
+        </div>
+    </form>
+    
+    <!-- Preview Results -->
+    <div x-show="currentStep === 'preview' && previewData" class="mt-6 bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-eye mr-2 text-orange-500"></i>Preview Parsed Papers
+        </h3>
+        
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-blue-600" x-text="previewData.ready_count || 0"></p>
+                <p class="text-xs text-blue-800 mt-1">Ready to Upload</p>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-yellow-600" x-text="previewData.warning_count || 0"></p>
+                <p class="text-xs text-yellow-800 mt-1">Warnings</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-red-600" x-text="previewData.error_count || 0"></p>
+                <p class="text-xs text-red-800 mt-1">Errors/Duplicates</p>
+            </div>
+        </div>
+        
+        <!-- Papers Table -->
+        <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-md mb-4">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paper</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="(paper, index) in previewData.papers" :key="index">
+                        <tr :class="paper.status === 'error' ? 'bg-red-50' : (paper.warnings && paper.warnings.length > 0 ? 'bg-yellow-50' : '')">
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-1 text-xs font-medium rounded"
+                                      :class="{
+                                          'bg-green-100 text-green-800': paper.status === 'ready',
+                                          'bg-yellow-100 text-yellow-800': paper.warnings && paper.warnings.length > 0 && paper.status !== 'error',
+                                          'bg-red-100 text-red-800': paper.status === 'error',
+                                          'bg-gray-100 text-gray-800': paper.status === 'skipped'
+                                      }"
+                                      x-text="paper.status === 'ready' ? 'Ready' : (paper.status === 'error' ? 'Error' : 'Skip')"></span>
+                            </td>
+                            <td class="px-3 py-2 text-xs text-gray-900 truncate max-w-xs" x-text="paper.original_filename"></td>
+                            <td class="px-3 py-2 text-xs font-medium text-gray-900" x-text="paper.subject_code || '-'"></td>
+                            <td class="px-3 py-2 text-xs text-gray-900" x-text="paper.year || '-'"></td>
+                            <td class="px-3 py-2 text-xs text-gray-600" x-text="paper.session || '-'"></td>
+                            <td class="px-3 py-2 text-xs text-gray-600" x-text="paper.paper_number || '-'"></td>
+                            <td class="px-3 py-2">
+                                <span x-show="paper.paper_type" class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800" 
+                                      x-text="(paper.paper_type || '').toUpperCase()"></span>
+                            </td>
+                            <td class="px-3 py-2 text-xs">
+                                <div x-show="paper.warnings && paper.warnings.length > 0">
+                                    <template x-for="warning in paper.warnings">
+                                        <p class="text-yellow-700" x-text="warning"></p>
+                                    </template>
+                                </div>
+                                <div x-show="paper.error">
+                                    <p class="text-red-700" x-text="paper.error"></p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center">
+            <button type="button" 
+                    @click="reset()"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+            <button type="button" 
+                    @click="confirmUpload()"
+                    :disabled="uploading || !previewData || previewData.ready_count === 0"
+                    class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium">
+                <span x-show="!uploading">
+                    <i class="fas fa-check-circle mr-2"></i>Confirm & Upload <span x-text="previewData.ready_count"></span> Papers
                 </span>
                 <span x-show="uploading">
                     <i class="fas fa-spinner fa-spin mr-2"></i>Uploading...
                 </span>
             </button>
         </div>
-    </form>
+    </div>
     
-    <!-- Results -->
-    <div x-show="results" class="mt-6 bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Results</h3>
+    <!-- Confirmation Results -->
+    <div x-show="currentStep === 'confirmed' && confirmResults" class="mt-6 bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-check-circle mr-2 text-green-500"></i>Upload Complete
+        </h3>
         
         <!-- Success Summary -->
-        <div x-show="results && results.success" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <p class="text-sm text-green-800">
                 <i class="fas fa-check-circle mr-2"></i>
-                Successfully uploaded <strong x-text="results.uploaded_count"></strong> paper(s)
+                Successfully uploaded <strong x-text="confirmResults.success_count"></strong> paper(s)
             </p>
-            <p x-show="results.failed_count > 0" class="text-sm text-orange-600 mt-1">
-                <i class="fas fa-exclamation-triangle mr-2"></i>
-                <span x-text="results.failed_count"></span> paper(s) failed to upload
+            <p x-show="confirmResults.skipped_count > 0" class="text-sm text-gray-600 mt-1">
+                <i class="fas fa-info-circle mr-2"></i>
+                Skipped <span x-text="confirmResults.skipped_count"></span> paper(s) (duplicates or errors)
             </p>
         </div>
         
-        <!-- Parsed Papers Preview -->
-        <div x-show="results && results.parsed_papers && results.parsed_papers.length > 0" class="mb-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">Parsed Papers:</h4>
-            <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paper</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <template x-for="(paper, index) in results.parsed_papers" :key="index">
-                            <tr>
-                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.filename"></td>
-                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.subject_code"></td>
-                                <td class="px-4 py-2 text-xs text-gray-900" x-text="paper.year"></td>
-                                <td class="px-4 py-2 text-xs text-gray-600" x-text="paper.session"></td>
-                                <td class="px-4 py-2 text-xs text-gray-600" x-text="paper.paper_number"></td>
-                                <td class="px-4 py-2 text-xs">
-                                    <span class="px-2 py-1 text-xs font-medium rounded"
-                                          :class="paper.type === 'qp' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
-                                          x-text="paper.type.toUpperCase()"></span>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Errors -->
-        <div x-show="results && results.failed_count > 0" class="mt-4">
-            <h4 class="text-sm font-medium text-red-700 mb-2">Failed Uploads:</h4>
-            <ul class="space-y-1">
-                <template x-for="(detail, index) in results.details.filter(d => !d.success)" :key="index">
-                    <li class="text-xs text-red-600">
-                        <i class="fas fa-times-circle mr-1"></i>
-                        <span x-text="detail.filename"></span>: <span x-text="detail.error"></span>
-                    </li>
-                </template>
-            </ul>
+        <!-- Reset Button -->
+        <div class="flex justify-end">
+            <button type="button" 
+                    @click="reset()"
+                    class="px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                <i class="fas fa-plus mr-2"></i>Upload More Papers
+            </button>
         </div>
     </div>
 </div>

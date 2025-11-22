@@ -2939,161 +2939,396 @@ def content_bulk_upload(request):
 
 @require_content_manager
 def official_papers_bulk_upload(request):
-    """Bulk upload official exam papers via folder structure"""
+    """Bulk upload official exam papers via folder structure with 2-step flow"""
     from .models import OfficialExamPaper
     import re
-    import os
     from datetime import datetime
+    from pathlib import PurePosixPath
     
-    if request.method == 'POST':
-        board_name = request.POST.get('board')
-        files = request.FILES.getlist('files')
-        file_paths = request.POST.getlist('file_paths')
+    # Security: Sanitize file paths to prevent directory traversal
+    def sanitize_file_path(path, max_depth=5):
+        """
+        Sanitize and validate file paths to prevent security issues.
+        Returns the sanitized path or raises ValueError.
+        """
+        try:
+            safe_path = PurePosixPath(path)
+            
+            # Check for directory traversal attempts
+            if '..' in safe_path.parts:
+                raise ValueError("Path contains invalid '..' component")
+            
+            # Check for absolute paths
+            if safe_path.is_absolute():
+                raise ValueError("Absolute paths not allowed")
+            
+            # Check path depth
+            if len(safe_path.parts) > max_depth:
+                raise ValueError(f"Path depth exceeds maximum of {max_depth} levels")
+            
+            # Check for dangerous characters
+            path_str = str(safe_path)
+            dangerous_chars = ['\\', '\x00', '\n', '\r']
+            if any(char in path_str for char in dangerous_chars):
+                raise ValueError("Path contains invalid characters")
+            
+            return path_str
+        except Exception as e:
+            raise ValueError(f"Invalid path: {str(e)}")
+    
+    # Improved parser that handles multiple board formats
+    def parse_filename(filename, file_path=''):
+        """
+        Parse different exam paper filename formats from various boards.
+        Supports Cambridge, Edexcel, CAPS, ZIMSEC, IEB, and generic formats.
+        Returns dict with parsed metadata and any warnings.
+        """
+        filename_lower = filename.lower()
+        warnings = []
         
-        if not files or not board_name:
-            return JsonResponse({'success': False, 'error': 'No files or board provided'})
+        parsed = {
+            'session': 'other',
+            'paper_number': '',
+            'variant': '',
+            'paper_type': 'qp',
+            'year': None,
+            'subject_name': '',
+        }
         
-        # Parse helper functions
-        def parse_filename(filename):
-            """Parse different exam paper filename formats"""
-            filename_lower = filename.lower()
-            parsed = {
-                'session': 'other',
-                'paper_number': '',
-                'variant': '',
-                'paper_type': 'qp',
-            }
-            
-            # Session detection
-            if 'june' in filename_lower or '_s' in filename_lower:
-                parsed['session'] = 'june'
-            elif 'november' in filename_lower or '_w' in filename_lower:
-                parsed['session'] = 'november'
-            elif 'may' in filename_lower:
-                parsed['session'] = 'may'
-            elif 'feb' in filename_lower or 'march' in filename_lower:
-                parsed['session'] = 'february'
-            elif 'oct' in filename_lower:
-                parsed['session'] = 'october'
-            elif 'summer' in filename_lower:
-                parsed['session'] = 'summer'
-            elif 'winter' in filename_lower:
-                parsed['session'] = 'winter'
-            
-            # Paper type detection
-            if '_ms' in filename_lower or 'marking' in filename_lower or 'memo' in filename_lower:
-                parsed['paper_type'] = 'ms'
-            elif '_qp' in filename_lower or 'question' in filename_lower:
-                parsed['paper_type'] = 'qp'
-            elif 'examiner' in filename_lower or '_er' in filename_lower:
-                parsed['paper_type'] = 'er'
-            elif 'grade' in filename_lower and 'threshold' in filename_lower:
-                parsed['paper_type'] = 'gt'
-            elif 'insert' in filename_lower or 'resource' in filename_lower:
-                parsed['paper_type'] = 'ir'
-            elif 'specimen' in filename_lower:
-                parsed['paper_type'] = 'specimen'
-            
-            # Paper number extraction - look for patterns like "paper 1", "p1", "_21", etc.
+        # === YEAR EXTRACTION ===
+        # Try to extract year from filename or path
+        year_match = re.search(r'(20[0-2]\d)', filename)
+        if year_match:
+            parsed['year'] = int(year_match.group(1))
+        elif file_path:
+            year_match = re.search(r'(20[0-2]\d)', file_path)
+            if year_match:
+                parsed['year'] = int(year_match.group(1))
+        
+        # If no year found, try 2-digit year format
+        if not parsed['year']:
+            year_match = re.search(r'[_\s](\d{2})[_\s.]', filename_lower)
+            if year_match:
+                year_2digit = int(year_match.group(1))
+                # Assume 20xx for years < 50, 19xx otherwise
+                parsed['year'] = 2000 + year_2digit if year_2digit < 50 else 1900 + year_2digit
+        
+        # === SESSION DETECTION ===
+        # Cambridge style: _s23, _w23, _m23, _y23
+        if re.search(r'_s\d{2}', filename_lower):
+            parsed['session'] = 'june'
+        elif re.search(r'_w\d{2}', filename_lower):
+            parsed['session'] = 'november'
+        elif re.search(r'_m\d{2}', filename_lower):
+            parsed['session'] = 'may'
+        elif re.search(r'_y\d{2}', filename_lower):
+            parsed['session'] = 'february'
+        # Word-based detection
+        elif 'june' in filename_lower:
+            parsed['session'] = 'june'
+        elif 'november' in filename_lower or 'nov' in filename_lower:
+            parsed['session'] = 'november'
+        elif 'may' in filename_lower:
+            parsed['session'] = 'may'
+        elif 'feb' in filename_lower or 'march' in filename_lower:
+            parsed['session'] = 'february'
+        elif 'oct' in filename_lower or 'october' in filename_lower:
+            parsed['session'] = 'october'
+        elif 'summer' in filename_lower:
+            parsed['session'] = 'summer'
+        elif 'winter' in filename_lower:
+            parsed['session'] = 'winter'
+        else:
+            warnings.append("Could not determine session - defaulting to 'other'")
+        
+        # === PAPER TYPE DETECTION ===
+        if '_ms' in filename_lower or 'marking' in filename_lower or 'memo' in filename_lower or 'mark scheme' in filename_lower:
+            parsed['paper_type'] = 'ms'
+        elif '_qp' in filename_lower or 'question' in filename_lower or '_que_' in filename_lower:
+            parsed['paper_type'] = 'qp'
+        elif 'examiner' in filename_lower or '_er' in filename_lower or 'exam report' in filename_lower:
+            parsed['paper_type'] = 'er'
+        elif 'grade' in filename_lower and 'threshold' in filename_lower:
+            parsed['paper_type'] = 'gt'
+        elif 'insert' in filename_lower or 'resource' in filename_lower:
+            parsed['paper_type'] = 'ir'
+        elif 'specimen' in filename_lower:
+            parsed['paper_type'] = 'specimen'
+        
+        # === PAPER NUMBER & VARIANT EXTRACTION ===
+        # Cambridge style: _21, _42 (paper 2 variant 1, paper 4 variant 2)
+        cambridge_match = re.search(r'_([1-9])([1-9])', filename_lower)
+        if cambridge_match:
+            parsed['paper_number'] = cambridge_match.group(1)
+            parsed['variant'] = cambridge_match.group(2)
+        else:
+            # Edexcel style: Paper 1, Paper 2, etc.
             paper_match = re.search(r'(?:paper|p)[\s_]?(\d+[hlfm]?)', filename_lower)
             if paper_match:
                 parsed['paper_number'] = paper_match.group(1).upper()
-            else:
-                # Try other patterns like _21, _42
-                num_match = re.search(r'_(\d)(\d)', filename_lower)
-                if num_match:
-                    parsed['paper_number'] = num_match.group(1)
-                    parsed['variant'] = num_match.group(2)
             
-            # Variant detection
+            # CAPS/IEB style: "P1", "P2" 
+            if not parsed['paper_number']:
+                caps_match = re.search(r'\bp(\d+)\b', filename_lower)
+                if caps_match:
+                    parsed['paper_number'] = caps_match.group(1)
+            
+            # Variant detection (separate from paper number)
             variant_match = re.search(r'(?:variant|v)[\s_]?(\d+)', filename_lower)
-            if variant_match and not parsed['variant']:
+            if variant_match:
                 parsed['variant'] = variant_match.group(1)
-            
-            return parsed
         
-        results = {
-            'success': True,
-            'uploaded_count': 0,
-            'failed_count': 0,
-            'details': [],
-            'parsed_papers': []
+        # === SUBJECT NAME EXTRACTION (for generic formats) ===
+        # Look for common subject names in filename
+        subjects = {
+            'mathematics': 'Mathematics',
+            'math': 'Mathematics',
+            'physics': 'Physics',
+            'chemistry': 'Chemistry',
+            'biology': 'Biology',
+            'english': 'English',
+            'history': 'History',
+            'geography': 'Geography',
+            'science': 'Science',
         }
         
+        for key, value in subjects.items():
+            if key in filename_lower:
+                parsed['subject_name'] = value
+                break
+        
+        # Validate critical fields
+        if not parsed['paper_number']:
+            warnings.append("Could not extract paper number - defaulting to '1'")
+            parsed['paper_number'] = '1'
+        
+        if not parsed['year']:
+            warnings.append(f"Could not extract year from filename or path")
+        
+        return parsed, warnings
+    
+    if request.method == 'POST':
+        action = request.POST.get('action', 'preview')  # 'preview' or 'confirm'
+        board_name = request.POST.get('board')
+        
+        if not board_name:
+            return JsonResponse({'success': False, 'error': 'No exam board provided'})
+        
+        # Get ExamBoard by name (name_full or abbreviation)
         try:
+            exam_board = ExamBoard.objects.filter(
+                Q(name_full__iexact=board_name) | Q(abbreviation__iexact=board_name)
+            ).first()
+            
+            if not exam_board:
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Exam board "{board_name}" not found. Please create it in the admin panel first.'
+                })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Error finding exam board: {str(e)}'})
+        
+        # === STEP 1: PREVIEW & PARSE ===
+        if action == 'preview':
+            files = request.FILES.getlist('files')
+            file_paths = request.POST.getlist('file_paths')
+            
+            if not files:
+                return JsonResponse({'success': False, 'error': 'No files provided'})
+            
+            results = {
+                'success': True,
+                'action': 'preview',
+                'total_files': len(files),
+                'parseable_count': 0,
+                'failed_count': 0,
+                'papers': []
+            }
+            
             for idx, file in enumerate(files):
+                file_path = file_paths[idx] if idx < len(file_paths) else file.name
+                paper_result = {
+                    'filename': file.name,
+                    'file_path': file_path,
+                    'status': 'error',
+                    'warnings': [],
+                    'errors': []
+                }
+                
                 try:
-                    # Get corresponding file path
-                    file_path = file_paths[idx] if idx < len(file_paths) else file.name
+                    # Sanitize file path
+                    try:
+                        safe_path = sanitize_file_path(file_path)
+                        paper_result['safe_path'] = safe_path
+                    except ValueError as e:
+                        paper_result['errors'].append(f"Path validation failed: {str(e)}")
+                        results['failed_count'] += 1
+                        results['papers'].append(paper_result)
+                        continue
                     
                     # Parse folder structure: SUBJECT_CODE/YEAR/filename.pdf
-                    path_parts = file_path.split('/')
-                    
-                    # Extract components
+                    path_parts = safe_path.split('/')
                     subject_code = ''
-                    year = datetime.now().year
-                    subject_name = ''
+                    year_from_path = None
                     
                     if len(path_parts) >= 2:
                         subject_code = path_parts[0]
                         year_str = path_parts[1]
-                        # Extract year from folder name (e.g., "2023" or "2023_Papers")
                         year_match = re.search(r'(20\d{2})', year_str)
                         if year_match:
-                            year = int(year_match.group(1))
+                            year_from_path = int(year_match.group(1))
+                    elif len(path_parts) == 1:
+                        # Just filename, try to extract subject code from it
+                        # Cambridge: 0580_s23_qp_21.pdf
+                        code_match = re.search(r'^(\d{4}|\w+\d+)', file.name)
+                        if code_match:
+                            subject_code = code_match.group(1)
+                    
+                    if not subject_code:
+                        paper_result['warnings'].append("Could not extract subject code from path")
                     
                     # Parse filename
-                    parsed = parse_filename(file.name)
+                    parsed, parse_warnings = parse_filename(file.name, safe_path)
+                    paper_result['warnings'].extend(parse_warnings)
                     
-                    # Create official exam paper
-                    paper = OfficialExamPaper.objects.create(
-                        board=board_name,
+                    # Use year from path if available, otherwise use parsed year
+                    year = year_from_path or parsed['year'] or datetime.now().year
+                    
+                    # Validate year
+                    current_year = datetime.now().year
+                    if year < 1990 or year > current_year + 1:
+                        paper_result['warnings'].append(f"Unusual year detected: {year}")
+                    
+                    # Build paper data
+                    paper_result.update({
+                        'status': 'ready',
+                        'board': exam_board.name_full,
+                        'board_id': exam_board.id,
+                        'subject_code': subject_code,
+                        'subject_name': parsed.get('subject_name', ''),
+                        'year': year,
+                        'session': parsed['session'],
+                        'paper_number': parsed['paper_number'],
+                        'variant': parsed['variant'],
+                        'paper_type': parsed['paper_type'],
+                        'file_size': file.size,
+                    })
+                    
+                    # Check for duplicates
+                    existing = OfficialExamPaper.objects.filter(
+                        exam_board=exam_board,
                         subject_code=subject_code,
-                        subject_name=subject_name,
                         year=year,
                         session=parsed['session'],
-                        paper_number=parsed['paper_number'] or '1',
+                        paper_number=parsed['paper_number'],
                         variant=parsed['variant'],
-                        paper_type=parsed['paper_type'],
+                        paper_type=parsed['paper_type']
+                    ).first()
+                    
+                    if existing:
+                        paper_result['warnings'].append(f"Duplicate: Paper already exists (ID: {existing.id})")
+                        paper_result['duplicate'] = True
+                    
+                    results['parseable_count'] += 1
+                    
+                except Exception as e:
+                    paper_result['status'] = 'error'
+                    paper_result['errors'].append(f"Parsing error: {str(e)}")
+                    results['failed_count'] += 1
+                
+                results['papers'].append(paper_result)
+            
+            return JsonResponse(results)
+        
+        # === STEP 2: CONFIRM & SAVE ===
+        elif action == 'confirm':
+            import json
+            
+            files = request.FILES.getlist('files')
+            file_paths = request.POST.getlist('file_paths')
+            papers_data_json = request.POST.get('papers_data')
+            
+            if not files or not papers_data_json:
+                return JsonResponse({'success': False, 'error': 'Missing files or paper data'})
+            
+            try:
+                papers_data = json.loads(papers_data_json)
+            except json.JSONDecodeError:
+                return JsonResponse({'success': False, 'error': 'Invalid paper data format'})
+            
+            results = {
+                'success': True,
+                'action': 'confirm',
+                'uploaded_count': 0,
+                'skipped_count': 0,
+                'failed_count': 0,
+                'details': []
+            }
+            
+            for idx, file in enumerate(files):
+                try:
+                    # Get corresponding paper data
+                    if idx >= len(papers_data):
+                        continue
+                    
+                    paper_data = papers_data[idx]
+                    
+                    # Skip if marked as duplicate or error
+                    if paper_data.get('duplicate') or paper_data.get('status') == 'error':
+                        results['skipped_count'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'status': 'skipped',
+                            'reason': 'Duplicate or error'
+                        })
+                        continue
+                    
+                    # Create official exam paper with secure file handling
+                    paper = OfficialExamPaper.objects.create(
+                        exam_board=exam_board,
+                        subject_code=paper_data['subject_code'],
+                        subject_name=paper_data.get('subject_name', ''),
+                        year=paper_data['year'],
+                        session=paper_data['session'],
+                        paper_number=paper_data['paper_number'],
+                        variant=paper_data.get('variant', ''),
+                        paper_type=paper_data['paper_type'],
                         original_filename=file.name,
-                        file=file,
-                        folder_path=file_path,
-                        metadata_json={'parsed_data': parsed, 'upload_date': datetime.now().isoformat()},
+                        file=file,  # Django handles secure storage automatically
+                        metadata_json={
+                            'parsed_data': paper_data,
+                            'upload_date': datetime.now().isoformat(),
+                            'warnings': paper_data.get('warnings', [])
+                        },
                         uploaded_by=request.user
                     )
                     
                     results['uploaded_count'] += 1
                     results['details'].append({
                         'filename': file.name,
-                        'success': True,
-                        'paper_id': paper.id
-                    })
-                    results['parsed_papers'].append({
-                        'filename': file.name,
-                        'board': board_name,
-                        'subject_code': subject_code,
-                        'year': year,
-                        'session': parsed['session'],
-                        'paper_number': parsed['paper_number'],
-                        'variant': parsed['variant'],
-                        'type': parsed['paper_type']
+                        'status': 'success',
+                        'paper_id': paper.id,
+                        'display_name': paper.get_display_name()
                     })
                     
                 except Exception as e:
                     results['failed_count'] += 1
                     results['details'].append({
                         'filename': file.name,
-                        'success': False,
+                        'status': 'error',
                         'error': str(e)
                     })
             
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse(results)
         
-        return JsonResponse(results)
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid action'})
     
     # GET request - show form
-    context = {}
+    exam_boards = ExamBoard.objects.all().order_by('name_full')
+    context = {
+        'exam_boards': exam_boards,
+    }
     return render(request, 'core/content/official_papers_upload.html', context)
 
 

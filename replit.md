@@ -40,6 +40,7 @@ Preferred communication style: Simple, everyday language.
 - **Content Management**: Dedicated Content Portal for content managers to:
   - Teacher Content: Upload/manage past papers, formatted papers, teacher quizzes (bulk upload with dynamic metadata forms)
   - Student Content: Create interactive questions (MCQ/True-False/Fill-blank/Matching/Essay), build quizzes, upload notes (full + summary versions), create flashcards, upload exam papers
+  - **Official Exam Papers**: Secure bulk upload system with folder structure parsing, 2-step preview/confirm flow, path sanitization to prevent directory traversal, and support for Cambridge, Edexcel, CAPS, ZIMSEC, IEB, AQA, and OCR board formats
 - **AI Integration**: 
   - Teacher Portal: Extracts and reformats content from PDFs using GPT-4, generates lesson plans and assignments
   - Content Creation: AI-powered question generation for interactive quizzes
@@ -56,12 +57,14 @@ Preferred communication style: Simple, everyday language.
 - **Models**: 
   - **Teacher System**: UserProfile, SubscribedSubject, UploadedDocument, Assignment, AssignmentShare, Quiz (Google Forms), QuizResponse, PastPaper, FormattedPaper, UsageQuota
   - **Student System**: StudentProfile, StudentExamBoard, StudentSubject, StudentQuiz, StudentQuizAttempt, StudentQuizQuota, InteractiveQuestion, Note, Flashcard, ExamPaper, StudentProgress
+  - **Official Exam Papers**: OfficialExamPaper (with ForeignKeys to ExamBoard and optional Subject, unique constraint on board/code/year/session/paper/variant/type)
   - **Shared**: Subject, Grade, ExamBoard, Announcement, EmailBlast
 - **File Storage**: Local file system with organized directories:
   - documents/%Y/%m/ - Teacher uploaded documents
   - notes/full/%Y/%m/ and notes/summary/%Y/%m/ - Student study notes
   - flashcards/images/ - Flashcard images
   - exam_papers/%Y/%m/ - Full exam papers and marking schemes
+  - official_exam_papers/%Y/%m/ - Official exam papers from various boards
   - questions/images/ - Interactive question images
 
 ### Authentication and Authorization
