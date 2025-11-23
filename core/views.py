@@ -23,6 +23,14 @@ from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, Ge
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 from .subscription_utils import require_premium, get_user_subscription
 
+def teacher_landing(request):
+    """Teacher portal landing page with animations"""
+    return render(request, 'core/teacher_landing.html')
+
+def student_landing(request):
+    """Student portal landing page with animations"""
+    return render(request, 'core/student_landing.html')
+
 def login_view(request):
     if request.method == 'POST':
         username_or_email = request.POST['username']

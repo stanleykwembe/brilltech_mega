@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTech - AI-Powered Teaching Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.3;
+            animation: blob 7s infinite;
+        }
+        
+        @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(20px, -50px) scale(1.1); }
+            50% { transform: translate(-20px, 20px) scale(0.9); }
+            75% { transform: translate(50px, 50px) scale(1.05); }
+        }
+        
+        .pricing-card {
+            transition: all 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Floating Background Blobs -->
+    <div class="blob w-96 h-96 bg-purple-400 top-0 left-0" style="top: 10%; left: 10%;"></div>
+    <div class="blob w-72 h-72 bg-indigo-400 bottom-0 right-0" style="top: 60%; left: 70%;"></div>
+    
+    <!-- Navigation -->
+    <nav class="fixed w-full bg-white/80 backdrop-blur-md z-50 shadow-sm" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold gradient-text">EduTech</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-700 hover:text-purple-600 transition">Features</a>
+                    <a href="#pricing" class="text-gray-700 hover:text-purple-600 transition">Pricing</a>
+                    <a href="#testimonials" class="text-gray-700 hover:text-purple-600 transition">Testimonials</a>
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-purple-600 transition">Login</a>
+                    <a href="{% url 'register' %}" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition">Get Started</a>
+                </div>
+                <button class="md:hidden text-gray-700">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
+        <div class="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center relative z-10">
+            <div class="hero-content">
+                <h1 class="text-6xl md:text-7xl font-bold mb-6 leading-tight">
+                    <span class="block text-gray-900">Teach Smarter</span>
+                    <span class="gradient-text">with AI Power</span>
+                </h1>
+                <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                    Generate lesson plans, assignments, and quizzes in seconds. Upload past papers and let AI do the heavy lifting.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="{% url 'register' %}" class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold text-lg hover:shadow-xl transition transform hover:scale-105">
+                        Start Free Trial
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                    <a href="#features" class="px-8 py-4 bg-white border-2 border-purple-600 text-purple-600 rounded-xl font-semibold text-lg hover:bg-purple-50 transition">
+                        Learn More
+                    </a>
+                </div>
+                <div class="flex items-center gap-8 mt-8">
+                    <div>
+                        <p class="text-3xl font-bold text-purple-600">10K+</p>
+                        <p class="text-sm text-gray-600">Active Teachers</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl font-bold text-purple-600">50K+</p>
+                        <p class="text-sm text-gray-600">Lessons Created</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl font-bold text-purple-600">98%</p>
+                        <p class="text-sm text-gray-600">Satisfaction</p>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image relative">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-3xl transform rotate-6 opacity-20"></div>
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop" alt="Teaching" class="rounded-3xl shadow-2xl relative z-10">
+                </div>
+                <!-- Floating Cards -->
+                <div class="floating-card absolute -top-10 -left-10 bg-white p-4 rounded-xl shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">Lesson Plan</p>
+                            <p class="text-sm text-gray-600">Generated in 3s</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-card absolute -bottom-10 -right-10 bg-white p-4 rounded-xl shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">AI-Powered</p>
+                            <p class="text-sm text-gray-600">GPT-4 Enhanced</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 features-header">
+                <h2 class="text-5xl font-bold mb-4">
+                    <span class="gradient-text">Powerful Features</span> for Modern Teachers
+                </h2>
+                <p class="text-xl text-gray-600">Everything you need to create engaging lessons and save time</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-gradient-to-br from-purple-50 to-indigo-50 p-8 rounded-2xl border border-purple-100">
+                    <div class="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 transform rotate-3">
+                        <i class="fas fa-magic text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">AI Lesson Plans</h3>
+                    <p class="text-gray-600 leading-relaxed">Generate comprehensive lesson plans with learning objectives, activities, and assessments in seconds using GPT-4.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-gradient-to-br from-blue-50 to-cyan-50 p-8 rounded-2xl border border-blue-100">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 transform -rotate-3">
+                        <i class="fas fa-file-pdf text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">Paper Extraction</h3>
+                    <p class="text-gray-600 leading-relaxed">Upload past papers and automatically extract questions, format content, and create practice materials.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-100">
+                    <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6 transform rotate-3">
+                        <i class="fas fa-clipboard-list text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">Smart Assignments</h3>
+                    <p class="text-gray-600 leading-relaxed">Create custom assignments and quizzes tailored to your curriculum with AI-powered question generation.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-gradient-to-br from-orange-50 to-red-50 p-8 rounded-2xl border border-orange-100">
+                    <div class="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 transform -rotate-3">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">Student Sharing</h3>
+                    <p class="text-gray-600 leading-relaxed">Share materials directly with students via unique codes. Track engagement and manage submissions easily.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card bg-gradient-to-br from-pink-50 to-rose-50 p-8 rounded-2xl border border-pink-100">
+                    <div class="w-16 h-16 bg-pink-600 rounded-2xl flex items-center justify-center mb-6 transform rotate-3">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">Analytics Dashboard</h3>
+                    <p class="text-gray-600 leading-relaxed">Track your usage, monitor quota limits, and gain insights into your teaching materials performance.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card bg-gradient-to-br from-yellow-50 to-amber-50 p-8 rounded-2xl border border-yellow-100">
+                    <div class="w-16 h-16 bg-yellow-600 rounded-2xl flex items-center justify-center mb-6 transform -rotate-3">
+                        <i class="fas fa-globe text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">Multi-Board Support</h3>
+                    <p class="text-gray-600 leading-relaxed">Works with Cambridge, Edexcel, CAPS, ZIMSEC, and more. Aligned with your curriculum standards.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 pricing-header">
+                <h2 class="text-5xl font-bold mb-4">
+                    Simple, <span class="gradient-text">Transparent Pricing</span>
+                </h2>
+                <p class="text-xl text-gray-600">Choose the plan that fits your teaching needs</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6">
+                <!-- Free Plan -->
+                <div class="pricing-card bg-white p-8 rounded-2xl shadow-lg border-2 border-gray-200">
+                    <h3 class="text-2xl font-bold mb-2">Free</h3>
+                    <p class="text-4xl font-bold mb-6">R0<span class="text-lg text-gray-600">/month</span></p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">1 Subject</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">2 Lesson Plans/month</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-times text-gray-400"></i>
+                            <span class="text-gray-400">No AI Features</span>
+                        </li>
+                    </ul>
+                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition">
+                        Get Started
+                    </a>
+                </div>
+
+                <!-- Starter Plan -->
+                <div class="pricing-card bg-white p-8 rounded-2xl shadow-lg border-2 border-purple-200">
+                    <h3 class="text-2xl font-bold mb-2">Starter</h3>
+                    <p class="text-4xl font-bold mb-6 gradient-text">R50<span class="text-lg text-gray-600">/month</span></p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">1 Subject</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">10 Lesson Plans/month</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-times text-gray-400"></i>
+                            <span class="text-gray-400">No AI Features</span>
+                        </li>
+                    </ul>
+                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">
+                        Choose Plan
+                    </a>
+                </div>
+
+                <!-- Growth Plan -->
+                <div class="pricing-card bg-white p-8 rounded-2xl shadow-lg border-2 border-purple-400 relative">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                        POPULAR
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Growth</h3>
+                    <p class="text-4xl font-bold mb-6 gradient-text">R100<span class="text-lg text-gray-600">/month</span></p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">2 Subjects</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">20 Lesson Plans/subject</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-600"></i>
+                            <span class="text-gray-700">GPT-3.5 AI</span>
+                        </li>
+                    </ul>
+                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
+                        Choose Plan
+                    </a>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="pricing-card bg-gradient-to-br from-purple-600 to-indigo-600 p-8 rounded-2xl shadow-lg text-white">
+                    <h3 class="text-2xl font-bold mb-2">Premium</h3>
+                    <p class="text-4xl font-bold mb-6">R250<span class="text-lg opacity-80">/month</span></p>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check"></i>
+                            <span>3 Subjects</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check"></i>
+                            <span>Unlimited Lesson Plans</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check"></i>
+                            <span>GPT-4 AI</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check"></i>
+                            <span>Priority Support</span>
+                        </li>
+                    </ul>
+                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        Choose Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-purple-600 to-indigo-600 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+            <h2 class="text-5xl font-bold text-white mb-6 cta-text">
+                Ready to Transform Your Teaching?
+            </h2>
+            <p class="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+                Join thousands of teachers using AI to create better lessons and save time
+            </p>
+            <a href="{% url 'register' %}" class="inline-block px-10 py-5 bg-white text-purple-600 rounded-xl font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                Start Your Free Trial Today
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">EduTech</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">AI-powered teaching platform for modern educators</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#features" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="{% url 'login' %}" class="hover:text-white transition">Login</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+                <p>&copy; 2025 EduTech. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Register GSAP plugins
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Navbar animation on scroll
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            if (currentScroll > lastScroll && currentScroll > 100) {
+                gsap.to('#navbar', { y: -100, duration: 0.3 });
+            } else {
+                gsap.to('#navbar', { y: 0, duration: 0.3 });
+            }
+            lastScroll = currentScroll;
+        });
+
+        // Hero section animation
+        gsap.from('.hero-content h1', {
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.hero-content p', {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            delay: 0.3,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.hero-content .flex', {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            delay: 0.6,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.hero-image', {
+            opacity: 0,
+            x: 100,
+            duration: 1,
+            delay: 0.3,
+            ease: 'power3.out'
+        });
+
+        // Floating cards animation
+        gsap.to('.floating-card', {
+            y: -20,
+            duration: 2,
+            repeat: -1,
+            yoyo: true,
+            ease: 'power1.inOut',
+            stagger: 0.2
+        });
+
+        // Features section animation
+        gsap.from('.features-header', {
+            scrollTrigger: {
+                trigger: '.features-header',
+                start: 'top 80%',
+            },
+            opacity: 0,
+            y: 50,
+            duration: 1
+        });
+
+        gsap.from('.feature-card', {
+            scrollTrigger: {
+                trigger: '.feature-card',
+                start: 'top 85%',
+            },
+            opacity: 0,
+            y: 100,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: 'power3.out'
+        });
+
+        // Pricing section animation
+        gsap.from('.pricing-header', {
+            scrollTrigger: {
+                trigger: '.pricing-header',
+                start: 'top 80%',
+            },
+            opacity: 0,
+            y: 50,
+            duration: 1
+        });
+
+        gsap.from('.pricing-card', {
+            scrollTrigger: {
+                trigger: '.pricing-card',
+                start: 'top 85%',
+            },
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'back.out(1.7)'
+        });
+
+        // CTA section animation
+        gsap.from('.cta-text', {
+            scrollTrigger: {
+                trigger: '.cta-text',
+                start: 'top 80%',
+            },
+            opacity: 0,
+            scale: 0.5,
+            duration: 1,
+            ease: 'back.out(1.7)'
+        });
+    </script>
+</body>
+</html>
