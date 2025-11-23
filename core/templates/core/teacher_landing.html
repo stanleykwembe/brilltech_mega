@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -72,6 +73,7 @@
                     <a href="#features" class="text-gray-700 hover:text-purple-600 transition">Features</a>
                     <a href="#pricing" class="text-gray-700 hover:text-purple-600 transition">Pricing</a>
                     <a href="#testimonials" class="text-gray-700 hover:text-purple-600 transition">Testimonials</a>
+                    <a href="#faq" class="text-gray-700 hover:text-purple-600 transition">FAQ</a>
                     <a href="{% url 'login' %}" class="text-gray-700 hover:text-purple-600 transition">Login</a>
                     <a href="{% url 'register' %}" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition">Get Started</a>
                 </div>
@@ -325,6 +327,157 @@
                     <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition">
                         Choose Plan
                     </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold mb-4">
+                    What <span class="gradient-text">Teachers Say</span>
+                </h2>
+                <p class="text-xl text-gray-600">Join thousands of educators transforming their teaching</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg border border-purple-100">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/professional_teacher_66d7df6b.jpg' %}" alt="Sarah Johnson" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Sarah Johnson</h4>
+                            <p class="text-sm text-gray-600">Mathematics Teacher</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"This platform has saved me hours every week! The AI-generated lesson plans are comprehensive and actually useful. My students love the materials I create now."</p>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-2xl shadow-lg border border-indigo-100">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/professional_teacher_f96eb457.jpg' %}" alt="Michael Chen" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Michael Chen</h4>
+                            <p class="text-sm text-gray-600">Science Teacher</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"The past paper extraction feature is a game-changer! I can upload old Cambridge papers and instantly get formatted questions for my students."</p>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg border border-purple-100">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/professional_teacher_e4626663.jpg' %}" alt="Priya Patel" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Priya Patel</h4>
+                            <p class="text-sm text-gray-600">English Teacher</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"Best investment I've made for my teaching career. The GPT-4 model creates incredibly detailed lesson plans that I can customize in minutes."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold mb-4">
+                    <span class="gradient-text">Frequently Asked</span> Questions
+                </h2>
+                <p class="text-xl text-gray-600">Everything you need to know about EduTech</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ 1 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        How does the AI lesson plan generation work?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Our platform uses GPT-4 (Premium) or GPT-3.5 (Growth) to generate comprehensive lesson plans based on your subject, grade level, and topic. Simply input your requirements, and get a fully structured lesson with objectives, activities, and assessments in seconds.
+                    </p>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        Can I upgrade or downgrade my plan anytime?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Yes! You can change your subscription plan at any time. Upgrades take effect immediately, while downgrades will apply at the start of your next billing cycle.
+                    </p>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        What exam boards do you support?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        We support Cambridge, Edexcel, CAPS (South African curriculum), ZIMSEC, IEB, AQA, and OCR. Our content is aligned with each board's curriculum standards and past paper formats.
+                    </p>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        How does the past paper extraction feature work?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Upload any PDF past paper, and our AI automatically extracts questions, formats them properly, and creates editable content you can use for practice materials, quizzes, or assignments. It saves hours of manual typing!
+                    </p>
+                </div>
+
+                <!-- FAQ 5 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        Is there a limit on document uploads?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Free and Starter plans have storage limits, while Growth and Premium plans offer generous document storage. All plans allow unlimited document sharing with students via unique codes.
+                    </p>
+                </div>
+
+                <!-- FAQ 6 -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-600 mt-1"></i>
+                        Do you offer training or support?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Yes! All plans include access to our help center and video tutorials. Premium users get priority email support with response times under 24 hours.
+                    </p>
                 </div>
             </div>
         </div>
