@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -78,8 +79,9 @@
                 </div>
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#features" class="text-gray-700 hover:text-green-600 transition font-medium">Features</a>
-                    <a href="#resources" class="text-gray-700 hover:text-green-600 transition font-medium">Resources</a>
                     <a href="#pricing" class="text-gray-700 hover:text-green-600 transition font-medium">Pricing</a>
+                    <a href="#testimonials" class="text-gray-700 hover:text-green-600 transition font-medium">Testimonials</a>
+                    <a href="#faq" class="text-gray-700 hover:text-green-600 transition font-medium">FAQ</a>
                     <a href="{% url 'student_login' %}" class="text-gray-700 hover:text-green-600 transition font-medium">Login</a>
                     <a href="{% url 'student_register' %}" class="px-6 py-2.5 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl hover:shadow-xl transition font-semibold">
                         Sign Up Free
@@ -333,6 +335,157 @@
                     <a href="{% url 'student_register' %}" class="block w-full text-center px-8 py-4 bg-white text-green-600 rounded-xl font-bold text-lg hover:bg-gray-100 transition shadow-xl">
                         Upgrade to Pro
                     </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold mb-4">
+                    <span class="gradient-text-student">Students Love</span> EduTech
+                </h2>
+                <p class="text-xl text-gray-600">See how students are achieving their academic goals</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-lg border border-green-200 transform hover:scale-105 transition">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/happy_student_teenag_bb6507f1.jpg' %}" alt="Emma Wilson" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Emma Wilson</h4>
+                            <p class="text-sm text-gray-600">Grade 11 • Cambridge</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"The interactive quizzes helped me improve my Maths score from 60% to 85% in just 2 months! The instant feedback is amazing."</p>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg border border-blue-200 transform hover:scale-105 transition">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/happy_student_teenag_cf3ff24b.jpg' %}" alt="Jordan Lee" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Jordan Lee</h4>
+                            <p class="text-sm text-gray-600">Grade 12 • CAPS</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"Having all my study materials in one place is a lifesaver! The flashcards feature really helped me memorize all the biology terms for my exam."</p>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-lg border border-purple-200 transform hover:scale-105 transition">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="{% static 'attached_assets/stock_images/happy_student_teenag_aa33c140.jpg' %}" alt="Aisha Patel" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-gray-900">Aisha Patel</h4>
+                            <p class="text-sm text-gray-600">Grade 10 • Edexcel</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-700 italic">"I love the past papers section! Practicing with real exam questions made me so much more confident. Got an A* in Chemistry!"</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-gradient-to-br from-green-50 to-blue-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold mb-4">
+                    <span class="gradient-text-student">Frequently Asked</span> Questions
+                </h2>
+                <p class="text-xl text-gray-600">Got questions? We've got answers!</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ 1 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-green-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-green-500 mt-1"></i>
+                        Is EduTech really free forever?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Yes! Our Free plan gives you access to 2 exam boards, unlimited notes and flashcards, 2 different quizzes per topic (with unlimited retries), and free exam paper downloads. No credit card required, ever.
+                    </p>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-blue-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-blue-500 mt-1"></i>
+                        What's the difference between Free and Pro?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Pro gives you unlimited quizzes (instead of 2 per topic), support for 5 exam boards (instead of 2), priority support, and early access to new features. Free users can still retry quizzes unlimited times!
+                    </p>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-purple-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-500 mt-1"></i>
+                        Which exam boards do you support?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        We support Cambridge (IGCSE/A-Level), Edexcel, CAPS (South Africa), ZIMSEC (Zimbabwe), IEB (South Africa), AQA, and OCR. All content is aligned with official syllabuses!
+                    </p>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-green-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-green-500 mt-1"></i>
+                        How do the quizzes work?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Our interactive quizzes include multiple choice, true/false, fill-in-the-blank, matching, and essay questions. You get instant feedback on your answers and can track your progress over time. Free users can take 2 different quizzes per topic but retry them unlimited times!
+                    </p>
+                </div>
+
+                <!-- FAQ 5 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-blue-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-blue-500 mt-1"></i>
+                        Can I study offline?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Yes! You can download notes and exam papers to study offline. Your quiz progress syncs automatically when you're back online.
+                    </p>
+                </div>
+
+                <!-- FAQ 6 -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-purple-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-start gap-3">
+                        <i class="fas fa-question-circle text-purple-500 mt-1"></i>
+                        How do I upgrade to Pro?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed pl-8">
+                        Simply click "Upgrade to Pro" from your dashboard and complete the secure PayFast payment (R100/month). Your Pro features activate immediately, and you can cancel anytime!
+                    </p>
                 </div>
             </div>
         </div>
