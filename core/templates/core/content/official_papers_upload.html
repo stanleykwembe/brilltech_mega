@@ -44,6 +44,7 @@
     previewData: null,
     confirmResults: null,
     uploadProgress: 0,
+    progressMessage: '',
     currentStep: 'upload', // 'upload', 'preview', 'confirmed'
     
     handleFolderSelect(e) {
@@ -70,6 +71,8 @@
         
         this.uploading = true;
         this.previewData = null;
+        this.uploadProgress = 0;
+        this.progressMessage = `Preparing ${this.files.length} files for preview...`;
         
         const formData = new FormData();
         formData.append('board', this.board);
@@ -81,31 +84,45 @@
             formData.append('file_paths', this.filePaths[index]);
         });
         
-        try {
-            const response = await fetch('{% url 'official_papers_bulk_upload' %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Preview failed');
+        // Use XMLHttpRequest to track upload progress
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                this.uploadProgress = Math.round((e.loaded / e.total) * 100);
+                this.progressMessage = `Uploading files... ${this.uploadProgress}%`;
             }
-            
-            this.previewData = data;
-            this.currentStep = 'preview';
-        } catch (error) {
-            alert('Preview failed: ' + error.message);
-        } finally {
+        });
+        
+        xhr.addEventListener('load', () => {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                
+                if (xhr.status !== 200) {
+                    throw new Error(data.error || 'Preview failed');
+                }
+                
+                this.previewData = data;
+                this.currentStep = 'preview';
+                this.progressMessage = `Preview complete! ${data.parseable_count} files ready to upload.`;
+            } catch (error) {
+                alert('Preview failed: ' + error.message);
+            } finally {
+                this.uploading = false;
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            alert('Preview failed: Network error');
             this.uploading = false;
-        }
+        });
+        
+        xhr.open('POST', '{% url "official_papers_bulk_upload" %}', true);
+        xhr.setRequestHeader('X-CSRFToken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        xhr.send(formData);
     },
     
-    async confirmUpload() {
+    confirmUpload() {
         if (!this.previewData || !this.previewData.papers || this.previewData.papers.length === 0) {
             alert('No papers to upload');
             return;
@@ -113,6 +130,8 @@
         
         this.uploading = true;
         this.confirmResults = null;
+        this.uploadProgress = 0;
+        this.progressMessage = `Starting upload of ${this.previewData.parseable_count} files...`;
         
         const formData = new FormData();
         formData.append('board', this.board);
@@ -127,28 +146,42 @@
         // Add preview data to validate against
         formData.append('papers_data', JSON.stringify(this.previewData.papers));
         
-        try {
-            const response = await fetch('{% url 'official_papers_bulk_upload' %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Upload failed');
+        // Use XMLHttpRequest to track upload progress
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                this.uploadProgress = Math.round((e.loaded / e.total) * 100);
+                this.progressMessage = `Uploading and saving files... ${this.uploadProgress}%`;
             }
-            
-            this.confirmResults = data;
-            this.currentStep = 'confirmed';
-        } catch (error) {
-            alert('Upload failed: ' + error.message);
-        } finally {
+        });
+        
+        xhr.addEventListener('load', () => {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                
+                if (xhr.status !== 200) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+                
+                this.confirmResults = data;
+                this.currentStep = 'confirmed';
+                this.progressMessage = `Upload complete! ${data.uploaded_count} files uploaded, ${data.skipped_count} skipped.`;
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+            } finally {
+                this.uploading = false;
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            alert('Upload failed: Network error');
             this.uploading = false;
-        }
+        });
+        
+        xhr.open('POST', '{% url "official_papers_bulk_upload" %}', true);
+        xhr.setRequestHeader('X-CSRFToken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        xhr.send(formData);
     },
     
     reset() {
@@ -291,6 +324,27 @@
                     ... and <span x-text="files.length - 50"></span> more files
                 </div>
             </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div x-show="uploading" class="bg-white shadow rounded-lg p-6 mb-6">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium text-gray-900">
+                        <i class="fas fa-spinner fa-spin mr-2 text-orange-500"></i>
+                        <span x-text="progressMessage"></span>
+                    </h3>
+                    <span class="text-sm font-semibold text-orange-600" x-text="uploadProgress + '%'"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-orange-500 to-teal-500 h-3 rounded-full transition-all duration-300 ease-out"
+                         :style="{ width: uploadProgress + '%' }">
+                    </div>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 text-center">
+                Please do not close this page or navigate away during upload
+            </p>
         </div>
         
         <!-- Submit Button -->
