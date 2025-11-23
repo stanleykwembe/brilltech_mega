@@ -16,8 +16,17 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Frameworks**: Streamlit (main application), Django templates (web views), Tailwind CSS (styling), Alpine.js (interactivity).
+- **Frameworks**: Streamlit (main application), Django templates (web views), Tailwind CSS (styling), Alpine.js (interactivity), GSAP (animations).
 - **Icons**: Font Awesome.
+- **Landing Pages**: Dedicated marketing landing pages for teachers (`/welcome/teacher/`) and students (`/welcome/student/`) featuring:
+  - Hero sections with animated gradient text and floating cards
+  - Feature showcases (6 for teachers, 7 for students)
+  - Detailed pricing tables (4 tiers for teachers, 2 for students)
+  - Testimonials sections with real stock photos (3 per page)
+  - FAQ sections (6 Q&As each covering platform features)
+  - GSAP scroll-triggered animations and smooth transitions
+  - Tailwind CDN for rapid prototyping (should be replaced with PostCSS build for production)
+  - Stock images stored in `core/static/core/img/testimonials/`
 - **UI/UX Design System**: Modern Windows 11/iPhone-inspired aesthetic with glassmorphism effects, gradient backgrounds, smooth animations, and multi-layer shadows.
   - **Design Tokens**: 8px radius for cards, 4px for buttons, 12px for modals; 200-300ms transitions; staggered animation delays.
   - **Color Themes**: Portal-specific color differentiation:
