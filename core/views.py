@@ -2984,8 +2984,8 @@ def official_papers_bulk_upload(request):
     from pathlib import PurePosixPath
     
     # Security: Sanitize file paths to prevent directory traversal
-    # Max depth is 3 to match the folder structure: Subject Name (CODE)/YEAR/filename.pdf
-    def sanitize_file_path(path, max_depth=3):
+    # Max depth is 4 to support optional session subfolder: Subject Name (CODE)/YEAR/[Session]/filename.pdf
+    def sanitize_file_path(path, max_depth=4):
         """
         Sanitize and validate file paths to prevent security issues.
         Returns the sanitized path or raises ValueError.
@@ -3234,13 +3234,18 @@ def official_papers_bulk_upload(request):
                             results['papers'].append(paper_result)
                             continue
                         
-                        # Extract year from folder (MUST be exactly 4-digit year like "2011", "2023")
-                        year_match = re.match(r'^([12]\d{3})$', year_folder)
+                        # Extract year from folder - flexible matching (allows "2023", "2023 June", etc.)
+                        year_match = re.search(r'([12]\d{3})', year_folder)
                         if year_match:
                             year_from_path = int(year_match.group(1))
+                            # Warn if folder name isn't exactly a year
+                            if year_folder != year_match.group(1):
+                                paper_result['warnings'].append(
+                                    f"Year folder '{year_folder}' contains extra text; using year {year_from_path}"
+                                )
                         else:
                             paper_result['errors'].append(
-                                f"Year folder must be exactly 4 digits (e.g., '2011', '2023'), got: '{year_folder}'"
+                                f"Year folder must contain a 4-digit year (e.g., '2011', '2023'), got: '{year_folder}'"
                             )
                             results['failed_count'] += 1
                             results['error_count'] += 1
@@ -3253,18 +3258,6 @@ def official_papers_bulk_upload(request):
                             f"Invalid folder structure. Expected: 'Subject Name (CODE)/YEAR/filename.pdf' "
                             f"(3 levels), but got {len(path_parts)} level(s). "
                             f"Please organize files correctly."
-                        )
-                        results['failed_count'] += 1
-                        results['error_count'] += 1
-                        results['papers'].append(paper_result)
-                        continue
-                    
-                    else:
-                        # Too deep - path has more than 3 levels
-                        paper_result['errors'].append(
-                            f"Folder structure too deep ({len(path_parts)} levels). "
-                            f"Expected: 'Subject Name (CODE)/YEAR/filename.pdf' (3 levels only). "
-                            f"Remove extra nested folders."
                         )
                         results['failed_count'] += 1
                         results['error_count'] += 1

@@ -429,8 +429,10 @@
                                         <p class="text-yellow-700" x-text="warning"></p>
                                     </template>
                                 </div>
-                                <div x-show="paper.error">
-                                    <p class="text-red-700" x-text="paper.error"></p>
+                                <div x-show="paper.errors && paper.errors.length > 0">
+                                    <template x-for="err in paper.errors">
+                                        <p class="text-red-700" x-text="err"></p>
+                                    </template>
                                 </div>
                             </td>
                         </tr>
