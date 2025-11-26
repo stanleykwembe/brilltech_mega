@@ -3153,16 +3153,47 @@ def official_papers_bulk_upload(request):
         if not board_name:
             return JsonResponse({'success': False, 'error': 'No exam board provided'})
         
-        # Get ExamBoard by name (name_full or abbreviation)
+        # Get ExamBoard by name (name_full, abbreviation, or common aliases)
+        # Common aliases map to database names
+        board_aliases = {
+            'cambridge': ['Cambridge International', 'CIE', 'CAIE', 'Cambridge'],
+            'edexcel': ['Edexcel', 'EDX', 'Pearson Edexcel'],
+            'caps': ['Department of Basic Education (CAPS)', 'CAPS', 'DBE'],
+            'zimsec': ['Zimbabwe School Examinations Council', 'ZIMSEC'],
+            'ieb': ['Independent Examinations Board', 'IEB'],
+            'aqa': ['AQA'],
+            'ocr': ['OCR'],
+        }
+        
         try:
+            # First try exact match on name_full or abbreviation
             exam_board = ExamBoard.objects.filter(
                 Q(name_full__iexact=board_name) | Q(abbreviation__iexact=board_name)
             ).first()
             
+            # If not found, try common aliases
             if not exam_board:
+                board_name_lower = board_name.lower()
+                if board_name_lower in board_aliases:
+                    for alias in board_aliases[board_name_lower]:
+                        exam_board = ExamBoard.objects.filter(
+                            Q(name_full__iexact=alias) | Q(abbreviation__iexact=alias)
+                        ).first()
+                        if exam_board:
+                            break
+            
+            # Also try partial match on name_full (e.g., "Cambridge" matches "Cambridge International")
+            if not exam_board:
+                exam_board = ExamBoard.objects.filter(
+                    name_full__icontains=board_name
+                ).first()
+            
+            if not exam_board:
+                # List available boards to help user
+                available_boards = ExamBoard.objects.values_list('name_full', flat=True)
                 return JsonResponse({
                     'success': False, 
-                    'error': f'Exam board "{board_name}" not found. Please create it in the admin panel first.'
+                    'error': f'Exam board "{board_name}" not found. Available boards: {", ".join(available_boards)}'
                 })
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Error finding exam board: {str(e)}'})
