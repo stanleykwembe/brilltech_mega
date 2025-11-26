@@ -3180,6 +3180,9 @@ def official_papers_bulk_upload(request):
                 'action': 'preview',
                 'total_files': len(files),
                 'parseable_count': 0,
+                'ready_count': 0,  # Alias for frontend compatibility
+                'warning_count': 0,
+                'error_count': 0,
                 'failed_count': 0,
                 'papers': []
             }
@@ -3202,6 +3205,7 @@ def official_papers_bulk_upload(request):
                     except ValueError as e:
                         paper_result['errors'].append(f"Path validation failed: {str(e)}")
                         results['failed_count'] += 1
+                        results['error_count'] += 1
                         results['papers'].append(paper_result)
                         continue
                     
@@ -3226,6 +3230,7 @@ def official_papers_bulk_upload(request):
                             # MANDATORY FORMAT: Reject if format doesn't match
                             paper_result['errors'].append(f"Subject folder must be in format 'Subject Name (CODE)', got: '{subject_folder}'")
                             results['failed_count'] += 1
+                            results['error_count'] += 1
                             results['papers'].append(paper_result)
                             continue
                         
@@ -3238,6 +3243,7 @@ def official_papers_bulk_upload(request):
                                 f"Year folder must be exactly 4 digits (e.g., '2011', '2023'), got: '{year_folder}'"
                             )
                             results['failed_count'] += 1
+                            results['error_count'] += 1
                             results['papers'].append(paper_result)
                             continue
                     
@@ -3249,6 +3255,7 @@ def official_papers_bulk_upload(request):
                             f"Please organize files correctly."
                         )
                         results['failed_count'] += 1
+                        results['error_count'] += 1
                         results['papers'].append(paper_result)
                         continue
                     
@@ -3260,6 +3267,7 @@ def official_papers_bulk_upload(request):
                             f"Remove extra nested folders."
                         )
                         results['failed_count'] += 1
+                        results['error_count'] += 1
                         results['papers'].append(paper_result)
                         continue
                     
@@ -3285,6 +3293,7 @@ def official_papers_bulk_upload(request):
                         'board_id': exam_board.id,
                         'subject_code': subject_code,
                         'subject_name': final_subject_name,
+                        'original_filename': file.name,
                         'year': year,
                         'session': parsed['session'],
                         'paper_number': parsed['paper_number'],
@@ -3294,11 +3303,15 @@ def official_papers_bulk_upload(request):
                     })
                     
                     results['parseable_count'] += 1
+                    results['ready_count'] += 1  # Frontend compatibility
+                    if paper_result['warnings']:
+                        results['warning_count'] += 1
                     
                 except Exception as e:
                     paper_result['status'] = 'error'
                     paper_result['errors'].append(f"Parsing error: {str(e)}")
                     results['failed_count'] += 1
+                    results['error_count'] += 1
                 
                 results['papers'].append(paper_result)
             
