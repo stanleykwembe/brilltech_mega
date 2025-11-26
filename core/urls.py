@@ -97,4 +97,11 @@ urlpatterns = [
     path('content/exam-papers/', views.manage_exam_papers, name='manage_exam_papers'),
     path('content/exam-paper/<int:paper_id>/delete/', views.delete_exam_paper, name='delete_exam_paper'),
     path('content/ajax/get-questions/', views.get_questions_ajax, name='get_questions_ajax'),
+    
+    # Public exam papers browse (no login required)
+    path('papers/', views.public_papers_browse, name='public_papers_browse'),
+    path('papers/api/', views.public_papers_api, name='public_papers_api'),
+    path('papers/filters/', views.public_papers_filters, name='public_papers_filters'),
+    path('papers/view/<int:paper_id>/', views.public_paper_view, name='public_paper_view'),
+    path('papers/download/<int:paper_id>/', views.public_paper_download, name='public_paper_download'),
 ]

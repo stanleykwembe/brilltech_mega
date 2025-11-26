@@ -4150,3 +4150,161 @@ def get_questions_ajax(request):
         })
     
     return JsonResponse({'questions': questions_data})
+
+
+# ===== PUBLIC EXAM PAPERS BROWSE VIEWS =====
+
+def public_papers_browse(request):
+    """Public page to browse official exam papers - no login required"""
+    from .models import OfficialExamPaper, ExamBoard
+    
+    exam_boards = ExamBoard.objects.all().order_by('name_full')
+    
+    context = {
+        'exam_boards': exam_boards,
+    }
+    return render(request, 'core/public/papers_browse.html', context)
+
+
+def public_papers_api(request):
+    """AJAX API for getting papers with cascading filters"""
+    from .models import OfficialExamPaper, ExamBoard
+    from django.core.paginator import Paginator
+    
+    board_id = request.GET.get('board')
+    subject_code = request.GET.get('subject')
+    year = request.GET.get('year')
+    session = request.GET.get('session')
+    paper_type = request.GET.get('paper_type')
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 20))
+    
+    papers = OfficialExamPaper.objects.all().order_by('-year', 'subject_code', 'paper_number')
+    
+    if board_id:
+        papers = papers.filter(exam_board_id=board_id)
+    if subject_code:
+        papers = papers.filter(subject_code=subject_code)
+    if year:
+        papers = papers.filter(year=year)
+    if session:
+        papers = papers.filter(session=session)
+    if paper_type:
+        papers = papers.filter(paper_type=paper_type)
+    
+    paginator = Paginator(papers, per_page)
+    page_obj = paginator.get_page(page)
+    
+    papers_data = []
+    for paper in page_obj:
+        papers_data.append({
+            'id': paper.id,
+            'subject_code': paper.subject_code,
+            'subject_name': paper.subject_name,
+            'year': paper.year,
+            'session': paper.get_session_display(),
+            'paper_number': paper.paper_number,
+            'variant': paper.variant,
+            'paper_type': paper.get_paper_type_display(),
+            'paper_type_code': paper.paper_type,
+            'display_name': paper.get_display_name(),
+            'file_url': paper.file.url if paper.file else None,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'papers': papers_data,
+        'total': paginator.count,
+        'page': page,
+        'pages': paginator.num_pages,
+        'has_next': page_obj.has_next(),
+        'has_prev': page_obj.has_previous(),
+    })
+
+
+def public_papers_filters(request):
+    """AJAX API for getting filter options based on current selection"""
+    from .models import OfficialExamPaper
+    
+    board_id = request.GET.get('board')
+    subject_code = request.GET.get('subject')
+    filter_type = request.GET.get('filter_type', 'subjects')
+    
+    papers = OfficialExamPaper.objects.all()
+    
+    if board_id:
+        papers = papers.filter(exam_board_id=board_id)
+    if subject_code and filter_type != 'subjects':
+        papers = papers.filter(subject_code=subject_code)
+    
+    if filter_type == 'subjects':
+        # Get unique subjects for selected board
+        subjects = papers.values('subject_code', 'subject_name').distinct().order_by('subject_name')
+        return JsonResponse({
+            'success': True,
+            'options': [{'code': s['subject_code'], 'name': s['subject_name'] or s['subject_code']} for s in subjects]
+        })
+    
+    elif filter_type == 'years':
+        # Get unique years for selected board/subject
+        years = papers.values_list('year', flat=True).distinct().order_by('-year')
+        return JsonResponse({
+            'success': True,
+            'options': list(years)
+        })
+    
+    elif filter_type == 'sessions':
+        # Get unique sessions for selected filters
+        sessions = papers.values_list('session', flat=True).distinct()
+        session_choices = dict(OfficialExamPaper.SESSION_CHOICES)
+        return JsonResponse({
+            'success': True,
+            'options': [{'code': s, 'name': session_choices.get(s, s)} for s in sessions]
+        })
+    
+    elif filter_type == 'paper_types':
+        # Get unique paper types
+        paper_types = papers.values_list('paper_type', flat=True).distinct()
+        type_choices = dict(OfficialExamPaper.PAPER_TYPE_CHOICES)
+        return JsonResponse({
+            'success': True,
+            'options': [{'code': t, 'name': type_choices.get(t, t)} for t in paper_types]
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid filter type'})
+
+
+def public_paper_view(request, paper_id):
+    """Individual paper view/download page with ad placeholders"""
+    from .models import OfficialExamPaper
+    
+    paper = get_object_or_404(OfficialExamPaper, id=paper_id)
+    
+    # Get related papers (same subject, different years)
+    related_papers = OfficialExamPaper.objects.filter(
+        exam_board=paper.exam_board,
+        subject_code=paper.subject_code
+    ).exclude(id=paper.id).order_by('-year')[:10]
+    
+    context = {
+        'paper': paper,
+        'related_papers': related_papers,
+    }
+    return render(request, 'core/public/paper_view.html', context)
+
+
+def public_paper_download(request, paper_id):
+    """Download paper file - tracks downloads for analytics"""
+    from .models import OfficialExamPaper
+    from django.http import FileResponse
+    import os
+    
+    paper = get_object_or_404(OfficialExamPaper, id=paper_id)
+    
+    if not paper.file:
+        raise Http404("Paper file not found")
+    
+    response = FileResponse(paper.file.open('rb'), as_attachment=True)
+    response['Content-Disposition'] = f'attachment; filename="{paper.original_filename}"'
+    
+    return response

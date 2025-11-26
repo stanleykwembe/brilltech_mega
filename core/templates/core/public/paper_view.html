@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ paper.get_display_name }} - Free Download</title>
+    <meta name="description" content="Download {{ paper.get_display_name }} - {{ paper.subject_name }} {{ paper.year }} {{ paper.get_session_display }} exam paper from {{ paper.exam_board.name_full }}.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .ad-placeholder {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px dashed #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-white to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'public_papers_browse' %}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">EduTech Papers</h1>
+                            <p class="text-xs text-gray-500">Free Exam Resources</p>
+                        </div>
+                    </a>
+                </div>
+                <nav class="flex items-center space-x-4">
+                    <a href="{% url 'public_papers_browse' %}" class="text-gray-600 hover:text-emerald-600 transition-colors">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Papers
+                    </a>
+                    <a href="{% url 'login' %}" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all">
+                        Sign In
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Top Banner Ad Placeholder -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="ad-placeholder h-24 rounded-lg" id="ad-top-banner">
+            <span><i class="fas fa-ad mr-2"></i>Advertisement (728x90)</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Paper Details -->
+            <div class="flex-1">
+                <!-- Breadcrumb -->
+                <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+                    <a href="{% url 'public_papers_browse' %}" class="hover:text-emerald-600 transition-colors">Papers</a>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                    <span>{{ paper.exam_board.abbreviation }}</span>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                    <span>{{ paper.subject_code }}</span>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                    <span class="text-gray-900">{{ paper.year }}</span>
+                </nav>
+
+                <!-- Paper Card -->
+                <div class="glass-card rounded-2xl p-8 mb-8">
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="flex items-center space-x-4">
+                            <!-- Paper Type Icon -->
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl
+                                {% if paper.paper_type == 'qp' %}bg-blue-500
+                                {% elif paper.paper_type == 'ms' %}bg-green-500
+                                {% elif paper.paper_type == 'er' %}bg-purple-500
+                                {% elif paper.paper_type == 'gt' %}bg-orange-500
+                                {% else %}bg-gray-500{% endif %}">
+                                {% if paper.paper_type == 'qp' %}<i class="fas fa-file-alt"></i>
+                                {% elif paper.paper_type == 'ms' %}<i class="fas fa-check-circle"></i>
+                                {% elif paper.paper_type == 'er' %}<i class="fas fa-clipboard"></i>
+                                {% elif paper.paper_type == 'gt' %}<i class="fas fa-chart-bar"></i>
+                                {% else %}<i class="fas fa-file"></i>{% endif %}
+                            </div>
+                            <div>
+                                <span class="px-3 py-1 text-xs font-medium rounded-full
+                                    {% if paper.paper_type == 'qp' %}bg-blue-100 text-blue-700
+                                    {% elif paper.paper_type == 'ms' %}bg-green-100 text-green-700
+                                    {% elif paper.paper_type == 'er' %}bg-purple-100 text-purple-700
+                                    {% elif paper.paper_type == 'gt' %}bg-orange-100 text-orange-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ paper.get_paper_type_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                        {{ paper.get_display_name }}
+                    </h1>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Exam Board</p>
+                            <p class="font-semibold text-gray-900">{{ paper.exam_board.abbreviation }}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Subject</p>
+                            <p class="font-semibold text-gray-900">{{ paper.subject_name|default:paper.subject_code }}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Year</p>
+                            <p class="font-semibold text-gray-900">{{ paper.year }}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Session</p>
+                            <p class="font-semibold text-gray-900">{{ paper.get_session_display }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Subject Code</p>
+                            <p class="font-semibold text-gray-900">{{ paper.subject_code }}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Paper Number</p>
+                            <p class="font-semibold text-gray-900">{{ paper.paper_number }}</p>
+                        </div>
+                        {% if paper.variant %}
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-xs text-gray-500 mb-1">Variant</p>
+                            <p class="font-semibold text-gray-900">{{ paper.variant }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Download Button -->
+                    <div class="flex flex-col sm:flex-row items-center gap-4">
+                        <a href="{% url 'public_paper_download' paper.id %}" 
+                           class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all text-center font-semibold text-lg">
+                            <i class="fas fa-download mr-2"></i> Download Paper
+                        </a>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-file-pdf mr-1"></i> PDF Format
+                        </p>
+                    </div>
+                </div>
+
+                <!-- In-Content Ad Placeholder -->
+                <div class="ad-placeholder h-24 rounded-lg mb-8" id="ad-in-content">
+                    <span><i class="fas fa-ad mr-2"></i>In-Content Advertisement (Responsive)</span>
+                </div>
+
+                <!-- Related Papers -->
+                {% if related_papers %}
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <i class="fas fa-folder-open mr-3 text-emerald-500"></i>
+                        More {{ paper.subject_name|default:paper.subject_code }} Papers
+                    </h2>
+                    <div class="space-y-3">
+                        {% for related in related_papers %}
+                        <a href="{% url 'public_paper_view' related.id %}" 
+                           class="block p-4 bg-gray-50 rounded-xl hover:bg-emerald-50 transition-colors group">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <span class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold
+                                        {% if related.paper_type == 'qp' %}bg-blue-500
+                                        {% elif related.paper_type == 'ms' %}bg-green-500
+                                        {% elif related.paper_type == 'er' %}bg-purple-500
+                                        {% elif related.paper_type == 'gt' %}bg-orange-500
+                                        {% else %}bg-gray-500{% endif %}">
+                                        {% if related.paper_type == 'qp' %}<i class="fas fa-file-alt"></i>
+                                        {% elif related.paper_type == 'ms' %}<i class="fas fa-check-circle"></i>
+                                        {% elif related.paper_type == 'er' %}<i class="fas fa-clipboard"></i>
+                                        {% elif related.paper_type == 'gt' %}<i class="fas fa-chart-bar"></i>
+                                        {% else %}<i class="fas fa-file"></i>{% endif %}
+                                    </span>
+                                    <div>
+                                        <p class="font-medium text-gray-900 group-hover:text-emerald-600 transition-colors">
+                                            {{ related.get_display_name }}
+                                        </p>
+                                        <p class="text-sm text-gray-500">{{ related.year }} - {{ related.get_session_display }}</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400 group-hover:text-emerald-500 transition-colors"></i>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-6 text-center">
+                        <a href="{% url 'public_papers_browse' %}?board={{ paper.exam_board.id }}&subject={{ paper.subject_code }}" 
+                           class="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+                            View All {{ paper.subject_name|default:paper.subject_code }} Papers <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="lg:w-80 flex-shrink-0">
+                <div class="sticky top-24 space-y-6">
+                    <!-- Quick Download Card -->
+                    <div class="glass-card rounded-2xl p-6 text-center">
+                        <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-pdf text-white text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Ready to Download</h3>
+                        <p class="text-sm text-gray-600 mb-4">Get instant access to this exam paper</p>
+                        <a href="{% url 'public_paper_download' paper.id %}" 
+                           class="block w-full py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all font-semibold">
+                            <i class="fas fa-download mr-2"></i> Download Now
+                        </a>
+                    </div>
+
+                    <!-- Sidebar Ad Placeholder -->
+                    <div class="ad-placeholder h-64 rounded-lg" id="ad-sidebar-1">
+                        <span class="text-center"><i class="fas fa-ad mr-1"></i><br>Ad (300x250)</span>
+                    </div>
+
+                    <!-- Sign Up CTA -->
+                    <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-emerald-50 to-blue-50">
+                        <h3 class="font-bold text-gray-900 mb-2">Want More Features?</h3>
+                        <p class="text-sm text-gray-600 mb-4">Sign up for free to access interactive quizzes, study notes, and personalized learning paths.</p>
+                        <a href="{% url 'student_landing' %}" 
+                           class="block w-full py-2.5 border-2 border-emerald-500 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all text-center font-semibold">
+                            Learn More
+                        </a>
+                    </div>
+
+                    <!-- Sidebar Ad Placeholder 2 -->
+                    <div class="ad-placeholder h-64 rounded-lg" id="ad-sidebar-2">
+                        <span class="text-center"><i class="fas fa-ad mr-1"></i><br>Ad (300x250)</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">EduTech</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">Free access to official exam papers from leading exam boards worldwide.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Exam Boards</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li>Cambridge (CAIE)</li>
+                        <li>Edexcel</li>
+                        <li>AQA</li>
+                        <li>OCR</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="{% url 'student_landing' %}" class="hover:text-white transition-colors">Student Portal</a></li>
+                        <li><a href="{% url 'teacher_landing' %}" class="hover:text-white transition-colors">Teacher Portal</a></li>
+                        <li><a href="{% url 'public_papers_browse' %}" class="hover:text-white transition-colors">Browse Papers</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Terms of Use</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Copyright Notice</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+                <p>&copy; 2024 EduTech. All rights reserved. Past papers are provided for educational purposes.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
