@@ -371,10 +371,14 @@
         </h3>
         
         <!-- Summary Stats -->
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="bg-blue-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-blue-600" x-text="previewData.ready_count || 0"></p>
-                <p class="text-xs text-blue-800 mt-1">Ready to Upload</p>
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="bg-green-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-green-600" x-text="previewData.ready_count || 0"></p>
+                <p class="text-xs text-green-800 mt-1">New (Ready to Upload)</p>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-gray-600" x-text="previewData.existing_count || 0"></p>
+                <p class="text-xs text-gray-700 mt-1">Already Exists (Skip)</p>
             </div>
             <div class="bg-yellow-50 rounded-lg p-4 text-center">
                 <p class="text-2xl font-bold text-yellow-600" x-text="previewData.warning_count || 0"></p>
@@ -382,7 +386,7 @@
             </div>
             <div class="bg-red-50 rounded-lg p-4 text-center">
                 <p class="text-2xl font-bold text-red-600" x-text="previewData.error_count || 0"></p>
-                <p class="text-xs text-red-800 mt-1">Errors/Duplicates</p>
+                <p class="text-xs text-red-800 mt-1">Errors</p>
             </div>
         </div>
         
@@ -403,16 +407,20 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <template x-for="(paper, index) in previewData.papers" :key="index">
-                        <tr :class="paper.status === 'error' ? 'bg-red-50' : (paper.warnings && paper.warnings.length > 0 ? 'bg-yellow-50' : '')">
+                        <tr :class="{
+                            'bg-red-50': paper.status === 'error',
+                            'bg-gray-50': paper.status === 'exists',
+                            'bg-yellow-50': paper.warnings && paper.warnings.length > 0 && paper.status !== 'error' && paper.status !== 'exists'
+                        }">
                             <td class="px-3 py-2">
                                 <span class="px-2 py-1 text-xs font-medium rounded"
                                       :class="{
                                           'bg-green-100 text-green-800': paper.status === 'ready',
-                                          'bg-yellow-100 text-yellow-800': paper.warnings && paper.warnings.length > 0 && paper.status !== 'error',
-                                          'bg-red-100 text-red-800': paper.status === 'error',
-                                          'bg-gray-100 text-gray-800': paper.status === 'skipped'
+                                          'bg-gray-200 text-gray-600': paper.status === 'exists',
+                                          'bg-yellow-100 text-yellow-800': paper.warnings && paper.warnings.length > 0 && paper.status === 'ready',
+                                          'bg-red-100 text-red-800': paper.status === 'error'
                                       }"
-                                      x-text="paper.status === 'ready' ? 'Ready' : (paper.status === 'error' ? 'Error' : 'Skip')"></span>
+                                      x-text="paper.status === 'ready' ? 'New' : (paper.status === 'exists' ? 'Exists' : (paper.status === 'error' ? 'Error' : 'Skip'))"></span>
                             </td>
                             <td class="px-3 py-2 text-xs text-gray-900 truncate max-w-xs" x-text="paper.original_filename"></td>
                             <td class="px-3 py-2 text-xs font-medium text-gray-900" x-text="paper.subject_code || '-'"></td>
@@ -424,6 +432,9 @@
                                       x-text="(paper.paper_type || '').toUpperCase()"></span>
                             </td>
                             <td class="px-3 py-2 text-xs">
+                                <div x-show="paper.status === 'exists'">
+                                    <p class="text-gray-500"><i class="fas fa-check-circle mr-1"></i>Already in database - will skip</p>
+                                </div>
                                 <div x-show="paper.warnings && paper.warnings.length > 0">
                                     <template x-for="warning in paper.warnings">
                                         <p class="text-yellow-700" x-text="warning"></p>
@@ -472,11 +483,15 @@
         <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <p class="text-sm text-green-800">
                 <i class="fas fa-check-circle mr-2"></i>
-                Successfully uploaded <strong x-text="confirmResults.success_count"></strong> paper(s)
+                Successfully uploaded <strong x-text="confirmResults.success_count || confirmResults.uploaded_count || 0"></strong> new paper(s)
             </p>
-            <p x-show="confirmResults.skipped_count > 0" class="text-sm text-gray-600 mt-1">
-                <i class="fas fa-info-circle mr-2"></i>
-                Skipped <span x-text="confirmResults.skipped_count"></span> paper(s) (duplicates or errors)
+            <p x-show="confirmResults.existing_skipped > 0" class="text-sm text-gray-500 mt-1">
+                <i class="fas fa-forward mr-2"></i>
+                Skipped <span x-text="confirmResults.existing_skipped"></span> paper(s) that already exist
+            </p>
+            <p x-show="confirmResults.failed_count > 0" class="text-sm text-red-600 mt-1">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                <span x-text="confirmResults.failed_count"></span> paper(s) failed to upload
             </p>
         </div>
         

@@ -3180,7 +3180,8 @@ def official_papers_bulk_upload(request):
                 'action': 'preview',
                 'total_files': len(files),
                 'parseable_count': 0,
-                'ready_count': 0,  # Alias for frontend compatibility
+                'ready_count': 0,  # New papers to upload
+                'existing_count': 0,  # Papers already in database (will skip)
                 'warning_count': 0,
                 'error_count': 0,
                 'failed_count': 0,
@@ -3280,23 +3281,55 @@ def official_papers_bulk_upload(request):
                     # Prioritize subject_name from folder structure, fallback to filename parsing
                     final_subject_name = subject_name or parsed.get('subject_name', '')
                     
-                    paper_result.update({
-                        'status': 'ready',
-                        'board': exam_board.name_full,
-                        'board_id': exam_board.id,
-                        'subject_code': subject_code,
-                        'subject_name': final_subject_name,
-                        'original_filename': file.name,
-                        'year': year,
-                        'session': parsed['session'],
-                        'paper_number': parsed['paper_number'],
-                        'variant': parsed['variant'],
-                        'paper_type': parsed['paper_type'],
-                        'file_size': file.size,
-                    })
+                    # Check if this paper already exists in the database
+                    existing_paper = OfficialExamPaper.objects.filter(
+                        exam_board=exam_board,
+                        subject_code=subject_code,
+                        year=year,
+                        session=parsed['session'],
+                        paper_number=parsed['paper_number'],
+                        variant=parsed['variant'] or '',
+                        paper_type=parsed['paper_type']
+                    ).first()
                     
-                    results['parseable_count'] += 1
-                    results['ready_count'] += 1  # Frontend compatibility
+                    if existing_paper:
+                        # Paper already exists - mark for skipping
+                        paper_result.update({
+                            'status': 'exists',
+                            'board': exam_board.name_full,
+                            'board_id': exam_board.id,
+                            'subject_code': subject_code,
+                            'subject_name': final_subject_name,
+                            'original_filename': file.name,
+                            'year': year,
+                            'session': parsed['session'],
+                            'paper_number': parsed['paper_number'],
+                            'variant': parsed['variant'],
+                            'paper_type': parsed['paper_type'],
+                            'file_size': file.size,
+                            'existing_id': existing_paper.id,
+                        })
+                        results['existing_count'] += 1
+                        results['parseable_count'] += 1
+                    else:
+                        # New paper - ready to upload
+                        paper_result.update({
+                            'status': 'ready',
+                            'board': exam_board.name_full,
+                            'board_id': exam_board.id,
+                            'subject_code': subject_code,
+                            'subject_name': final_subject_name,
+                            'original_filename': file.name,
+                            'year': year,
+                            'session': parsed['session'],
+                            'paper_number': parsed['paper_number'],
+                            'variant': parsed['variant'],
+                            'paper_type': parsed['paper_type'],
+                            'file_size': file.size,
+                        })
+                        results['parseable_count'] += 1
+                        results['ready_count'] += 1
+                    
                     if paper_result['warnings']:
                         results['warning_count'] += 1
                     
@@ -3330,7 +3363,9 @@ def official_papers_bulk_upload(request):
                 'success': True,
                 'action': 'confirm',
                 'uploaded_count': 0,
+                'success_count': 0,  # Alias for frontend compatibility
                 'skipped_count': 0,
+                'existing_skipped': 0,  # Papers skipped because they already exist
                 'failed_count': 0,
                 'details': []
             }
@@ -3350,6 +3385,17 @@ def official_papers_bulk_upload(request):
                             'filename': file.name,
                             'status': 'skipped',
                             'reason': 'Parsing error'
+                        })
+                        continue
+                    
+                    # Skip if paper already exists in database
+                    if paper_data.get('status') == 'exists':
+                        results['skipped_count'] += 1
+                        results['existing_skipped'] += 1
+                        results['details'].append({
+                            'filename': file.name,
+                            'status': 'skipped',
+                            'reason': 'Already exists in database'
                         })
                         continue
                     
@@ -3388,6 +3434,7 @@ def official_papers_bulk_upload(request):
                         )
                         
                         results['uploaded_count'] += 1
+                        results['success_count'] += 1  # Alias for frontend
                         results['details'].append({
                             'filename': file.name,
                             'status': 'success',
