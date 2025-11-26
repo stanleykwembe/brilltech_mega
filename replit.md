@@ -27,6 +27,13 @@ Preferred communication style: Simple, everyday language.
   - GSAP scroll-triggered animations and smooth transitions
   - Tailwind CDN for rapid prototyping (should be replaced with PostCSS build for production)
   - Stock images stored in `core/static/core/img/testimonials/`
+- **Public Papers Page** (`/papers/`): Free public access to official exam papers with:
+  - Cascading AJAX filters (Board → Subject → Year → Session → Paper Type)
+  - Lazy-loading pagination for performance with thousands of files
+  - Ad placeholder spaces (728x90 top banner, 300x250 sidebar, responsive in-content)
+  - Individual paper view/download pages (`/papers/view/<id>/`)
+  - Related papers suggestions from the same subject
+  - Green/blue student portal color theme for consistency
 - **UI/UX Design System**: Modern Windows 11/iPhone-inspired aesthetic with glassmorphism effects, gradient backgrounds, smooth animations, and multi-layer shadows.
   - **Design Tokens**: 8px radius for cards, 4px for buttons, 12px for modals; 200-300ms transitions; staggered animation delays.
   - **Color Themes**: Portal-specific color differentiation:
