@@ -180,6 +180,7 @@ def classwork_view(request):
 
 @login_required
 def homework_view(request):
+    from .models import TeacherAssessment
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -195,6 +196,12 @@ def homework_view(request):
         revoked_at__isnull=True
     ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
     
+    # Get teacher-created assessments
+    my_assessments = TeacherAssessment.objects.filter(
+        teacher=request.user,
+        category='homework'
+    ).order_by('-created_at')
+    
     context = {
         'document_type': 'homework',
         'document_type_display': 'Homework',
@@ -203,12 +210,14 @@ def homework_view(request):
         'boards': boards,
         'my_documents': my_documents,
         'shared_documents': shared_documents,
+        'my_assessments': my_assessments,
     }
     
     return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def tests_view(request):
+    from .models import TeacherAssessment
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -224,6 +233,12 @@ def tests_view(request):
         revoked_at__isnull=True
     ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
     
+    # Get teacher-created assessments
+    my_assessments = TeacherAssessment.objects.filter(
+        teacher=request.user,
+        category='test'
+    ).order_by('-created_at')
+    
     context = {
         'document_type': 'test',
         'document_type_display': 'Tests',
@@ -232,12 +247,14 @@ def tests_view(request):
         'boards': boards,
         'my_documents': my_documents,
         'shared_documents': shared_documents,
+        'my_assessments': my_assessments,
     }
     
     return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def exams_view(request):
+    from .models import TeacherAssessment
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -253,6 +270,12 @@ def exams_view(request):
         revoked_at__isnull=True
     ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
     
+    # Get teacher-created assessments
+    my_assessments = TeacherAssessment.objects.filter(
+        teacher=request.user,
+        category='exam'
+    ).order_by('-created_at')
+    
     context = {
         'document_type': 'exam',
         'document_type_display': 'Exams',
@@ -261,6 +284,7 @@ def exams_view(request):
         'boards': boards,
         'my_documents': my_documents,
         'shared_documents': shared_documents,
+        'my_assessments': my_assessments,
     }
     
     return render(request, 'core/document_type_base.html', context)
@@ -340,6 +364,13 @@ def assignments_view(request):
     # Only show subscribed subjects in the dropdown
     available_subjects = Subject.objects.filter(id__in=user_subject_ids)
     
+    # Get teacher-created assessments
+    from .models import TeacherAssessment
+    my_assessments = TeacherAssessment.objects.filter(
+        teacher=request.user,
+        category='assignment'
+    ).order_by('-created_at')
+    
     context = {
         'assignments': assignments,
         'uploaded_assignments': uploaded_assignments,
@@ -349,6 +380,7 @@ def assignments_view(request):
         'grades': Grade.objects.all(),
         'exam_boards': ExamBoard.objects.all(),
         'teacher_classes': teacher_classes,
+        'my_assessments': my_assessments,
     }
     return render(request, 'core/assignments.html', context)
 
@@ -4379,6 +4411,252 @@ def public_paper_download(request, paper_id):
     response['Content-Disposition'] = f'attachment; filename="{paper.original_filename}"'
     
     return response
+
+
+# ============================================================================
+# TEACHER ASSESSMENT BUILDER
+# ============================================================================
+
+@login_required
+def create_assessment(request):
+    """Google Forms-style assessment builder for teachers"""
+    from .models import SubscribedSubject, Grade, TeacherAssessment
+    
+    category = request.GET.get('category', 'test')
+    
+    # Category icons for display
+    category_icons = {
+        'exam': 'fa-graduation-cap',
+        'test': 'fa-file-alt',
+        'assignment': 'fa-tasks',
+        'homework': 'fa-home',
+        'classwork': 'fa-book-open',
+    }
+    
+    subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    
+    context = {
+        'category': category,
+        'category_icon': category_icons.get(category, 'fa-file-alt'),
+        'subjects': subjects,
+        'grades': grades,
+    }
+    return render(request, 'core/teacher/create_assessment.html', context)
+
+
+@login_required
+def save_assessment(request):
+    """Save assessment and questions"""
+    from .models import TeacherAssessment, TeacherQuestion, TeacherQuestionOption, Subject, Grade
+    import json
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        assessment_data = json.loads(request.POST.get('assessment', '{}'))
+        questions_data = json.loads(request.POST.get('questions', '[]'))
+        
+        # Create assessment
+        assessment = TeacherAssessment(
+            teacher=request.user,
+            title=assessment_data.get('title', 'Untitled'),
+            description=assessment_data.get('description', ''),
+            category=assessment_data.get('category', 'test'),
+            instructions=assessment_data.get('instructions', ''),
+            status=assessment_data.get('status', 'draft'),
+        )
+        
+        # Handle optional fields
+        if assessment_data.get('subject_id'):
+            assessment.subject = Subject.objects.filter(id=assessment_data['subject_id']).first()
+        if assessment_data.get('grade_id'):
+            assessment.grade = Grade.objects.filter(id=assessment_data['grade_id']).first()
+        if assessment_data.get('time_limit'):
+            assessment.time_limit = int(assessment_data['time_limit'])
+        
+        assessment.save()
+        
+        # Create questions
+        total_marks = 0
+        for i, q_data in enumerate(questions_data):
+            question = TeacherQuestion(
+                assessment=assessment,
+                question_type=q_data.get('type', 'mcq'),
+                question_text=q_data.get('text', ''),
+                marks=int(q_data.get('marks', 1)),
+                order=i,
+                is_required=True,
+            )
+            
+            # Handle correct answer based on type
+            if q_data.get('type') in ['short_answer', 'long_answer']:
+                question.correct_answer = q_data.get('expected_answer', '')
+            elif q_data.get('type') == 'true_false':
+                question.correct_answer = q_data.get('correct_answer', 'true')
+            elif q_data.get('type') == 'fill_blank':
+                question.correct_answer = q_data.get('correct_answer', '')
+            
+            # Handle explanation
+            question.explanation = q_data.get('explanation', '')
+            
+            # Handle image upload
+            image_key = f'question_image_{i}'
+            if image_key in request.FILES:
+                question.question_image = request.FILES[image_key]
+            
+            question.save()
+            total_marks += question.marks
+            
+            # Create options for MCQ
+            if q_data.get('type') in ['mcq', 'mcq_multi']:
+                correct_option = q_data.get('correct_option')
+                for j, opt in enumerate(q_data.get('options', [])):
+                    if opt.get('text'):
+                        TeacherQuestionOption.objects.create(
+                            question=question,
+                            option_text=opt['text'],
+                            is_correct=(j == correct_option) if q_data.get('type') == 'mcq' else opt.get('is_correct', False),
+                            order=j
+                        )
+            
+            # Create matching pairs
+            elif q_data.get('type') == 'matching':
+                for j, pair in enumerate(q_data.get('pairs', [])):
+                    if pair.get('left'):
+                        TeacherQuestionOption.objects.create(
+                            question=question,
+                            option_text=pair['left'],
+                            match_pair=pair.get('right', ''),
+                            order=j
+                        )
+        
+        # Update total marks
+        assessment.total_marks = total_marks
+        assessment.save()
+        
+        # Redirect based on category
+        category_urls = {
+            'exam': 'exams',
+            'test': 'tests',
+            'assignment': 'assignments',
+            'homework': 'homework',
+            'classwork': 'classwork',
+        }
+        redirect_url = reverse(category_urls.get(assessment.category, 'dashboard'))
+        
+        return JsonResponse({
+            'success': True,
+            'assessment_id': assessment.id,
+            'redirect_url': redirect_url
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def edit_assessment(request, assessment_id):
+    """Edit existing assessment"""
+    from .models import TeacherAssessment, SubscribedSubject, Grade
+    
+    assessment = get_object_or_404(TeacherAssessment, id=assessment_id, teacher=request.user)
+    subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
+    grades = Grade.objects.all().order_by('number')
+    
+    # Prepare questions data for the editor
+    questions_json = []
+    for q in assessment.questions.all().prefetch_related('options'):
+        q_dict = {
+            'id': q.id,
+            'type': q.question_type,
+            'text': q.question_text,
+            'marks': q.marks,
+            'explanation': q.explanation,
+            'showExplanation': bool(q.explanation),
+            'showImageUpload': bool(q.question_image),
+            'imagePreview': q.question_image.url if q.question_image else None,
+        }
+        
+        if q.question_type in ['mcq', 'mcq_multi']:
+            q_dict['options'] = [{'text': o.option_text, 'is_correct': o.is_correct} for o in q.options.all()]
+            correct_idx = next((i for i, o in enumerate(q.options.all()) if o.is_correct), None)
+            q_dict['correct_option'] = correct_idx
+        elif q.question_type == 'matching':
+            q_dict['pairs'] = [{'left': o.option_text, 'right': o.match_pair} for o in q.options.all()]
+        elif q.question_type in ['short_answer', 'long_answer']:
+            q_dict['expected_answer'] = q.correct_answer
+        else:
+            q_dict['correct_answer'] = q.correct_answer
+            
+        questions_json.append(q_dict)
+    
+    category_icons = {
+        'exam': 'fa-graduation-cap',
+        'test': 'fa-file-alt',
+        'assignment': 'fa-tasks',
+        'homework': 'fa-home',
+        'classwork': 'fa-book-open',
+    }
+    
+    context = {
+        'assessment': assessment,
+        'category': assessment.category,
+        'category_icon': category_icons.get(assessment.category, 'fa-file-alt'),
+        'subjects': subjects,
+        'grades': grades,
+        'questions_json': json.dumps(questions_json),
+        'editing': True,
+    }
+    return render(request, 'core/teacher/create_assessment.html', context)
+
+
+@login_required
+def delete_assessment(request, assessment_id):
+    """Delete an assessment"""
+    from .models import TeacherAssessment
+    
+    assessment = get_object_or_404(TeacherAssessment, id=assessment_id, teacher=request.user)
+    category = assessment.category
+    assessment.delete()
+    
+    messages.success(request, f'{category.title()} deleted successfully.')
+    
+    category_urls = {
+        'exam': 'exams',
+        'test': 'tests',
+        'assignment': 'assignments',
+        'homework': 'homework',
+        'classwork': 'classwork',
+    }
+    return redirect(category_urls.get(category, 'dashboard'))
+
+
+@login_required
+def view_assessment(request, assessment_id):
+    """View assessment details and questions"""
+    from .models import TeacherAssessment
+    
+    assessment = get_object_or_404(TeacherAssessment, id=assessment_id, teacher=request.user)
+    questions = assessment.questions.all().prefetch_related('options')
+    
+    category_icons = {
+        'exam': 'fa-graduation-cap',
+        'test': 'fa-file-alt',
+        'assignment': 'fa-tasks',
+        'homework': 'fa-home',
+        'classwork': 'fa-book-open',
+    }
+    
+    context = {
+        'assessment': assessment,
+        'questions': questions,
+        'category_icon': category_icons.get(assessment.category, 'fa-file-alt'),
+    }
+    return render(request, 'core/teacher/view_assessment.html', context)
 
 
 # ============================================================================

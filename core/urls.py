@@ -98,6 +98,13 @@ urlpatterns = [
     path('content/exam-paper/<int:paper_id>/delete/', views.delete_exam_paper, name='delete_exam_paper'),
     path('content/ajax/get-questions/', views.get_questions_ajax, name='get_questions_ajax'),
     
+    # Teacher Assessment Builder
+    path('create/', views.create_assessment, name='create_assessment'),
+    path('assessment/save/', views.save_assessment, name='save_assessment'),
+    path('assessment/<int:assessment_id>/edit/', views.edit_assessment, name='edit_assessment'),
+    path('assessment/<int:assessment_id>/delete/', views.delete_assessment, name='delete_assessment'),
+    path('assessment/<int:assessment_id>/', views.view_assessment, name='view_assessment'),
+    
     # Public exam papers browse (no login required)
     path('papers/', views.public_papers_browse, name='public_papers_browse'),
     path('papers/api/', views.public_papers_api, name='public_papers_api'),

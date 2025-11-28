@@ -18,10 +18,17 @@
 </div>
 
 <!-- Tab Navigation -->
-<div x-data="{ activeTab: 'admin_library' }">
+<div x-data="{ activeTab: 'my_assessments' }">
     <div class="bg-white shadow rounded-lg mb-6 animate-scale-in opacity-0 delay-100">
         <div class="border-b border-gray-200">
-            <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+            <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
+                <button @click="activeTab = 'my_assessments'" 
+                    :class="activeTab === 'my_assessments' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                    <i class="fas fa-clipboard-list mr-2"></i>
+                    My {{ document_type_display }}
+                    {% if my_assessments %}<span class="ml-2 bg-indigo-100 text-indigo-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ my_assessments|length }}</span>{% endif %}
+                </button>
                 <button @click="activeTab = 'admin_library'" 
                     :class="activeTab === 'admin_library' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                     class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
@@ -40,16 +47,93 @@
                     :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                     class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     <i class="fas fa-upload mr-2"></i>
-                    My Uploads
+                    Uploads
                 </button>
                 <button @click="activeTab = 'shared'" 
                     :class="activeTab === 'shared' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                     class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     <i class="fas fa-share-alt mr-2"></i>
-                    Shared Assignments
+                    Shared
                 </button>
             </nav>
         </div>
+    </div>
+    
+    <!-- My Assessments Tab (Created via Builder) -->
+    <div x-show="activeTab === 'my_assessments'" x-cloak class="tab-content mt-6">
+        <!-- Create Button -->
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Your Created {{ document_type_display }}</h3>
+            <a href="{% url 'create_assessment' %}?category={{ document_type }}" class="inline-flex items-center px-4 py-2.5 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                <i class="fas fa-plus mr-2"></i>
+                Create {{ document_type_display }}
+            </a>
+        </div>
+        
+        {% if my_assessments %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
+            {% for assessment in my_assessments %}
+            <div class="stat-card group relative overflow-hidden">
+                <!-- Status Badge -->
+                <div class="absolute top-3 right-3">
+                    {% if assessment.status == 'published' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Published</span>
+                    {% else %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Draft</span>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-start mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-clipboard-list text-white text-lg"></i>
+                    </div>
+                </div>
+                
+                <h3 class="font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors pr-16">{{ assessment.title }}</h3>
+                
+                <div class="space-y-1 mb-4 text-sm text-gray-600">
+                    {% if assessment.subject %}
+                    <p><i class="fas fa-book text-indigo-400 w-4 mr-1"></i> {{ assessment.subject.name }}</p>
+                    {% endif %}
+                    {% if assessment.grade %}
+                    <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ assessment.grade.number }}</p>
+                    {% endif %}
+                    <p><i class="fas fa-question-circle text-blue-400 w-4 mr-1"></i> {{ assessment.get_question_count }} questions</p>
+                    <p><i class="fas fa-star text-yellow-400 w-4 mr-1"></i> {{ assessment.total_marks }} marks</p>
+                    {% if assessment.time_limit %}
+                    <p><i class="fas fa-clock text-green-400 w-4 mr-1"></i> {{ assessment.time_limit }} minutes</p>
+                    {% endif %}
+                </div>
+                
+                <p class="text-xs text-gray-400 mb-4">Created {{ assessment.created_at|date:"M d, Y" }}</p>
+                
+                <div class="flex gap-2">
+                    <a href="{% url 'view_assessment' assessment.id %}" class="flex-1 text-center px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </a>
+                    <a href="{% url 'edit_assessment' assessment.id %}" class="flex-1 text-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </a>
+                    <button onclick="if(confirm('Delete this {{ document_type }}?')) window.location='{% url 'delete_assessment' assessment.id %}'" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="action-card text-center py-12">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-clipboard-list text-indigo-500 text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">No {{ document_type_display }} Created Yet</h3>
+            <p class="text-gray-500 mb-6 max-w-md mx-auto">Create your first {{ document_type|lower }} with our easy-to-use builder. Add multiple question types, images, and more!</p>
+            <a href="{% url 'create_assessment' %}?category={{ document_type }}" class="inline-flex items-center px-6 py-3 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                <i class="fas fa-plus mr-2"></i>
+                Create Your First {{ document_type_display }}
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Admin Library Tab -->
