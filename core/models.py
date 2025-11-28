@@ -1073,3 +1073,110 @@ class OfficialExamPaper(models.Model):
         """Combined text for full-text search"""
         board_name = self.exam_board.name_full if self.exam_board else ""
         return f"{board_name} {self.subject_code} {self.subject_name} {self.year} {self.session} {self.paper_number} {self.variant} {self.original_filename}"
+
+
+class TeacherAssessment(models.Model):
+    """Teacher-created assessments (exams, tests, assignments, homework)"""
+    
+    CATEGORY_CHOICES = [
+        ('exam', 'Exam'),
+        ('test', 'Test'),
+        ('assignment', 'Assignment'),
+        ('homework', 'Homework'),
+        ('classwork', 'Classwork'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('archived', 'Archived'),
+    ]
+    
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assessments')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
+    grade = models.ForeignKey(Grade, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    time_limit = models.IntegerField(null=True, blank=True, help_text="Time limit in minutes")
+    total_marks = models.IntegerField(default=0)
+    passing_marks = models.IntegerField(null=True, blank=True)
+    instructions = models.TextField(blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    is_shuffle_questions = models.BooleanField(default=False)
+    show_correct_answers = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['teacher', 'category']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_category_display()})"
+    
+    def get_question_count(self):
+        return self.questions.count()
+    
+    def calculate_total_marks(self):
+        return self.questions.aggregate(total=models.Sum('marks'))['total'] or 0
+
+
+class TeacherQuestion(models.Model):
+    """Questions within a teacher assessment"""
+    
+    QUESTION_TYPE_CHOICES = [
+        ('mcq', 'Multiple Choice'),
+        ('mcq_multi', 'Multiple Choice (Multiple Answers)'),
+        ('true_false', 'True/False'),
+        ('short_answer', 'Short Answer'),
+        ('long_answer', 'Long Answer / Essay'),
+        ('matching', 'Matching'),
+        ('fill_blank', 'Fill in the Blank'),
+    ]
+    
+    assessment = models.ForeignKey(TeacherAssessment, on_delete=models.CASCADE, related_name='questions')
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES)
+    question_text = models.TextField()
+    question_image = models.ImageField(upload_to='assessment_questions/%Y/%m/', null=True, blank=True)
+    
+    marks = models.IntegerField(default=1)
+    order = models.IntegerField(default=0)
+    
+    correct_answer = models.TextField(blank=True, help_text="For short/long answer - expected answer or keywords")
+    explanation = models.TextField(blank=True, help_text="Explanation shown after answering")
+    
+    is_required = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"Q{self.order}: {self.question_text[:50]}..."
+
+
+class TeacherQuestionOption(models.Model):
+    """Options for MCQ and matching questions"""
+    
+    question = models.ForeignKey(TeacherQuestion, on_delete=models.CASCADE, related_name='options')
+    option_text = models.CharField(max_length=500)
+    option_image = models.ImageField(upload_to='assessment_options/%Y/%m/', null=True, blank=True)
+    is_correct = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    
+    match_pair = models.CharField(max_length=500, blank=True, help_text="For matching questions - the paired answer")
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return self.option_text[:50]
