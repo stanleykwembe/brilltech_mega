@@ -151,7 +151,7 @@ def lesson_plans_view(request):
 
 @login_required
 def classwork_view(request):
-    from .models import TeacherAssessment
+    from .models import TeacherAssessment, ContentShare
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -173,6 +173,21 @@ def classwork_view(request):
         category='classwork'
     ).order_by('-created_at')
     
+    # Get shared content (via ContentShare tokens)
+    shared_assessments = ContentShare.objects.filter(
+        teacher=request.user,
+        assessment__isnull=False,
+        assessment__category='classwork',
+        is_active=True
+    ).select_related('assessment', 'assessment__subject', 'assessment__grade').order_by('-created_at')
+    
+    shared_docs = ContentShare.objects.filter(
+        teacher=request.user,
+        document__isnull=False,
+        document__type='classwork',
+        is_active=True
+    ).select_related('document').order_by('-created_at')
+    
     context = {
         'document_type': 'classwork',
         'document_type_display': 'Classwork',
@@ -182,13 +197,15 @@ def classwork_view(request):
         'my_documents': my_documents,
         'shared_documents': shared_documents,
         'my_assessments': my_assessments,
+        'shared_assessments': shared_assessments,
+        'shared_docs': shared_docs,
     }
     
     return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def homework_view(request):
-    from .models import TeacherAssessment
+    from .models import TeacherAssessment, ContentShare
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -210,6 +227,21 @@ def homework_view(request):
         category='homework'
     ).order_by('-created_at')
     
+    # Get shared content (via ContentShare tokens)
+    shared_assessments = ContentShare.objects.filter(
+        teacher=request.user,
+        assessment__isnull=False,
+        assessment__category='homework',
+        is_active=True
+    ).select_related('assessment', 'assessment__subject', 'assessment__grade').order_by('-created_at')
+    
+    shared_docs = ContentShare.objects.filter(
+        teacher=request.user,
+        document__isnull=False,
+        document__type='homework',
+        is_active=True
+    ).select_related('document').order_by('-created_at')
+    
     context = {
         'document_type': 'homework',
         'document_type_display': 'Homework',
@@ -219,13 +251,15 @@ def homework_view(request):
         'my_documents': my_documents,
         'shared_documents': shared_documents,
         'my_assessments': my_assessments,
+        'shared_assessments': shared_assessments,
+        'shared_docs': shared_docs,
     }
     
     return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def tests_view(request):
-    from .models import TeacherAssessment
+    from .models import TeacherAssessment, ContentShare
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -247,6 +281,21 @@ def tests_view(request):
         category='test'
     ).order_by('-created_at')
     
+    # Get shared content (via ContentShare tokens)
+    shared_assessments = ContentShare.objects.filter(
+        teacher=request.user,
+        assessment__isnull=False,
+        assessment__category='test',
+        is_active=True
+    ).select_related('assessment', 'assessment__subject', 'assessment__grade').order_by('-created_at')
+    
+    shared_docs = ContentShare.objects.filter(
+        teacher=request.user,
+        document__isnull=False,
+        document__type='test',
+        is_active=True
+    ).select_related('document').order_by('-created_at')
+    
     context = {
         'document_type': 'test',
         'document_type_display': 'Tests',
@@ -256,13 +305,15 @@ def tests_view(request):
         'my_documents': my_documents,
         'shared_documents': shared_documents,
         'my_assessments': my_assessments,
+        'shared_assessments': shared_assessments,
+        'shared_docs': shared_docs,
     }
     
     return render(request, 'core/document_type_base.html', context)
 
 @login_required
 def exams_view(request):
-    from .models import TeacherAssessment
+    from .models import TeacherAssessment, ContentShare
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -284,6 +335,21 @@ def exams_view(request):
         category='exam'
     ).order_by('-created_at')
     
+    # Get shared content (via ContentShare tokens)
+    shared_assessments = ContentShare.objects.filter(
+        teacher=request.user,
+        assessment__isnull=False,
+        assessment__category='exam',
+        is_active=True
+    ).select_related('assessment', 'assessment__subject', 'assessment__grade').order_by('-created_at')
+    
+    shared_docs = ContentShare.objects.filter(
+        teacher=request.user,
+        document__isnull=False,
+        document__type='exam',
+        is_active=True
+    ).select_related('document').order_by('-created_at')
+    
     context = {
         'document_type': 'exam',
         'document_type_display': 'Exams',
@@ -293,6 +359,8 @@ def exams_view(request):
         'my_documents': my_documents,
         'shared_documents': shared_documents,
         'my_assessments': my_assessments,
+        'shared_assessments': shared_assessments,
+        'shared_docs': shared_docs,
     }
     
     return render(request, 'core/document_type_base.html', context)
@@ -373,11 +441,26 @@ def assignments_view(request):
     available_subjects = Subject.objects.filter(id__in=user_subject_ids)
     
     # Get teacher-created assessments
-    from .models import TeacherAssessment
+    from .models import TeacherAssessment, ContentShare
     my_assessments = TeacherAssessment.objects.filter(
         teacher=request.user,
         category='assignment'
     ).order_by('-created_at')
+    
+    # Get shared content (via ContentShare tokens)
+    shared_assessments_content = ContentShare.objects.filter(
+        teacher=request.user,
+        assessment__isnull=False,
+        assessment__category='assignment',
+        is_active=True
+    ).select_related('assessment', 'assessment__subject', 'assessment__grade').order_by('-created_at')
+    
+    shared_docs = ContentShare.objects.filter(
+        teacher=request.user,
+        document__isnull=False,
+        document__type='assignment',
+        is_active=True
+    ).select_related('document').order_by('-created_at')
     
     context = {
         'assignments': assignments,
@@ -389,6 +472,8 @@ def assignments_view(request):
         'exam_boards': ExamBoard.objects.all(),
         'teacher_classes': teacher_classes,
         'my_assessments': my_assessments,
+        'shared_assessments': shared_assessments_content,
+        'shared_docs': shared_docs,
     }
     return render(request, 'core/assignments.html', context)
 
