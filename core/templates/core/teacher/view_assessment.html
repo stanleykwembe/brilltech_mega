@@ -50,9 +50,9 @@
     <!-- Header -->
     <div class="mb-8 animate-fade-in-up">
         {% with category=assessment.category %}
-        <a href="{% if category == 'exam' %}{% url 'exams' %}{% elif category == 'test' %}{% url 'tests' %}{% elif category == 'assignment' %}{% url 'assignments' %}{% elif category == 'homework' %}{% url 'homework' %}{% else %}{% url 'tests' %}{% endif %}" class="text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-flex items-center">
+        <a href="{% if category == 'exam' %}{% url 'exams' %}{% elif category == 'test' %}{% url 'tests' %}{% elif category == 'assignment' %}{% url 'assignments' %}{% elif category == 'homework' %}{% url 'homework' %}{% elif category == 'classwork' %}{% url 'classwork' %}{% else %}{% url 'tests' %}{% endif %}" class="text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-flex items-center">
             <i class="fas fa-arrow-left mr-2"></i>
-            Back to {{ assessment.get_category_display }}{% if assessment.category != 'homework' %}s{% endif %}
+            Back to {{ assessment.get_category_display }}
         </a>
         {% endwith %}
         

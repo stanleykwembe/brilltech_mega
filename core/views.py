@@ -151,6 +151,7 @@ def lesson_plans_view(request):
 
 @login_required
 def classwork_view(request):
+    from .models import TeacherAssessment
     subscribed_subjects = SubscribedSubject.objects.filter(user=request.user).select_related('subject')
     grades = Grade.objects.all().order_by('number')
     boards = ExamBoard.objects.all().order_by('name_full')
@@ -166,6 +167,12 @@ def classwork_view(request):
         revoked_at__isnull=True
     ).select_related('class_group', 'uploaded_document').order_by('-shared_at')
     
+    # Get teacher-created assessments
+    my_assessments = TeacherAssessment.objects.filter(
+        teacher=request.user,
+        category='classwork'
+    ).order_by('-created_at')
+    
     context = {
         'document_type': 'classwork',
         'document_type_display': 'Classwork',
@@ -174,6 +181,7 @@ def classwork_view(request):
         'boards': boards,
         'my_documents': my_documents,
         'shared_documents': shared_documents,
+        'my_assessments': my_assessments,
     }
     
     return render(request, 'core/document_type_base.html', context)
