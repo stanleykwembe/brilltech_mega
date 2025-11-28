@@ -41,12 +41,25 @@
                         <h1 class="text-white text-xl font-bold tracking-tight">EduTech</h1>
                     </div>
                     
-                    <!-- Create Button -->
-                    <div class="px-3 mb-4">
-                        <a href="{% url 'create_assessment' %}" class="w-full flex items-center justify-center px-4 py-2.5 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                    <!-- Create Button with Dropdown -->
+                    <div class="px-3 mb-4" x-data="{ createOpen: false }">
+                        <button @click="createOpen = !createOpen" class="w-full flex items-center justify-center px-4 py-2.5 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
                             <i class="fas fa-plus mr-2"></i>
                             Create
-                        </a>
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        <div x-show="createOpen" @click.away="createOpen = false" x-cloak class="mt-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden">
+                            <a href="{% url 'create_assessment' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                <i class="fas fa-edit w-5 mr-3 text-indigo-500"></i>
+                                <span class="font-medium">Create Assessment</span>
+                            </a>
+                            {% if user.userprofile.can_use_ai %}
+                            <a href="{% url 'lesson_plans' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors border-t border-gray-100">
+                                <i class="fas fa-magic w-5 mr-3 text-purple-500"></i>
+                                <span class="font-medium">AI Generate</span>
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <nav class="flex-1 px-3 space-y-1">

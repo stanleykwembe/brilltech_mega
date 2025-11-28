@@ -42,14 +42,6 @@
                     <i class="fas fa-book-reader mr-2"></i>
                     Library
                 </button>
-                {% if user.userprofile.can_use_ai %}
-                <button @click="activeTab = 'ai_generate'" 
-                    :class="activeTab === 'ai_generate' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-magic mr-2"></i>
-                    AI Generate
-                </button>
-                {% endif %}
             </nav>
         </div>
     </div>
@@ -174,15 +166,19 @@
                 <p class="text-xs text-gray-400 mb-4">Uploaded {{ doc.created_at|date:"M d, Y" }}</p>
                 
                 <div class="flex gap-2 flex-wrap">
+                    {% if doc.file %}
                     <a href="{{ doc.file.url }}" target="_blank" class="flex-1 text-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
                         <i class="fas fa-eye mr-1"></i>View
                     </a>
+                    {% endif %}
                     <button onclick="shareDocument({{ doc.id }}, '{{ doc.title|escapejs }}')" class="flex-1 text-center px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
                         <i class="fas fa-share-alt mr-1"></i>Share
                     </button>
+                    {% if doc.file %}
                     <a href="{{ doc.file.url }}" download class="px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
                         <i class="fas fa-download"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -214,80 +210,6 @@
             </div>
         </div>
     </div>
-
-    <!-- AI Generate Tab -->
-    {% if user.userprofile.can_use_ai %}
-    <div x-show="activeTab === 'ai_generate'" x-cloak class="tab-content mt-6">
-        <div class="action-card">
-            <div class="flex items-center mb-6">
-                <div class="action-icon-wrapper bg-indigo-50 mr-4">
-                    <i class="fas fa-magic text-indigo-600 text-2xl"></i>
-                </div>
-                <div>
-                    <h3 class="heading-secondary">Generate AI {{ document_type_display }}</h3>
-                    <p class="text-sm text-gray-600">Let AI create {{ document_type_display|lower }} for you</p>
-                </div>
-            </div>
-            <form method="post" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="generate_ai" value="1">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                        <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select subject</option>
-                            {% for sub_subject in subscribed_subjects %}
-                            <option value="{{ sub_subject.subject.id }}">{{ sub_subject.subject.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
-                        <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select grade</option>
-                            {% for grade in grades %}
-                            <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
-                        <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select exam board</option>
-                            {% for board in boards %}
-                            <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                        <select name="duration" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="30 minutes">30 minutes</option>
-                            <option value="45 minutes" selected>45 minutes</option>
-                            <option value="60 minutes">60 minutes</option>
-                            <option value="90 minutes">90 minutes</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
-                    <input type="text" name="topic" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Introduction to Quadratic Equations">
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="submit" class="btn-gradient">
-                        <i class="fas fa-magic mr-2"></i>Generate {{ document_type_display }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    {% endif %}
 
     <!-- Upload Modal -->
     <div x-show="showUploadModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
