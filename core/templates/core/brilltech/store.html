@@ -1,0 +1,220 @@
+{% extends 'core/brilltech/base.html' %}
+
+{% block title %}Tech Store{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="pt-32 pb-20 mesh-gradient relative overflow-hidden">
+    <div class="blob w-80 h-80 bg-green-400 top-20 -right-20 float-animation"></div>
+    <div class="blob w-64 h-64 bg-emerald-400 bottom-0 left-10 float-animation float-delay-2"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-3xl mx-auto">
+            <div class="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium mb-6 hero-badge">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                Premium Tech Products
+            </div>
+            <h1 class="hero-title text-4xl sm:text-5xl lg:text-6xl font-bold font-display text-gray-900 mb-6">
+                Power Your
+                <span class="gradient-text">Potential</span>
+            </h1>
+            <p class="hero-subtitle text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10">
+                Discover premium hardware, software, and digital tools curated for professionals. Quality products at competitive prices.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Product Categories -->
+<section class="py-20 lg:py-32 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="section-title text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-6">
+                Shop by <span class="gradient-text">Category</span>
+            </h2>
+            <p class="section-subtitle text-lg text-gray-600 max-w-2xl mx-auto">
+                From laptops to enterprise software, find everything you need to succeed.
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-laptop text-blue-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Laptops</h3>
+                <p class="text-sm text-gray-500">Premium devices for work & play</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-desktop text-purple-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Desktops</h3>
+                <p class="text-sm text-gray-500">High-performance workstations</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-hdd text-green-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Storage</h3>
+                <p class="text-sm text-gray-500">SSDs, HDDs & cloud solutions</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-headphones text-orange-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Accessories</h3>
+                <p class="text-sm text-gray-500">Peripherals & gadgets</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-network-wired text-red-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Networking</h3>
+                <p class="text-sm text-gray-500">Routers, switches & cables</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-cyan-100 to-cyan-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-box text-cyan-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Software</h3>
+                <p class="text-sm text-gray-500">Licensed business software</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-print text-indigo-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Printers</h3>
+                <p class="text-sm text-gray-500">Office & home printers</p>
+            </div>
+            
+            <div class="product-card glass-card rounded-2xl p-6 card-hover border border-gray-100 text-center group">
+                <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-server text-pink-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Servers</h3>
+                <p class="text-sm text-gray-500">Enterprise solutions</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Preview -->
+<section class="py-20 mesh-gradient">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="section-title text-3xl sm:text-4xl font-bold font-display text-gray-900 mb-6">
+                Featured <span class="gradient-text">Products</span>
+            </h2>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="featured-product bg-white rounded-3xl overflow-hidden shadow-lg card-hover">
+                <div class="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <i class="fas fa-laptop text-6xl text-gray-400"></i>
+                </div>
+                <div class="p-6">
+                    <span class="text-xs font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full">New</span>
+                    <h3 class="text-lg font-bold text-gray-900 mt-3 mb-2">Business Pro Laptop</h3>
+                    <p class="text-sm text-gray-600 mb-4">Intel i7, 16GB RAM, 512GB SSD</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-gray-900">R15,999</span>
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-cart-plus mr-2"></i>Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="featured-product bg-white rounded-3xl overflow-hidden shadow-lg card-hover">
+                <div class="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <i class="fas fa-desktop text-6xl text-gray-400"></i>
+                </div>
+                <div class="p-6">
+                    <span class="text-xs font-semibold text-orange-600 bg-orange-100 px-3 py-1 rounded-full">Popular</span>
+                    <h3 class="text-lg font-bold text-gray-900 mt-3 mb-2">Workstation Tower</h3>
+                    <p class="text-sm text-gray-600 mb-4">AMD Ryzen 9, 32GB RAM, 1TB NVMe</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-gray-900">R28,499</span>
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-cart-plus mr-2"></i>Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="featured-product bg-white rounded-3xl overflow-hidden shadow-lg card-hover">
+                <div class="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <i class="fas fa-headset text-6xl text-gray-400"></i>
+                </div>
+                <div class="p-6">
+                    <span class="text-xs font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">Bestseller</span>
+                    <h3 class="text-lg font-bold text-gray-900 mt-3 mb-2">Pro Wireless Headset</h3>
+                    <p class="text-sm text-gray-600 mb-4">Noise-canceling, 40hr battery</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-gray-900">R2,499</span>
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-cart-plus mr-2"></i>Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Coming Soon Banner -->
+<section class="py-20 lg:py-32 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="glass-card rounded-3xl p-12 border border-gray-200">
+            <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-8">
+                <i class="fas fa-store text-white text-3xl"></i>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-bold font-display text-gray-900 mb-6">
+                Full Store <span class="gradient-text">Coming Soon</span>
+            </h2>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                Our complete e-commerce platform is launching soon. Get early access and exclusive discounts!
+            </p>
+            <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <input type="email" placeholder="Enter your email" class="flex-1 px-6 py-4 rounded-full border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all">
+                <button type="submit" class="btn-primary px-8 py-4 rounded-full text-white font-semibold">
+                    Get Early Access
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!prefersReducedMotion) {
+        gsap.from('.hero-badge', { opacity: 0, y: -20, duration: 0.6 });
+        gsap.from('.hero-title', { opacity: 0, y: 40, duration: 0.8, delay: 0.2 });
+        gsap.from('.hero-subtitle', { opacity: 0, y: 30, duration: 0.8, delay: 0.4 });
+        
+        gsap.from('.product-card', {
+            scrollTrigger: { trigger: '.product-card', start: 'top 85%' },
+            opacity: 0, y: 40, scale: 0.95, duration: 0.6, stagger: 0.08
+        });
+        
+        gsap.from('.featured-product', {
+            scrollTrigger: { trigger: '.featured-product', start: 'top 85%' },
+            opacity: 0, y: 60, duration: 0.8, stagger: 0.15
+        });
+    }
+});
+</script>
+{% endblock %}

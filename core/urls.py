@@ -104,4 +104,11 @@ urlpatterns = [
     path('papers/filters/', views.public_papers_filters, name='public_papers_filters'),
     path('papers/view/<int:paper_id>/', views.public_paper_view, name='public_paper_view'),
     path('papers/download/<int:paper_id>/', views.public_paper_download, name='public_paper_download'),
+    
+    # BrillTech corporate pages (no login required)
+    path('brilltech/', views.brilltech_landing, name='brilltech_landing'),
+    path('brilltech/services/', views.brilltech_services, name='brilltech_services'),
+    path('brilltech/learning/', views.brilltech_learning, name='brilltech_learning'),
+    path('brilltech/store/', views.brilltech_store, name='brilltech_store'),
+    path('brilltech/dashboard/', views.brilltech_dashboard, name='brilltech_dashboard'),
 ]

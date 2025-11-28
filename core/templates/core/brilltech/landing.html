@@ -1,0 +1,444 @@
+{% extends 'core/brilltech/base.html' %}
+
+{% block title %}Welcome to BrillTech{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="min-h-screen mesh-gradient relative overflow-hidden pt-20">
+    <!-- Animated Background Blobs -->
+    <div class="blob w-96 h-96 bg-blue-400 top-20 -left-48 float-animation"></div>
+    <div class="blob w-80 h-80 bg-cyan-400 top-40 right-0 float-animation float-delay-1"></div>
+    <div class="blob w-64 h-64 bg-indigo-400 bottom-20 left-1/4 float-animation float-delay-2"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-32 pb-20 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <!-- Hero Content -->
+            <div class="hero-content">
+                <div class="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-6">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+                    Trusted by 500+ businesses
+                </div>
+                
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold font-display text-gray-900 leading-tight mb-6">
+                    Transform Your Business with
+                    <span class="gradient-text block">Digital Innovation</span>
+                </h1>
+                
+                <p class="text-lg sm:text-xl text-gray-600 mb-8 max-w-lg">
+                    We craft cutting-edge technology solutions that empower your business to thrive in the digital age. From web development to cloud infrastructure, we've got you covered.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="{% url 'brilltech_services' %}" class="btn-primary px-8 py-4 rounded-full text-white font-semibold inline-flex items-center justify-center text-lg">
+                        Explore Services
+                        <i class="fas fa-arrow-right ml-3"></i>
+                    </a>
+                    <a href="{% url 'brilltech_learning' %}" class="px-8 py-4 rounded-full border-2 border-gray-300 text-gray-700 font-semibold hover:border-blue-500 hover:text-blue-600 transition-all inline-flex items-center justify-center text-lg">
+                        <i class="fas fa-play-circle mr-3"></i>
+                        Learn More
+                    </a>
+                </div>
+                
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-6 mt-12 pt-12 border-t border-gray-200">
+                    <div class="stat-item">
+                        <div class="text-3xl lg:text-4xl font-bold gradient-text">500+</div>
+                        <div class="text-sm text-gray-500 mt-1">Happy Clients</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="text-3xl lg:text-4xl font-bold gradient-text">99%</div>
+                        <div class="text-sm text-gray-500 mt-1">Satisfaction</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="text-3xl lg:text-4xl font-bold gradient-text">24/7</div>
+                        <div class="text-sm text-gray-500 mt-1">Support</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero Visual -->
+            <div class="hero-visual relative">
+                <div class="relative">
+                    <!-- Main Card -->
+                    <div class="glass-card rounded-3xl p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+                                <i class="fas fa-code text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Project Dashboard</h3>
+                                <p class="text-sm text-gray-500">Real-time analytics</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Website Development</span>
+                                <span class="text-sm font-semibold text-green-600">Completed</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Mobile App</span>
+                                <span class="text-sm font-semibold text-blue-600">85%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-purple-500 to-pink-400 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Cloud Migration</span>
+                                <span class="text-sm font-semibold text-orange-600">60%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-orange-500 to-amber-400 h-2 rounded-full" style="width: 60%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Floating Cards -->
+                    <div class="absolute -top-6 -right-6 glass-card rounded-2xl p-4 shadow-xl float-animation">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">New Project</p>
+                                <p class="text-sm font-semibold text-gray-900">Deployed!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute -bottom-4 -left-6 glass-card rounded-2xl p-4 shadow-xl float-animation float-delay-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-users text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Active Users</p>
+                                <p class="text-sm font-semibold text-gray-900">12,543</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div class="w-6 h-10 rounded-full border-2 border-gray-400 flex items-start justify-center p-2">
+            <div class="w-1 h-3 bg-gray-400 rounded-full animate-pulse"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Overview Cards Section -->
+<section class="py-20 lg:py-32 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-6 section-title">
+                Everything You Need to
+                <span class="gradient-text">Succeed</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto section-subtitle">
+                Discover our comprehensive suite of digital solutions designed to accelerate your business growth.
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8 lg:gap-10">
+            <!-- Services Card -->
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover border border-gray-100">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
+                    <i class="fas fa-cogs text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold font-display text-gray-900 mb-4">Professional Services</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    From web development to IT support, our expert team delivers tailored solutions that drive results. We handle the technology so you can focus on what matters most - your business.
+                </p>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Custom Web & Mobile Development
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        24/7 IT Support & Maintenance
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Enterprise Network Solutions
+                    </li>
+                </ul>
+                <a href="{% url 'brilltech_services' %}" class="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 group">
+                    Explore Services
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+            
+            <!-- Learning Card -->
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover border border-gray-100">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-400 flex items-center justify-center mb-6 shadow-lg shadow-purple-200">
+                    <i class="fas fa-graduation-cap text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold font-display text-gray-900 mb-4">Learning Platform</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    Empower your team with our comprehensive digital skills training. Interactive courses, expert instructors, and certifications that matter in today's tech landscape.
+                </p>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Interactive Online Courses
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Industry-Recognized Certifications
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Personalized Learning Paths
+                    </li>
+                </ul>
+                <a href="{% url 'brilltech_learning' %}" class="inline-flex items-center text-purple-600 font-semibold hover:text-purple-700 group">
+                    Start Learning
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+            
+            <!-- Store Card -->
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover border border-gray-100">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-400 flex items-center justify-center mb-6 shadow-lg shadow-green-200">
+                    <i class="fas fa-shopping-cart text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold font-display text-gray-900 mb-4">Tech Store</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    Get the best hardware, software, and digital tools at competitive prices. From laptops to enterprise solutions, we've curated everything you need to power your success.
+                </p>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Premium Hardware Selection
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Licensed Software Solutions
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Fast Nationwide Delivery
+                    </li>
+                </ul>
+                <a href="{% url 'brilltech_store' %}" class="inline-flex items-center text-green-600 font-semibold hover:text-green-700 group">
+                    Visit Store
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+            
+            <!-- Dashboard Card -->
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover border border-gray-100">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center mb-6 shadow-lg shadow-orange-200">
+                    <i class="fas fa-chart-line text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold font-display text-gray-900 mb-4">Client Dashboard</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    Track your projects, manage subscriptions, and access all your BrillTech services from one powerful dashboard. Real-time insights at your fingertips.
+                </p>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Real-Time Project Tracking
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Comprehensive Analytics
+                    </li>
+                    <li class="flex items-center text-gray-600">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Unified Account Management
+                    </li>
+                </ul>
+                <a href="{% url 'brilltech_dashboard' %}" class="inline-flex items-center text-orange-600 font-semibold hover:text-orange-700 group">
+                    View Dashboard
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section class="py-20 lg:py-32 mesh-gradient relative overflow-hidden">
+    <div class="blob w-80 h-80 bg-blue-400 top-0 right-0 float-animation"></div>
+    <div class="blob w-64 h-64 bg-cyan-400 bottom-0 left-0 float-animation float-delay-1"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-6 section-title">
+                Why Choose <span class="gradient-text">BrillTech?</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto section-subtitle">
+                We're more than just a tech company. We're your partners in digital transformation.
+            </p>
+        </div>
+        
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="feature-card text-center">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-lg shadow-blue-200 transform hover:scale-110 transition-transform">
+                    <i class="fas fa-rocket text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Fast Delivery</h3>
+                <p class="text-gray-600">Quick turnaround without compromising quality. Your time is valuable.</p>
+            </div>
+            
+            <div class="feature-card text-center">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6 shadow-lg shadow-green-200 transform hover:scale-110 transition-transform">
+                    <i class="fas fa-shield-alt text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Secure & Reliable</h3>
+                <p class="text-gray-600">Enterprise-grade security protocols protect your data around the clock.</p>
+            </div>
+            
+            <div class="feature-card text-center">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-200 transform hover:scale-110 transition-transform">
+                    <i class="fas fa-users text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Expert Team</h3>
+                <p class="text-gray-600">Certified professionals with years of industry experience.</p>
+            </div>
+            
+            <div class="feature-card text-center">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-6 shadow-lg shadow-orange-200 transform hover:scale-110 transition-transform">
+                    <i class="fas fa-headset text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">24/7 Support</h3>
+                <p class="text-gray-600">Round-the-clock assistance whenever you need us.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+    
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 cta-section">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6">
+            Ready to Transform Your Business?
+        </h2>
+        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+            Join hundreds of businesses that trust BrillTech to power their digital success. Let's build something amazing together.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'brilltech_services' %}" class="px-10 py-4 bg-white text-blue-600 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all hover:scale-105 inline-flex items-center justify-center">
+                Get Started Today
+                <i class="fas fa-arrow-right ml-3"></i>
+            </a>
+            <a href="{% url 'brilltech_learning' %}" class="px-10 py-4 border-2 border-white text-white rounded-full font-semibold text-lg hover:bg-white hover:text-blue-600 transition-all inline-flex items-center justify-center">
+                <i class="fas fa-phone mr-3"></i>
+                Contact Us
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!prefersReducedMotion) {
+        gsap.from('.hero-content', {
+            opacity: 0,
+            x: -60,
+            duration: 1,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.hero-visual', {
+            opacity: 0,
+            x: 60,
+            duration: 1,
+            delay: 0.3,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.stat-item', {
+            opacity: 0,
+            y: 30,
+            duration: 0.6,
+            stagger: 0.1,
+            delay: 0.8,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.section-title', {
+            scrollTrigger: {
+                trigger: '.section-title',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.section-subtitle', {
+            scrollTrigger: {
+                trigger: '.section-subtitle',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            delay: 0.2,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.overview-card', {
+            scrollTrigger: {
+                trigger: '.overview-card',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 60,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.feature-card', {
+            scrollTrigger: {
+                trigger: '.feature-card',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 50,
+            scale: 0.9,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'back.out(1.2)'
+        });
+        
+        gsap.from('.cta-section', {
+            scrollTrigger: {
+                trigger: '.cta-section',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+            ease: 'power3.out'
+        });
+    }
+});
+</script>
+{% endblock %}

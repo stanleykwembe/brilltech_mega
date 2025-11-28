@@ -4379,3 +4379,70 @@ def public_paper_download(request, paper_id):
     response['Content-Disposition'] = f'attachment; filename="{paper.original_filename}"'
     
     return response
+
+
+# ============================================================================
+# BRILLTECH CORPORATE PAGES
+# ============================================================================
+
+def brilltech_landing(request):
+    """BrillTech main landing page with hero and service summaries"""
+    return render(request, 'core/brilltech/landing.html')
+
+
+def brilltech_services(request):
+    """BrillTech detailed services page with 6 service cards"""
+    services = [
+        {
+            'icon': 'fa-globe',
+            'title': 'Website Development',
+            'description': 'Custom-built, responsive websites that captivate your audience. From sleek portfolios to complex e-commerce platforms, we craft digital experiences that drive results.',
+            'color': 'from-blue-500 to-cyan-400'
+        },
+        {
+            'icon': 'fa-mobile-alt',
+            'title': 'Mobile App Development',
+            'description': 'Native and cross-platform mobile applications that users love. iOS, Android, or both - we build apps that perform flawlessly and scale effortlessly.',
+            'color': 'from-purple-500 to-pink-400'
+        },
+        {
+            'icon': 'fa-headset',
+            'title': 'IT Support & Maintenance',
+            'description': 'Round-the-clock technical support to keep your systems running smoothly. Proactive monitoring, rapid response, and expert troubleshooting.',
+            'color': 'from-green-500 to-emerald-400'
+        },
+        {
+            'icon': 'fa-network-wired',
+            'title': 'Network Installation',
+            'description': 'Enterprise-grade network infrastructure designed for speed, security, and reliability. From small offices to large campuses, we connect your world.',
+            'color': 'from-orange-500 to-amber-400'
+        },
+        {
+            'icon': 'fa-chalkboard-teacher',
+            'title': 'Training & Digital Skills',
+            'description': 'Empower your team with cutting-edge digital skills. Customized training programs that transform beginners into tech-savvy professionals.',
+            'color': 'from-red-500 to-rose-400'
+        },
+        {
+            'icon': 'fa-cloud-upload-alt',
+            'title': 'Cloud & Data Backup',
+            'description': 'Secure cloud solutions that protect your data and enable seamless collaboration. Automated backups, disaster recovery, and infinite scalability.',
+            'color': 'from-indigo-500 to-violet-400'
+        },
+    ]
+    return render(request, 'core/brilltech/services.html', {'services': services})
+
+
+def brilltech_learning(request):
+    """BrillTech learning platform page"""
+    return render(request, 'core/brilltech/learning.html')
+
+
+def brilltech_store(request):
+    """BrillTech store page"""
+    return render(request, 'core/brilltech/store.html')
+
+
+def brilltech_dashboard(request):
+    """BrillTech dashboard overview page"""
+    return render(request, 'core/brilltech/dashboard.html')

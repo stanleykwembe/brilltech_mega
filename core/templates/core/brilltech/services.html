@@ -1,0 +1,311 @@
+{% extends 'core/brilltech/base.html' %}
+
+{% block title %}Our Services{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="pt-32 pb-20 mesh-gradient relative overflow-hidden">
+    <div class="blob w-80 h-80 bg-blue-400 top-20 -right-20 float-animation"></div>
+    <div class="blob w-64 h-64 bg-cyan-400 bottom-0 left-10 float-animation float-delay-2"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-3xl mx-auto">
+            <div class="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-6 hero-badge">
+                <i class="fas fa-cogs mr-2"></i>
+                Professional IT Services
+            </div>
+            <h1 class="hero-title text-4xl sm:text-5xl lg:text-6xl font-bold font-display text-gray-900 mb-6">
+                Solutions That
+                <span class="gradient-text">Power Success</span>
+            </h1>
+            <p class="hero-subtitle text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                From concept to deployment, we provide end-to-end technology services that transform your ideas into reality. Let's build the future together.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Services Grid -->
+<section class="py-20 lg:py-32 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+            {% for service in services %}
+            <div class="service-card group relative">
+                <div class="glass-card rounded-3xl p-8 h-full border border-gray-100 card-hover relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br {{ service.color }} opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500"></div>
+                    
+                    <div class="relative z-10">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br {{ service.color }} flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                            <i class="fas {{ service.icon }} text-white text-2xl"></i>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold font-display text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
+                            {{ service.title }}
+                        </h3>
+                        
+                        <p class="text-gray-600 leading-relaxed mb-6">
+                            {{ service.description }}
+                        </p>
+                        
+                        <a href="#" class="inline-flex items-center text-blue-600 font-semibold group-hover:text-blue-700">
+                            Learn More
+                            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Process Section -->
+<section class="py-20 lg:py-32 mesh-gradient relative overflow-hidden">
+    <div class="blob w-72 h-72 bg-blue-400 top-0 left-0 float-animation"></div>
+    <div class="blob w-56 h-56 bg-cyan-400 bottom-20 right-10 float-animation float-delay-1"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16">
+            <h2 class="process-title text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-6">
+                Our <span class="gradient-text">Process</span>
+            </h2>
+            <p class="process-subtitle text-lg text-gray-600 max-w-2xl mx-auto">
+                A proven methodology that delivers results every time.
+            </p>
+        </div>
+        
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="process-step text-center">
+                <div class="relative inline-block mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200">
+                        1
+                    </div>
+                    <div class="hidden lg:block absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Discovery</h3>
+                <p class="text-gray-600">We listen to understand your unique challenges and goals.</p>
+            </div>
+            
+            <div class="process-step text-center">
+                <div class="relative inline-block mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-purple-200">
+                        2
+                    </div>
+                    <div class="hidden lg:block absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Strategy</h3>
+                <p class="text-gray-600">We craft a customized plan tailored to your needs.</p>
+            </div>
+            
+            <div class="process-step text-center">
+                <div class="relative inline-block mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-green-200">
+                        3
+                    </div>
+                    <div class="hidden lg:block absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-green-400 to-transparent"></div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Execution</h3>
+                <p class="text-gray-600">Our experts bring your vision to life with precision.</p>
+            </div>
+            
+            <div class="process-step text-center">
+                <div class="relative inline-block mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-orange-200">
+                        4
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Support</h3>
+                <p class="text-gray-600">Ongoing maintenance to ensure lasting success.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tech Stack Section -->
+<section class="py-20 bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="tech-title text-3xl sm:text-4xl font-bold font-display mb-6">
+                Technologies We <span class="gradient-text">Master</span>
+            </h2>
+            <p class="text-lg text-gray-400 max-w-2xl mx-auto">
+                We stay ahead of the curve with cutting-edge technologies.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-react text-4xl text-cyan-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">React</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-python text-4xl text-yellow-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">Python</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-node-js text-4xl text-green-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">Node.js</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-aws text-4xl text-orange-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">AWS</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-docker text-4xl text-blue-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">Docker</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-android text-4xl text-green-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">Android</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fab fa-apple text-4xl text-gray-300 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">iOS</span>
+            </div>
+            <div class="tech-icon flex flex-col items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors group">
+                <i class="fas fa-database text-4xl text-blue-300 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs text-gray-400">SQL</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+    
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 cta-section">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6">
+            Let's Build Something Amazing
+        </h2>
+        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+            Ready to take your business to the next level? Get in touch and let's discuss your project.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'brilltech_landing' %}" class="px-10 py-4 bg-white text-blue-600 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all hover:scale-105 inline-flex items-center justify-center">
+                Request a Quote
+                <i class="fas fa-arrow-right ml-3"></i>
+            </a>
+            <a href="{% url 'brilltech_learning' %}" class="px-10 py-4 border-2 border-white text-white rounded-full font-semibold text-lg hover:bg-white hover:text-blue-600 transition-all inline-flex items-center justify-center">
+                <i class="fas fa-phone mr-3"></i>
+                Call Us Now
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!prefersReducedMotion) {
+        gsap.from('.hero-badge', {
+            opacity: 0,
+            y: -20,
+            duration: 0.6,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.hero-title', {
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+            delay: 0.2,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.hero-subtitle', {
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            delay: 0.4,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.service-card', {
+            scrollTrigger: {
+                trigger: '.service-card',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 60,
+            rotateX: 10,
+            duration: 0.8,
+            stagger: 0.12,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.process-title, .process-subtitle', {
+            scrollTrigger: {
+                trigger: '.process-title',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 30,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.process-step', {
+            scrollTrigger: {
+                trigger: '.process-step',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            scale: 0.9,
+            duration: 0.6,
+            stagger: 0.15,
+            ease: 'back.out(1.2)'
+        });
+        
+        gsap.from('.tech-title', {
+            scrollTrigger: {
+                trigger: '.tech-title',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 30,
+            duration: 0.6,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.tech-icon', {
+            scrollTrigger: {
+                trigger: '.tech-icon',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.4,
+            stagger: 0.05,
+            ease: 'back.out(1.5)'
+        });
+        
+        gsap.from('.cta-section', {
+            scrollTrigger: {
+                trigger: '.cta-section',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+            ease: 'power3.out'
+        });
+    }
+});
+</script>
+{% endblock %}
