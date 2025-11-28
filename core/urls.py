@@ -119,7 +119,9 @@ urlpatterns = [
     path('brilltech/store/', views.brilltech_store, name='brilltech_store'),
     path('brilltech/dashboard/', views.brilltech_dashboard, name='brilltech_dashboard'),
     
-    # Public share links for students (no login required)
-    path('share/assessment/<int:assessment_id>/', views.share_assessment_view, name='share_assessment_view'),
-    path('share/document/<int:document_id>/', views.share_document_view, name='share_document_view'),
+    # Public share links for students (token-based, no login required)
+    path('share/<str:token>/', views.share_content_view, name='share_content_view'),
+    
+    # Create share link (requires teacher login)
+    path('api/create-share/', views.create_share_link, name='create_share_link'),
 ]

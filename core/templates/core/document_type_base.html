@@ -435,24 +435,57 @@ let currentShareType = '';
 let currentShareId = '';
 let currentShareTitle = '';
 
-function shareAssessment(id, title) {
+async function createShareLink(type, id) {
+    const response = await fetch('/api/create-share/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ type: type, id: id })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to create share link');
+    }
+    
+    return await response.json();
+}
+
+async function shareAssessment(id, title) {
     currentShareType = 'assessment';
     currentShareId = id;
     currentShareTitle = title;
-    const link = window.location.origin + '/share/assessment/' + id + '/';
-    document.getElementById('shareLink').value = link;
+    
+    document.getElementById('shareLink').value = 'Creating share link...';
     document.getElementById('shareItemTitle').textContent = title;
     document.getElementById('shareModal').classList.remove('hidden');
+    
+    try {
+        const data = await createShareLink('assessment', id);
+        document.getElementById('shareLink').value = data.url;
+    } catch (error) {
+        document.getElementById('shareLink').value = 'Error creating link. Please try again.';
+        console.error('Share error:', error);
+    }
 }
 
-function shareDocument(id, title) {
+async function shareDocument(id, title) {
     currentShareType = 'document';
     currentShareId = id;
     currentShareTitle = title;
-    const link = window.location.origin + '/share/document/' + id + '/';
-    document.getElementById('shareLink').value = link;
+    
+    document.getElementById('shareLink').value = 'Creating share link...';
     document.getElementById('shareItemTitle').textContent = title;
     document.getElementById('shareModal').classList.remove('hidden');
+    
+    try {
+        const data = await createShareLink('document', id);
+        document.getElementById('shareLink').value = data.url;
+    } catch (error) {
+        document.getElementById('shareLink').value = 'Error creating link. Please try again.';
+        console.error('Share error:', error);
+    }
 }
 
 function closeShareModal() {
@@ -461,6 +494,8 @@ function closeShareModal() {
 
 function copyShareLink() {
     const link = document.getElementById('shareLink').value;
+    if (link.startsWith('Creating') || link.startsWith('Error')) return;
+    
     navigator.clipboard.writeText(link).then(() => {
         const btn = event.target.closest('button');
         const originalHTML = btn.innerHTML;
@@ -475,12 +510,16 @@ function copyShareLink() {
 
 function shareViaWhatsApp() {
     const link = document.getElementById('shareLink').value;
+    if (link.startsWith('Creating') || link.startsWith('Error')) return;
+    
     const text = encodeURIComponent('Check out this ' + currentShareTitle + ': ' + link);
     window.open('https://wa.me/?text=' + text, '_blank');
 }
 
 function shareViaEmail() {
     const link = document.getElementById('shareLink').value;
+    if (link.startsWith('Creating') || link.startsWith('Error')) return;
+    
     const subject = encodeURIComponent('Shared: ' + currentShareTitle);
     const body = encodeURIComponent('Hi,\n\nI wanted to share this with you: ' + currentShareTitle + '\n\nAccess it here: ' + link + '\n\nBest regards');
     window.location.href = 'mailto:?subject=' + subject + '&body=' + body;

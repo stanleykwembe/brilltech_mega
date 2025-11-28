@@ -4738,38 +4738,93 @@ def brilltech_dashboard(request):
 # PUBLIC SHARE VIEWS FOR STUDENTS
 # ============================================================================
 
-def share_assessment_view(request, assessment_id):
-    """Public view for shared assessment - accessible by students"""
-    from .models import TeacherAssessment
+def share_content_view(request, token):
+    """Public view for shared content - accessible by students via token"""
+    from .models import ContentShare
+    from django.utils import timezone
     
-    assessment = get_object_or_404(TeacherAssessment, id=assessment_id, status='published')
-    questions = assessment.questions.all().prefetch_related('options')
+    share = get_object_or_404(ContentShare, token=token)
     
-    category_icons = {
-        'exam': 'fa-graduation-cap',
-        'test': 'fa-file-alt',
-        'assignment': 'fa-tasks',
-        'homework': 'fa-home',
-        'classwork': 'fa-book-open',
-    }
+    if not share.is_valid:
+        return render(request, 'core/shared/share_expired.html')
     
-    context = {
-        'assessment': assessment,
-        'questions': questions,
-        'category_icon': category_icons.get(assessment.category, 'fa-file-alt'),
-        'is_shared_view': True,
-    }
-    return render(request, 'core/shared/assessment_view.html', context)
+    share.view_count += 1
+    share.last_accessed = timezone.now()
+    share.save()
+    
+    if share.assessment:
+        questions = share.assessment.questions.all().prefetch_related('options')
+        
+        category_icons = {
+            'exam': 'fa-graduation-cap',
+            'test': 'fa-file-alt',
+            'assignment': 'fa-tasks',
+            'homework': 'fa-home',
+            'classwork': 'fa-book-open',
+        }
+        
+        context = {
+            'assessment': share.assessment,
+            'questions': questions,
+            'category_icon': category_icons.get(share.assessment.category, 'fa-file-alt'),
+            'is_shared_view': True,
+            'share': share,
+        }
+        return render(request, 'core/shared/assessment_view.html', context)
+    
+    elif share.document:
+        context = {
+            'document': share.document,
+            'is_shared_view': True,
+            'share': share,
+        }
+        return render(request, 'core/shared/document_view.html', context)
+    
+    return HttpResponse("Content not found", status=404)
 
 
-def share_document_view(request, document_id):
-    """Public view for shared document - accessible by students"""
-    from .models import UploadedDocument
+@require_teacher
+def create_share_link(request):
+    """Create a shareable link for an assessment or document"""
+    from .models import ContentShare, TeacherAssessment, UploadedDocument
+    import json
     
-    document = get_object_or_404(UploadedDocument, id=document_id)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
     
-    context = {
-        'document': document,
-        'is_shared_view': True,
-    }
-    return render(request, 'core/shared/document_view.html', context)
+    try:
+        data = json.loads(request.body)
+        content_type = data.get('type')
+        content_id = data.get('id')
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+    
+    if not content_type or not content_id:
+        return JsonResponse({'error': 'Missing type or id'}, status=400)
+    
+    if content_type == 'assessment':
+        assessment = get_object_or_404(TeacherAssessment, id=content_id, teacher=request.user)
+        share, created = ContentShare.objects.get_or_create(
+            teacher=request.user,
+            assessment=assessment,
+            is_active=True,
+            defaults={'document': None}
+        )
+    elif content_type == 'document':
+        document = get_object_or_404(UploadedDocument, id=content_id, uploaded_by=request.user)
+        share, created = ContentShare.objects.get_or_create(
+            teacher=request.user,
+            document=document,
+            is_active=True,
+            defaults={'assessment': None}
+        )
+    else:
+        return JsonResponse({'error': 'Invalid content type'}, status=400)
+    
+    share_url = request.build_absolute_uri(f'/share/{share.token}/')
+    
+    return JsonResponse({
+        'token': share.token,
+        'url': share_url,
+        'created': created
+    })

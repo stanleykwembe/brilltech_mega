@@ -1180,3 +1180,51 @@ class TeacherQuestionOption(models.Model):
     
     def __str__(self):
         return self.option_text[:50]
+
+
+class ContentShare(models.Model):
+    """Token-based sharing for assessments and documents"""
+    
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=32, unique=True, default=generate_share_token)
+    
+    assessment = models.ForeignKey('TeacherAssessment', on_delete=models.CASCADE, null=True, blank=True, related_name='shares')
+    document = models.ForeignKey(UploadedDocument, on_delete=models.CASCADE, null=True, blank=True, related_name='shares')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    view_count = models.IntegerField(default=0)
+    last_accessed = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['token']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(assessment__isnull=False, document__isnull=True) |
+                    models.Q(assessment__isnull=True, document__isnull=False)
+                ),
+                name='exactly_one_content_type'
+            ),
+        ]
+    
+    def __str__(self):
+        if self.assessment:
+            return f"Share: {self.assessment.title} ({self.token[:8]}...)"
+        elif self.document:
+            return f"Share: {self.document.title} ({self.token[:8]}...)"
+        return f"Share ({self.token[:8]}...)"
+    
+    @property
+    def is_valid(self):
+        """Check if share link is still valid"""
+        if not self.is_active:
+            return False
+        if self.expires_at:
+            from django.utils import timezone
+            return timezone.now() < self.expires_at
+        return True
