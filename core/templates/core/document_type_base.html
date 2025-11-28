@@ -47,7 +47,7 @@
                     class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
                     <i class="fas fa-share-alt mr-2"></i>
                     Shared {{ document_type_display }}
-                    {% if shared_assessments or shared_docs %}<span class="ml-2 bg-green-100 text-green-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ shared_assessments|length|add:shared_docs|length }}</span>{% endif %}
+                    {% if shared_assessments or shared_docs %}{% with shared_assessments|length as sa_count %}{% with shared_docs|length as sd_count %}<span class="ml-2 bg-green-100 text-green-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ sa_count|add:sd_count }}</span>{% endwith %}{% endwith %}{% endif %}
                 </button>
             </nav>
         </div>
@@ -67,7 +67,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
             {% for assessment in my_assessments %}
             <div class="stat-card group relative overflow-hidden">
-                <div class="absolute top-3 right-3">
+                <div class="absolute top-3 right-3 flex gap-1">
+                    {% if assessment.has_share %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700" title="Shared">
+                        <i class="fas fa-share-alt"></i>
+                    </span>
+                    {% endif %}
                     {% if assessment.status == 'published' %}
                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Published</span>
                     {% else %}
@@ -142,7 +147,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
             {% for doc in my_documents %}
             <div class="stat-card group relative overflow-hidden">
-                <div class="absolute top-3 right-3">
+                <div class="absolute top-3 right-3 flex gap-1">
+                    {% if doc.has_share %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700" title="Shared">
+                        <i class="fas fa-share-alt"></i>
+                    </span>
+                    {% endif %}
                     {% if doc.file %}
                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
                         {{ doc.file.name|slice:"-3:"|upper }}
@@ -268,7 +278,7 @@
                             <button onclick="copyShareLink('{{ share.token }}')" class="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium" title="Copy link">
                                 <i class="fas fa-link"></i>
                             </button>
-                            <a href="{% url 'share_assessment' share.token %}" target="_blank" class="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium" title="View">
+                            <a href="{% url 'share_content_view' share.token %}" target="_blank" class="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium" title="View">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
                         </div>
@@ -322,7 +332,7 @@
                             <button onclick="copyShareLink('{{ share.token }}')" class="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium" title="Copy link">
                                 <i class="fas fa-link"></i>
                             </button>
-                            <a href="{% url 'share_document' share.token %}" target="_blank" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium" title="View">
+                            <a href="{% url 'share_content_view' share.token %}" target="_blank" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium" title="View">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
                         </div>

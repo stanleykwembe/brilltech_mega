@@ -188,6 +188,16 @@ def classwork_view(request):
         is_active=True
     ).select_related('document').order_by('-created_at')
     
+    # Add has_share flag to assessments and documents
+    shared_assessment_ids = set(shared_assessments.values_list('assessment_id', flat=True))
+    shared_doc_ids = set(shared_docs.values_list('document_id', flat=True))
+    
+    for assessment in my_assessments:
+        assessment.has_share = assessment.id in shared_assessment_ids
+    
+    for doc in my_documents:
+        doc.has_share = doc.id in shared_doc_ids
+    
     context = {
         'document_type': 'classwork',
         'document_type_display': 'Classwork',
@@ -241,6 +251,16 @@ def homework_view(request):
         document__type='homework',
         is_active=True
     ).select_related('document').order_by('-created_at')
+    
+    # Add has_share flag to assessments and documents
+    shared_assessment_ids = set(shared_assessments.values_list('assessment_id', flat=True))
+    shared_doc_ids = set(shared_docs.values_list('document_id', flat=True))
+    
+    for assessment in my_assessments:
+        assessment.has_share = assessment.id in shared_assessment_ids
+    
+    for doc in my_documents:
+        doc.has_share = doc.id in shared_doc_ids
     
     context = {
         'document_type': 'homework',
@@ -296,6 +316,16 @@ def tests_view(request):
         is_active=True
     ).select_related('document').order_by('-created_at')
     
+    # Add has_share flag to assessments and documents
+    shared_assessment_ids = set(shared_assessments.values_list('assessment_id', flat=True))
+    shared_doc_ids = set(shared_docs.values_list('document_id', flat=True))
+    
+    for assessment in my_assessments:
+        assessment.has_share = assessment.id in shared_assessment_ids
+    
+    for doc in my_documents:
+        doc.has_share = doc.id in shared_doc_ids
+    
     context = {
         'document_type': 'test',
         'document_type_display': 'Tests',
@@ -349,6 +379,16 @@ def exams_view(request):
         document__type='exam',
         is_active=True
     ).select_related('document').order_by('-created_at')
+    
+    # Add has_share flag to assessments and documents
+    shared_assessment_ids = set(shared_assessments.values_list('assessment_id', flat=True))
+    shared_doc_ids = set(shared_docs.values_list('document_id', flat=True))
+    
+    for assessment in my_assessments:
+        assessment.has_share = assessment.id in shared_assessment_ids
+    
+    for doc in my_documents:
+        doc.has_share = doc.id in shared_doc_ids
     
     context = {
         'document_type': 'exam',
