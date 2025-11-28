@@ -49,10 +49,12 @@
 <div class="max-w-4xl mx-auto">
     <!-- Header -->
     <div class="mb-8 animate-fade-in-up">
-        <a href="{% url assessment.category|add:'s' %}" class="text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-flex items-center">
+        {% with category=assessment.category %}
+        <a href="{% if category == 'exam' %}{% url 'exams' %}{% elif category == 'test' %}{% url 'tests' %}{% elif category == 'assignment' %}{% url 'assignments' %}{% elif category == 'homework' %}{% url 'homework' %}{% else %}{% url 'tests' %}{% endif %}" class="text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-flex items-center">
             <i class="fas fa-arrow-left mr-2"></i>
-            Back to {{ assessment.get_category_display }}s
+            Back to {{ assessment.get_category_display }}{% if assessment.category != 'homework' %}s{% endif %}
         </a>
+        {% endwith %}
         
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white mt-4 shadow-xl">
             <div class="flex items-center gap-3 mb-4">

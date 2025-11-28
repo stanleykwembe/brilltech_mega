@@ -4417,7 +4417,7 @@ def public_paper_download(request, paper_id):
 # TEACHER ASSESSMENT BUILDER
 # ============================================================================
 
-@login_required
+@require_teacher
 def create_assessment(request):
     """Google Forms-style assessment builder for teachers"""
     from .models import SubscribedSubject, Grade, TeacherAssessment
@@ -4445,7 +4445,7 @@ def create_assessment(request):
     return render(request, 'core/teacher/create_assessment.html', context)
 
 
-@login_required
+@require_teacher
 def save_assessment(request):
     """Save assessment and questions"""
     from .models import TeacherAssessment, TeacherQuestion, TeacherQuestionOption, Subject, Grade
@@ -4558,7 +4558,7 @@ def save_assessment(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@login_required
+@require_teacher
 def edit_assessment(request, assessment_id):
     """Edit existing assessment"""
     from .models import TeacherAssessment, SubscribedSubject, Grade
@@ -4614,7 +4614,7 @@ def edit_assessment(request, assessment_id):
     return render(request, 'core/teacher/create_assessment.html', context)
 
 
-@login_required
+@require_teacher
 def delete_assessment(request, assessment_id):
     """Delete an assessment"""
     from .models import TeacherAssessment
@@ -4635,7 +4635,7 @@ def delete_assessment(request, assessment_id):
     return redirect(category_urls.get(category, 'dashboard'))
 
 
-@login_required
+@require_teacher
 def view_assessment(request, assessment_id):
     """View assessment details and questions"""
     from .models import TeacherAssessment
