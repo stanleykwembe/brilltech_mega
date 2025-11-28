@@ -118,4 +118,8 @@ urlpatterns = [
     path('brilltech/learning/', views.brilltech_learning, name='brilltech_learning'),
     path('brilltech/store/', views.brilltech_store, name='brilltech_store'),
     path('brilltech/dashboard/', views.brilltech_dashboard, name='brilltech_dashboard'),
+    
+    # Public share links for students (no login required)
+    path('share/assessment/<int:assessment_id>/', views.share_assessment_view, name='share_assessment_view'),
+    path('share/document/<int:document_id>/', views.share_document_view, name='share_document_view'),
 ]

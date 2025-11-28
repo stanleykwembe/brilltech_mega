@@ -18,7 +18,7 @@
 </div>
 
 <!-- Tab Navigation -->
-<div x-data="{ activeTab: 'my_assessments' }">
+<div x-data="{ activeTab: 'my_assessments', showUploadModal: false }">
     <div class="bg-white shadow rounded-lg mb-6 animate-scale-in opacity-0 delay-100">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
@@ -29,11 +29,18 @@
                     My {{ document_type_display }}
                     {% if my_assessments %}<span class="ml-2 bg-indigo-100 text-indigo-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ my_assessments|length }}</span>{% endif %}
                 </button>
+                <button @click="activeTab = 'my_uploads'" 
+                    :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Uploaded Files
+                    {% if my_documents %}<span class="ml-2 bg-blue-100 text-blue-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ my_documents|length }}</span>{% endif %}
+                </button>
                 <button @click="activeTab = 'admin_library'" 
                     :class="activeTab === 'admin_library' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                     class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     <i class="fas fa-book-reader mr-2"></i>
-                    Admin Library
+                    Library
                 </button>
                 {% if user.userprofile.can_use_ai %}
                 <button @click="activeTab = 'ai_generate'" 
@@ -43,25 +50,12 @@
                     AI Generate
                 </button>
                 {% endif %}
-                <button @click="activeTab = 'my_uploads'" 
-                    :class="activeTab === 'my_uploads' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-upload mr-2"></i>
-                    Uploads
-                </button>
-                <button @click="activeTab = 'shared'" 
-                    :class="activeTab === 'shared' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-share-alt mr-2"></i>
-                    Shared
-                </button>
             </nav>
         </div>
     </div>
     
     <!-- My Assessments Tab (Created via Builder) -->
     <div x-show="activeTab === 'my_assessments'" x-cloak class="tab-content mt-6">
-        <!-- Create Button -->
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-semibold text-gray-900">Your Created {{ document_type_display }}</h3>
             <a href="{% url 'create_assessment' %}?category={{ document_type }}" class="inline-flex items-center px-4 py-2.5 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
@@ -74,7 +68,6 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
             {% for assessment in my_assessments %}
             <div class="stat-card group relative overflow-hidden">
-                <!-- Status Badge -->
                 <div class="absolute top-3 right-3">
                     {% if assessment.status == 'published' %}
                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Published</span>
@@ -100,19 +93,19 @@
                     {% endif %}
                     <p><i class="fas fa-question-circle text-blue-400 w-4 mr-1"></i> {{ assessment.get_question_count }} questions</p>
                     <p><i class="fas fa-star text-yellow-400 w-4 mr-1"></i> {{ assessment.total_marks }} marks</p>
-                    {% if assessment.time_limit %}
-                    <p><i class="fas fa-clock text-green-400 w-4 mr-1"></i> {{ assessment.time_limit }} minutes</p>
-                    {% endif %}
                 </div>
                 
                 <p class="text-xs text-gray-400 mb-4">Created {{ assessment.created_at|date:"M d, Y" }}</p>
                 
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap">
                     <a href="{% url 'view_assessment' assessment.id %}" class="flex-1 text-center px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium">
                         <i class="fas fa-eye mr-1"></i>View
                     </a>
-                    <a href="{% url 'edit_assessment' assessment.id %}" class="flex-1 text-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
-                        <i class="fas fa-edit mr-1"></i>Edit
+                    <button onclick="shareAssessment({{ assessment.id }}, '{{ assessment.title|escapejs }}')" class="flex-1 text-center px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-share-alt mr-1"></i>Share
+                    </button>
+                    <a href="{% url 'edit_assessment' assessment.id %}" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-edit"></i>
                     </a>
                     <button onclick="if(confirm('Delete this {{ document_type }}?')) window.location='{% url 'delete_assessment' assessment.id %}'" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
                         <i class="fas fa-trash"></i>
@@ -136,248 +129,361 @@
         {% endif %}
     </div>
 
+    <!-- My Uploads Tab (Files) -->
+    <div x-show="activeTab === 'my_uploads'" x-cloak class="tab-content mt-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Uploaded {{ document_type_display }} Files</h3>
+            <button @click="showUploadModal = true" class="inline-flex items-center px-4 py-2.5 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="fas fa-upload mr-2"></i>
+                Upload File
+            </button>
+        </div>
+        
+        {% if my_documents %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
+            {% for doc in my_documents %}
+            <div class="stat-card group relative overflow-hidden">
+                <div class="absolute top-3 right-3">
+                    {% if doc.file %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                        {{ doc.file.name|slice:"-3:"|upper }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-start mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-pdf text-white text-lg"></i>
+                    </div>
+                </div>
+                
+                <h3 class="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors pr-16">{{ doc.title }}</h3>
+                
+                <div class="space-y-1 mb-4 text-sm text-gray-600">
+                    {% if doc.subject %}
+                    <p><i class="fas fa-book text-blue-400 w-4 mr-1"></i> {{ doc.subject.name }}</p>
+                    {% endif %}
+                    {% if doc.grade %}
+                    <p><i class="fas fa-graduation-cap text-cyan-400 w-4 mr-1"></i> Grade {{ doc.grade.number }}</p>
+                    {% endif %}
+                    {% if doc.board %}
+                    <p><i class="fas fa-award text-purple-400 w-4 mr-1"></i> {{ doc.board.abbreviation }}</p>
+                    {% endif %}
+                </div>
+                
+                <p class="text-xs text-gray-400 mb-4">Uploaded {{ doc.created_at|date:"M d, Y" }}</p>
+                
+                <div class="flex gap-2 flex-wrap">
+                    <a href="{{ doc.file.url }}" target="_blank" class="flex-1 text-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </a>
+                    <button onclick="shareDocument({{ doc.id }}, '{{ doc.title|escapejs }}')" class="flex-1 text-center px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-share-alt mr-1"></i>Share
+                    </button>
+                    <a href="{{ doc.file.url }}" download class="px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="action-card text-center py-12">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-file-upload text-blue-500 text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">No Files Uploaded Yet</h3>
+            <p class="text-gray-500 mb-6 max-w-md mx-auto">Upload PDF, Word, or text files for your {{ document_type_display|lower }}.</p>
+            <button @click="showUploadModal = true" class="inline-flex items-center px-6 py-3 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition-all" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="fas fa-upload mr-2"></i>
+                Upload Your First File
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
     <!-- Admin Library Tab -->
-<div x-show="activeTab === 'admin_library'" x-cloak class="tab-content mt-6">
-    <div class="action-card text-center group">
-        <div class="action-icon-wrapper bg-gray-50 mx-auto">
-            <i class="fas fa-building text-gray-400 text-4xl"></i>
-        </div>
-        <div class="mt-5">
-            <h3 class="text-xl font-bold text-gray-900">Admin Content Library</h3>
-            <p class="mt-2 text-sm text-gray-600">Coming soon - Pre-approved {{ document_type_display|lower }} from your institution</p>
-        </div>
-    </div>
-</div>
-
-<!-- AI Generate Tab -->
-{% if user.userprofile.can_use_ai %}
-<div x-show="activeTab === 'ai_generate'" x-cloak class="tab-content mt-6">
-    <div class="action-card">
-        <div class="flex items-center mb-6">
-            <div class="action-icon-wrapper bg-indigo-50 mr-4">
-                <i class="fas fa-magic text-indigo-600 text-2xl"></i>
+    <div x-show="activeTab === 'admin_library'" x-cloak class="tab-content mt-6">
+        <div class="action-card text-center group">
+            <div class="action-icon-wrapper bg-gray-50 mx-auto">
+                <i class="fas fa-building text-gray-400 text-4xl"></i>
             </div>
-            <div>
-                <h3 class="heading-secondary">Generate AI {{ document_type_display }}</h3>
-                <p class="text-sm text-gray-600">Let AI create {{ document_type_display|lower }} for you</p>
+            <div class="mt-5">
+                <h3 class="text-xl font-bold text-gray-900">Admin Content Library</h3>
+                <p class="mt-2 text-sm text-gray-600">Coming soon - Pre-approved {{ document_type_display|lower }} from your institution</p>
             </div>
         </div>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <input type="hidden" name="generate_ai" value="1">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                    <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select subject</option>
-                        {% for sub_subject in subscribed_subjects %}
-                        <option value="{{ sub_subject.subject.id }}">{{ sub_subject.subject.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
-                    <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select grade</option>
-                        {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
-                    <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select exam board</option>
-                        {% for board in boards %}
-                        <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                    <select name="duration" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="30 minutes">30 minutes</option>
-                        <option value="45 minutes" selected>45 minutes</option>
-                        <option value="60 minutes">60 minutes</option>
-                        <option value="90 minutes">90 minutes</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
-                <input type="text" name="topic" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Introduction to Quadratic Equations">
-            </div>
-            
-            <div class="flex justify-end">
-                <button type="submit" class="btn-gradient">
-                    <i class="fas fa-magic mr-2"></i>Generate {{ document_type_display }}
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
-
-<!-- My Uploads Tab -->
-<div x-show="activeTab === 'my_uploads'" x-cloak class="tab-content mt-6">
-    <div class="action-card mb-6">
-        <div class="flex items-center mb-6">
-            <div class="action-icon-wrapper bg-green-50 mr-4">
-                <i class="fas fa-upload text-green-600 text-2xl"></i>
-            </div>
-            <div>
-                <h3 class="heading-secondary">Upload {{ document_type_display }}</h3>
-                <p class="text-sm text-gray-600">Upload your own {{ document_type_display|lower }}</p>
-            </div>
-        </div>
-        <form method="post" enctype="multipart/form-data" class="space-y-4">
-            {% csrf_token %}
-            <input type="hidden" name="upload_file" value="1">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                    <input type="text" name="title" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Algebra {{ document_type_display }}">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                    <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select subject</option>
-                        {% for sub_subject in subscribed_subjects %}
-                        <option value="{{ sub_subject.subject.id }}">{{ sub_subject.subject.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
-                    <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select grade</option>
-                        {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
-                    <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Select exam board</option>
-                        {% for board in boards %}
-                        <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
-                    <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Add a description..."></textarea>
-                </div>
-                
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
-                    <input type="file" name="file" required accept=".pdf,.doc,.docx,.txt" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <p class="mt-1 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX, TXT</p>
-                </div>
-            </div>
-            
-            <div class="flex justify-end">
-                <button type="submit" class="btn-gradient">
-                    <i class="fas fa-upload mr-2"></i>Upload {{ document_type_display }}
-                </button>
-            </div>
-        </form>
     </div>
 
-    <!-- My Documents List -->
-    {% if my_documents %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
-        {% for doc in my_documents %}
-        <div class="stat-card group">
-            <div class="flex items-start justify-between mb-4">
-                <div class="icon-wrapper bg-gradient-to-br from-blue-50 to-indigo-50">
-                    <i class="fas fa-file-alt text-indigo-600"></i>
+    <!-- AI Generate Tab -->
+    {% if user.userprofile.can_use_ai %}
+    <div x-show="activeTab === 'ai_generate'" x-cloak class="tab-content mt-6">
+        <div class="action-card">
+            <div class="flex items-center mb-6">
+                <div class="action-icon-wrapper bg-indigo-50 mr-4">
+                    <i class="fas fa-magic text-indigo-600 text-2xl"></i>
                 </div>
-                <span class="text-xs text-gray-500">{{ doc.created_at|date:"M d, Y" }}</span>
+                <div>
+                    <h3 class="heading-secondary">Generate AI {{ document_type_display }}</h3>
+                    <p class="text-sm text-gray-600">Let AI create {{ document_type_display|lower }} for you</p>
+                </div>
             </div>
-            <h3 class="font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">{{ doc.title }}</h3>
-            <p class="text-sm text-gray-600 mb-4">{{ doc.subject.name }} - Grade {{ doc.grade.number }}</p>
-            <div class="flex gap-2">
-                <a href="{{ doc.file.url }}" target="_blank" class="flex-1 text-center px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-eye mr-1"></i>View
-                </a>
-                <a href="{% url 'create_share' %}?document_id={{ doc.id }}" class="flex-1 text-center px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-share-alt mr-1"></i>Share
-                </a>
-            </div>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="generate_ai" value="1">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select name="subject" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select subject</option>
+                            {% for sub_subject in subscribed_subjects %}
+                            <option value="{{ sub_subject.subject.id }}">{{ sub_subject.subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                        <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select grade</option>
+                            {% for grade in grades %}
+                            <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
+                        <select name="board" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select exam board</option>
+                            {% for board in boards %}
+                            <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                        <select name="duration" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="30 minutes">30 minutes</option>
+                            <option value="45 minutes" selected>45 minutes</option>
+                            <option value="60 minutes">60 minutes</option>
+                            <option value="90 minutes">90 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                    <input type="text" name="topic" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Introduction to Quadratic Equations">
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="btn-gradient">
+                        <i class="fas fa-magic mr-2"></i>Generate {{ document_type_display }}
+                    </button>
+                </div>
+            </form>
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="action-card text-center">
-        <div class="action-icon-wrapper bg-gray-50 mx-auto">
-            <i class="fas fa-inbox text-gray-400 text-3xl"></i>
-        </div>
-        <h3 class="mt-4 text-lg font-medium text-gray-900">No {{ document_type_display }} Yet</h3>
-        <p class="mt-2 text-sm text-gray-500">Upload your first {{ document_type_display|lower }} using the form above</p>
     </div>
     {% endif %}
-</div>
 
-<!-- Shared Assignments Tab -->
-<div x-show="activeTab === 'shared'" x-cloak class="tab-content mt-6">
-    {% if shared_documents %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in opacity-0 delay-200">
-        {% for share in shared_documents %}
-        <div class="stat-card group">
-            <div class="flex items-start justify-between mb-4">
-                <div class="icon-wrapper bg-gradient-to-br from-green-50 to-emerald-50">
-                    <i class="fas fa-share-alt text-green-600"></i>
+    <!-- Upload Modal -->
+    <div x-show="showUploadModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showUploadModal" @click="showUploadModal = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div x-show="showUploadModal" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_file" value="1">
+                    
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg mr-4">
+                                <i class="fas fa-upload text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Upload {{ document_type_display }}</h3>
+                                <p class="text-sm text-gray-500">Add a file to your {{ document_type_display|lower }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                                <input type="text" name="title" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Algebra {{ document_type_display }}">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                                    <select name="subject" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="">Select</option>
+                                        {% for sub_subject in subscribed_subjects %}
+                                        <option value="{{ sub_subject.subject.id }}">{{ sub_subject.subject.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                                    <select name="grade" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="">Select</option>
+                                        {% for grade in grades %}
+                                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Board</label>
+                                <select name="board" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select exam board</option>
+                                    {% for board in boards %}
+                                    <option value="{{ board.id }}">{{ board.abbreviation }} ({{ board.region }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
+                                <input type="file" name="file" required accept=".pdf,.doc,.docx,.txt" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                <p class="mt-1 text-xs text-gray-500">PDF, DOC, DOCX, TXT (Max 10MB)</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                        <button type="button" @click="showUploadModal = false" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <i class="fas fa-upload mr-2"></i>Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="share-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeShareModal()"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="bg-white px-6 pt-6 pb-4">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg mr-4">
+                            <i class="fas fa-share-alt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Share Content</h3>
+                            <p id="shareItemTitle" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shareable Link</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="shareLink" readonly class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 text-sm">
+                                <button onclick="copyShareLink()" class="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500">Students can access this content using this link</p>
+                        </div>
+                        
+                        <div class="border-t border-gray-200 pt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-3">Quick Share</p>
+                            <div class="flex gap-3">
+                                <button onclick="shareViaWhatsApp()" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                                <button onclick="shareViaEmail()" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    <i class="fas fa-envelope"></i> Email
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <span class="text-xs text-gray-500">{{ share.shared_at|date:"M d, Y" }}</span>
-            </div>
-            <h3 class="font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{{ share.uploaded_document.title }}</h3>
-            <p class="text-sm text-gray-600 mb-2">{{ share.uploaded_document.subject.name }} - Grade {{ share.uploaded_document.grade.number }}</p>
-            <div class="bg-blue-50 rounded-lg p-3 mb-4">
-                <p class="text-xs font-medium text-blue-900 mb-1">Shared with: {{ share.class_group.name }}</p>
-                <p class="text-xs text-blue-700">Share Code: <span class="font-mono font-bold">{{ share.share_token }}</span></p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ share.uploaded_document.file.url }}" target="_blank" class="flex-1 text-center px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-eye mr-1"></i>View
-                </a>
-                <button onclick="copyShareLink('{{ share.share_token }}')" class="flex-1 px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-copy mr-1"></i>Copy Link
-                </button>
+                
+                <div class="bg-gray-50 px-6 py-4">
+                    <button onclick="closeShareModal()" class="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-    {% else %}
-    <div class="action-card text-center">
-        <div class="action-icon-wrapper bg-gray-50 mx-auto">
-            <i class="fas fa-share-alt text-gray-400 text-3xl"></i>
-        </div>
-        <h3 class="mt-4 text-lg font-medium text-gray-900">No Shared {{ document_type_display }} Yet</h3>
-        <p class="mt-2 text-sm text-gray-500">Upload and share {{ document_type_display|lower }} to see them here</p>
-    </div>
-    {% endif %}
-</div>
 
 </div>
 
 <script>
-function copyShareLink(token) {
-    const url = window.location.origin + '/share/a/' + token + '/';
-    navigator.clipboard.writeText(url).then(() => {
-        alert('Share link copied to clipboard!');
+let currentShareType = '';
+let currentShareId = '';
+let currentShareTitle = '';
+
+function shareAssessment(id, title) {
+    currentShareType = 'assessment';
+    currentShareId = id;
+    currentShareTitle = title;
+    const link = window.location.origin + '/share/assessment/' + id + '/';
+    document.getElementById('shareLink').value = link;
+    document.getElementById('shareItemTitle').textContent = title;
+    document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function shareDocument(id, title) {
+    currentShareType = 'document';
+    currentShareId = id;
+    currentShareTitle = title;
+    const link = window.location.origin + '/share/document/' + id + '/';
+    document.getElementById('shareLink').value = link;
+    document.getElementById('shareItemTitle').textContent = title;
+    document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
+}
+
+function copyShareLink() {
+    const link = document.getElementById('shareLink').value;
+    navigator.clipboard.writeText(link).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.add('bg-green-600');
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('bg-green-600');
+        }, 2000);
     });
+}
+
+function shareViaWhatsApp() {
+    const link = document.getElementById('shareLink').value;
+    const text = encodeURIComponent('Check out this ' + currentShareTitle + ': ' + link);
+    window.open('https://wa.me/?text=' + text, '_blank');
+}
+
+function shareViaEmail() {
+    const link = document.getElementById('shareLink').value;
+    const subject = encodeURIComponent('Shared: ' + currentShareTitle);
+    const body = encodeURIComponent('Hi,\n\nI wanted to share this with you: ' + currentShareTitle + '\n\nAccess it here: ' + link + '\n\nBest regards');
+    window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
 }
 </script>
 

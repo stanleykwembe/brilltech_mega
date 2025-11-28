@@ -4732,3 +4732,44 @@ def brilltech_store(request):
 def brilltech_dashboard(request):
     """BrillTech dashboard overview page"""
     return render(request, 'core/brilltech/dashboard.html')
+
+
+# ============================================================================
+# PUBLIC SHARE VIEWS FOR STUDENTS
+# ============================================================================
+
+def share_assessment_view(request, assessment_id):
+    """Public view for shared assessment - accessible by students"""
+    from .models import TeacherAssessment
+    
+    assessment = get_object_or_404(TeacherAssessment, id=assessment_id, status='published')
+    questions = assessment.questions.all().prefetch_related('options')
+    
+    category_icons = {
+        'exam': 'fa-graduation-cap',
+        'test': 'fa-file-alt',
+        'assignment': 'fa-tasks',
+        'homework': 'fa-home',
+        'classwork': 'fa-book-open',
+    }
+    
+    context = {
+        'assessment': assessment,
+        'questions': questions,
+        'category_icon': category_icons.get(assessment.category, 'fa-file-alt'),
+        'is_shared_view': True,
+    }
+    return render(request, 'core/shared/assessment_view.html', context)
+
+
+def share_document_view(request, document_id):
+    """Public view for shared document - accessible by students"""
+    from .models import UploadedDocument
+    
+    document = get_object_or_404(UploadedDocument, id=document_id)
+    
+    context = {
+        'document': document,
+        'is_shared_view': True,
+    }
+    return render(request, 'core/shared/document_view.html', context)

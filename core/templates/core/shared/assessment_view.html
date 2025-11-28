@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ assessment.title }} - Shared Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #6366f1;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .option-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        
+        .option-item.selected {
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border-color: #6366f1;
+        }
+        
+        .matching-pair {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body class="min-h-screen" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                        <i class="fas {{ category_icon }} text-2xl"></i>
+                    </div>
+                    <span class="text-white/80 text-sm font-medium">{{ assessment.get_category_display }}</span>
+                </div>
+                <h1 class="text-3xl font-bold mb-2">{{ assessment.title }}</h1>
+                {% if assessment.description %}
+                <p class="text-white/80">{{ assessment.description }}</p>
+                {% endif %}
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-white/10 rounded-xl p-4 text-center">
+                        <p class="text-2xl font-bold">{{ questions|length }}</p>
+                        <p class="text-sm text-white/70">Questions</p>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4 text-center">
+                        <p class="text-2xl font-bold">{{ assessment.total_marks }}</p>
+                        <p class="text-sm text-white/70">Total Marks</p>
+                    </div>
+                    {% if assessment.time_limit %}
+                    <div class="bg-white/10 rounded-xl p-4 text-center">
+                        <p class="text-2xl font-bold">{{ assessment.time_limit }}</p>
+                        <p class="text-sm text-white/70">Minutes</p>
+                    </div>
+                    {% endif %}
+                    {% if assessment.subject %}
+                    <div class="bg-white/10 rounded-xl p-4 text-center">
+                        <p class="text-lg font-bold truncate">{{ assessment.subject.name }}</p>
+                        <p class="text-sm text-white/70">Subject</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                <i class="fas fa-info-circle text-blue-500"></i>
+                <p class="text-blue-800 text-sm">This is a shared assessment. Your responses are not being recorded.</p>
+            </div>
+        </div>
+        
+        {% if assessment.instructions %}
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8">
+            <h3 class="font-semibold text-amber-900 mb-2">
+                <i class="fas fa-info-circle mr-2"></i>Instructions
+            </h3>
+            <p class="text-amber-800">{{ assessment.instructions }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Questions -->
+        <div class="space-y-6">
+            {% for question in questions %}
+            <div class="question-card">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm">{{ forloop.counter }}</span>
+                        <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ question.get_question_type_display }}</span>
+                    </div>
+                    <span class="text-sm font-semibold text-indigo-600">{{ question.marks }} mark{{ question.marks|pluralize }}</span>
+                </div>
+                
+                <p class="text-gray-900 font-medium text-lg mb-4">{{ question.question_text }}</p>
+                
+                {% if question.question_image %}
+                <div class="mb-4">
+                    <img src="{{ question.question_image.url }}" alt="Question image" class="max-w-md rounded-lg shadow-sm">
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'mcq' or question.question_type == 'mcq_multi' %}
+                <div class="space-y-2">
+                    {% for option in question.options.all %}
+                    <div class="option-item">
+                        {% if question.question_type == 'mcq' %}
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                        {% else %}
+                        <div class="w-5 h-5 rounded border-2 border-gray-300"></div>
+                        {% endif %}
+                        <span class="text-gray-700">{{ option.option_text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'true_false' %}
+                <div class="space-y-2">
+                    <div class="option-item">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                        <span class="text-gray-700">True</span>
+                    </div>
+                    <div class="option-item">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                        <span class="text-gray-700">False</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'matching' %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Column A</p>
+                        {% for option in question.options.all %}
+                        <div class="bg-gray-50 rounded-lg p-3 mb-2 border border-gray-200">
+                            <span class="text-gray-700">{{ forloop.counter }}. {{ option.option_text }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Column B</p>
+                        {% for option in question.options.all %}
+                        <div class="bg-gray-50 rounded-lg p-3 mb-2 border border-gray-200">
+                            <span class="text-gray-700">{{ option.match_pair }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'short_answer' %}
+                <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <input type="text" placeholder="Type your answer here..." class="w-full bg-transparent outline-none text-gray-700">
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'long_answer' %}
+                <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <textarea rows="4" placeholder="Type your answer here..." class="w-full bg-transparent outline-none text-gray-700 resize-none"></textarea>
+                </div>
+                {% endif %}
+                
+                {% if question.question_type == 'fill_blank' %}
+                <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <input type="text" placeholder="Fill in the blank..." class="w-full bg-transparent outline-none text-gray-700">
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="text-center py-12 bg-white rounded-xl shadow">
+                <i class="fas fa-question-circle text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">No questions in this assessment.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            <p>Shared by {{ assessment.teacher.get_full_name|default:assessment.teacher.username }} via EduTech</p>
+        </div>
+    </div>
+</body>
+</html>
