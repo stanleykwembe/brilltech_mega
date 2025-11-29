@@ -4953,3 +4953,355 @@ def create_share_link(request):
         'url': share_url,
         'created': created
     })
+
+
+# ============================================================================
+# BRILLTECH CORPORATE PAGES - Apps, About, Contact
+# ============================================================================
+
+def brilltech_apps(request):
+    """BrillTech apps/products showcase page"""
+    apps = [
+        {
+            'name': 'EduTech Portal',
+            'tagline': 'AI-Powered Education Platform',
+            'description': 'A comprehensive learning management system for teachers and students. Create lessons, generate AI content, track progress, and manage classrooms with ease.',
+            'icon': 'fa-graduation-cap',
+            'color': 'from-purple-500 to-indigo-600',
+            'features': ['AI Lesson Plans', 'Student Portal', 'Quiz Builder', 'Progress Tracking'],
+            'demo_link': '/welcome/teacher/',
+            'status': 'Live'
+        },
+        {
+            'name': 'ExamPrep Pro',
+            'tagline': 'Smart Exam Preparation',
+            'description': 'Access thousands of past papers, practice questions, and AI-generated quizzes. Perfect for Cambridge, Edexcel, CAPS, and other major exam boards.',
+            'icon': 'fa-file-alt',
+            'color': 'from-emerald-500 to-teal-600',
+            'features': ['Past Papers Library', 'Interactive Quizzes', 'Flashcards', 'Study Notes'],
+            'demo_link': '/welcome/student/',
+            'status': 'Live'
+        },
+        {
+            'name': 'SchoolSync',
+            'tagline': 'School Management System',
+            'description': 'Complete school administration solution. Manage admissions, attendance, fees, timetables, and parent communication all in one place.',
+            'icon': 'fa-school',
+            'color': 'from-blue-500 to-cyan-600',
+            'features': ['Admissions', 'Fee Management', 'Timetables', 'Parent Portal'],
+            'demo_link': '#',
+            'status': 'Coming Soon'
+        },
+        {
+            'name': 'TutorMatch',
+            'tagline': 'Connect with Expert Tutors',
+            'description': 'Find qualified tutors for any subject. Book sessions, track progress, and manage payments seamlessly. Perfect for students seeking personalized learning.',
+            'icon': 'fa-users',
+            'color': 'from-orange-500 to-amber-600',
+            'features': ['Tutor Discovery', 'Online Sessions', 'Progress Reports', 'Secure Payments'],
+            'demo_link': '#',
+            'status': 'Coming Soon'
+        },
+        {
+            'name': 'ContentForge',
+            'tagline': 'AI Content Creation Studio',
+            'description': 'Generate educational content at scale. Create worksheets, quizzes, lesson plans, and assessments using advanced AI technology.',
+            'icon': 'fa-magic',
+            'color': 'from-pink-500 to-rose-600',
+            'features': ['AI Generation', 'Template Library', 'Bulk Export', 'Multi-format Support'],
+            'demo_link': '#',
+            'status': 'Beta'
+        },
+        {
+            'name': 'ClassroomLive',
+            'tagline': 'Virtual Classroom Solution',
+            'description': 'Host live classes, webinars, and interactive sessions. Features whiteboard, screen sharing, breakout rooms, and recording capabilities.',
+            'icon': 'fa-video',
+            'color': 'from-red-500 to-pink-600',
+            'features': ['Live Streaming', 'Interactive Whiteboard', 'Breakout Rooms', 'Recording'],
+            'demo_link': '#',
+            'status': 'Coming Soon'
+        },
+    ]
+    return render(request, 'core/brilltech/apps.html', {'apps': apps})
+
+
+def brilltech_about(request):
+    """BrillTech about us page"""
+    team = [
+        {
+            'name': 'Alex Johnson',
+            'role': 'CEO & Founder',
+            'bio': 'Passionate about leveraging technology to transform education. 15+ years in EdTech.',
+            'image': 'https://randomuser.me/api/portraits/men/32.jpg',
+        },
+        {
+            'name': 'Sarah Chen',
+            'role': 'CTO',
+            'bio': 'Full-stack developer with expertise in AI/ML. Building the future of learning.',
+            'image': 'https://randomuser.me/api/portraits/women/44.jpg',
+        },
+        {
+            'name': 'Michael Okonkwo',
+            'role': 'Head of Product',
+            'bio': 'Former teacher turned product leader. Ensuring every feature serves real needs.',
+            'image': 'https://randomuser.me/api/portraits/men/52.jpg',
+        },
+        {
+            'name': 'Emma Williams',
+            'role': 'Lead Designer',
+            'bio': 'Creating beautiful, intuitive interfaces that make learning enjoyable.',
+            'image': 'https://randomuser.me/api/portraits/women/68.jpg',
+        },
+    ]
+    
+    milestones = [
+        {'year': '2020', 'title': 'BrillTech Founded', 'description': 'Started with a vision to democratize quality education through technology.'},
+        {'year': '2021', 'title': 'EduTech Portal Launch', 'description': 'Released our flagship AI-powered education platform to teachers across Africa.'},
+        {'year': '2022', 'title': '10,000 Users', 'description': 'Reached our first major milestone of 10,000 active educators on the platform.'},
+        {'year': '2023', 'title': 'Student Portal Launch', 'description': 'Expanded with a dedicated student learning portal and mobile app.'},
+        {'year': '2024', 'title': 'AI Integration', 'description': 'Integrated GPT-4 for intelligent content generation and personalized learning.'},
+        {'year': '2025', 'title': 'Pan-African Expansion', 'description': 'Expanding operations across 15 African countries with localized content.'},
+    ]
+    
+    stats = [
+        {'number': '50,000+', 'label': 'Active Users'},
+        {'number': '1M+', 'label': 'Lessons Created'},
+        {'number': '15', 'label': 'Countries'},
+        {'number': '99.9%', 'label': 'Uptime'},
+    ]
+    
+    return render(request, 'core/brilltech/about.html', {
+        'team': team,
+        'milestones': milestones,
+        'stats': stats
+    })
+
+
+def brilltech_contact(request):
+    """BrillTech contact page with working form"""
+    from .models import ContactSubmission
+    from django.core.mail import send_mail
+    from django.conf import settings
+    import os
+    
+    success_message = None
+    error_message = None
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        company = request.POST.get('company', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+        
+        if not name or not email or not message:
+            error_message = 'Please fill in all required fields (Name, Email, Message).'
+        else:
+            try:
+                submission = ContactSubmission.objects.create(
+                    name=name,
+                    email=email,
+                    phone=phone,
+                    company=company,
+                    subject=subject or 'Website Contact',
+                    message=message
+                )
+                
+                try:
+                    email_host_user = os.environ.get('EMAIL_HOST_USER')
+                    if email_host_user:
+                        send_mail(
+                            subject=f'[BrillTech Contact] {subject or "New Inquiry"} from {name}',
+                            message=f"""New contact form submission from BrillTech website:
+
+Name: {name}
+Email: {email}
+Phone: {phone or 'Not provided'}
+Company: {company or 'Not provided'}
+
+Message:
+{message}
+
+---
+View all submissions at: /brilltech/admin/
+""",
+                            from_email=email_host_user,
+                            recipient_list=[email_host_user],
+                            fail_silently=True,
+                        )
+                except Exception as e:
+                    pass
+                
+                success_message = 'Thank you for your message! We will get back to you within 24 hours.'
+                
+            except Exception as e:
+                error_message = 'There was an error submitting your message. Please try again.'
+    
+    contact_info = {
+        'email': 'info@brilltech.com',
+        'phone': '+27 11 123 4567',
+        'whatsapp': '+27 82 123 4567',
+        'address': 'Johannesburg, South Africa',
+        'hours': 'Monday - Friday: 8:00 AM - 5:00 PM SAST'
+    }
+    
+    return render(request, 'core/brilltech/contact.html', {
+        'success_message': success_message,
+        'error_message': error_message,
+        'contact_info': contact_info
+    })
+
+
+# ============================================================================
+# BRILLTECH ADMIN PORTAL (Separate from EduTech Admin)
+# ============================================================================
+
+def brilltech_admin_required(view_func):
+    """Decorator to check if user is logged in to BrillTech admin"""
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get('brilltech_admin_id'):
+            return redirect('brilltech_admin_login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def brilltech_admin_login(request):
+    """BrillTech admin login page"""
+    from .models import BrillTechAdmin
+    from django.utils import timezone
+    
+    error = None
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        try:
+            admin = BrillTechAdmin.objects.get(username=username, is_active=True)
+            if admin.check_password(password):
+                request.session['brilltech_admin_id'] = admin.id
+                request.session['brilltech_admin_username'] = admin.username
+                admin.last_login = timezone.now()
+                admin.save()
+                return redirect('brilltech_admin_dashboard')
+            else:
+                error = 'Invalid username or password'
+        except BrillTechAdmin.DoesNotExist:
+            error = 'Invalid username or password'
+    
+    return render(request, 'core/brilltech/admin/login.html', {'error': error})
+
+
+def brilltech_admin_logout(request):
+    """Logout from BrillTech admin"""
+    request.session.pop('brilltech_admin_id', None)
+    request.session.pop('brilltech_admin_username', None)
+    return redirect('brilltech_admin_login')
+
+
+@brilltech_admin_required
+def brilltech_admin_dashboard(request):
+    """BrillTech admin dashboard with stats"""
+    from .models import ContactSubmission
+    
+    total_submissions = ContactSubmission.objects.count()
+    new_submissions = ContactSubmission.objects.filter(status='new').count()
+    read_submissions = ContactSubmission.objects.filter(status='read').count()
+    replied_submissions = ContactSubmission.objects.filter(status='replied').count()
+    
+    recent_submissions = ContactSubmission.objects.all()[:5]
+    
+    return render(request, 'core/brilltech/admin/dashboard.html', {
+        'total_submissions': total_submissions,
+        'new_submissions': new_submissions,
+        'read_submissions': read_submissions,
+        'replied_submissions': replied_submissions,
+        'recent_submissions': recent_submissions,
+    })
+
+
+@brilltech_admin_required
+def brilltech_admin_submissions(request):
+    """View all contact submissions"""
+    from .models import ContactSubmission
+    
+    status_filter = request.GET.get('status', '')
+    submissions = ContactSubmission.objects.all()
+    
+    if status_filter:
+        submissions = submissions.filter(status=status_filter)
+    
+    return render(request, 'core/brilltech/admin/submissions.html', {
+        'submissions': submissions,
+        'status_filter': status_filter,
+    })
+
+
+@brilltech_admin_required
+def brilltech_admin_submission_detail(request, submission_id):
+    """View single submission detail"""
+    from .models import ContactSubmission
+    from django.utils import timezone
+    
+    submission = get_object_or_404(ContactSubmission, id=submission_id)
+    
+    if not submission.is_read:
+        submission.is_read = True
+        submission.read_at = timezone.now()
+        if submission.status == 'new':
+            submission.status = 'read'
+        submission.save()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'mark_replied':
+            submission.status = 'replied'
+            submission.replied_at = timezone.now()
+            submission.save()
+        elif action == 'archive':
+            submission.status = 'archived'
+            submission.save()
+        elif action == 'save_notes':
+            submission.admin_notes = request.POST.get('notes', '')
+            submission.save()
+        return redirect('brilltech_admin_submission_detail', submission_id=submission_id)
+    
+    return render(request, 'core/brilltech/admin/submission_detail.html', {
+        'submission': submission,
+    })
+
+
+@brilltech_admin_required
+def brilltech_admin_change_password(request):
+    """Change BrillTech admin password"""
+    from .models import BrillTechAdmin
+    
+    success = False
+    error = None
+    
+    admin_id = request.session.get('brilltech_admin_id')
+    admin = get_object_or_404(BrillTechAdmin, id=admin_id)
+    
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password', '')
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        if not admin.check_password(current_password):
+            error = 'Current password is incorrect'
+        elif len(new_password) < 6:
+            error = 'New password must be at least 6 characters'
+        elif new_password != confirm_password:
+            error = 'New passwords do not match'
+        else:
+            admin.set_password(new_password)
+            admin.save()
+            success = True
+    
+    return render(request, 'core/brilltech/admin/change_password.html', {
+        'success': success,
+        'error': error,
+        'admin': admin,
+    })

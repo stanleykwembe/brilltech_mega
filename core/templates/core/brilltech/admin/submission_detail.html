@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submission Details - BrillTech Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #EC4899, #A855F7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0F0A1F 0%, #1E1B4B 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 sidebar-gradient min-h-screen fixed left-0 top-0 p-6">
+            <a href="{% url 'brilltech_landing' %}" class="flex items-center space-x-3 mb-10">
+                <img src="{% static 'core/img/brilltech-logo.jpg' %}" alt="BrillTech" class="w-10 h-10 rounded-xl object-cover">
+                <span class="text-lg font-bold text-white">Brill<span class="gradient-text">Tech</span></span>
+            </a>
+            
+            <nav class="space-y-2">
+                <a href="{% url 'brilltech_admin_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'brilltech_admin_submissions' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-pink-500/20 text-pink-400">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span>Submissions</span>
+                </a>
+                <a href="{% url 'brilltech_admin_change_password' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-key w-5"></i>
+                    <span>Change Password</span>
+                </a>
+            </nav>
+            
+            <div class="absolute bottom-6 left-6 right-6">
+                <a href="{% url 'brilltech_admin_logout' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- Back Link -->
+            <a href="{% url 'brilltech_admin_submissions' %}" class="inline-flex items-center text-gray-600 hover:text-pink-600 transition-colors mb-6">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Submissions
+            </a>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Content -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Submission Details -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex items-start justify-between mb-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl">
+                                    {{ submission.name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <h1 class="text-2xl font-bold text-gray-900">{{ submission.name }}</h1>
+                                    <p class="text-gray-600">{{ submission.email }}</p>
+                                    {% if submission.phone %}
+                                    <p class="text-gray-500 text-sm">{{ submission.phone }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium
+                                {% if submission.status == 'new' %}bg-pink-100 text-pink-700
+                                {% elif submission.status == 'read' %}bg-blue-100 text-blue-700
+                                {% elif submission.status == 'replied' %}bg-green-100 text-green-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ submission.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        {% if submission.company %}
+                        <div class="mb-4 p-3 bg-gray-50 rounded-xl">
+                            <span class="text-sm text-gray-500">Company/School:</span>
+                            <span class="text-gray-900 font-medium ml-2">{{ submission.company }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="border-t border-gray-100 pt-6">
+                            <h2 class="font-semibold text-gray-900 mb-2">{{ submission.subject|default:"No Subject" }}</h2>
+                            <div class="prose prose-gray max-w-none">
+                                <p class="text-gray-700 whitespace-pre-wrap">{{ submission.message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Admin Notes -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h2 class="font-semibold text-gray-900 mb-4">Admin Notes</h2>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="save_notes">
+                            <textarea name="notes" rows="4" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all resize-none" placeholder="Add internal notes about this submission...">{{ submission.admin_notes }}</textarea>
+                            <button type="submit" class="mt-3 px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors">
+                                Save Notes
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Sidebar Actions -->
+                <div class="space-y-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <a href="mailto:{{ submission.email }}?subject=Re: {{ submission.subject|urlencode }}" class="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
+                                <i class="fas fa-reply"></i>
+                                <span>Reply via Email</span>
+                            </a>
+                            
+                            {% if submission.status != 'replied' %}
+                            <form method="POST" class="w-full">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_replied">
+                                <button type="submit" class="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors">
+                                    <i class="fas fa-check"></i>
+                                    <span>Mark as Replied</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                            
+                            {% if submission.status != 'archived' %}
+                            <form method="POST" class="w-full">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="archive">
+                                <button type="submit" class="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">
+                                    <i class="fas fa-archive"></i>
+                                    <span>Archive</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Submission Info -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Submission Info</h3>
+                        <div class="space-y-4 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Received:</span>
+                                <span class="text-gray-900">{{ submission.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% if submission.read_at %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Read:</span>
+                                <span class="text-gray-900">{{ submission.read_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if submission.replied_at %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Replied:</span>
+                                <span class="text-gray-900">{{ submission.replied_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

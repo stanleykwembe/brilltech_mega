@@ -355,15 +355,12 @@
                 </a>
                 
                 <!-- Desktop Navigation -->
-                <div class="hidden lg:flex items-center space-x-8">
+                <div class="hidden lg:flex items-center space-x-6">
                     <a href="{% url 'brilltech_landing' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_landing' %}active text-pink-600 dark:text-pink-400{% endif %}">Home</a>
+                    <a href="{% url 'brilltech_apps' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_apps' %}active text-pink-600 dark:text-pink-400{% endif %}">Apps</a>
                     <a href="{% url 'brilltech_services' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_services' %}active text-pink-600 dark:text-pink-400{% endif %}">Services</a>
-                    <a href="{% url 'brilltech_learning' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_learning' %}active text-pink-600 dark:text-pink-400{% endif %}">Learning</a>
-                    <a href="{% url 'brilltech_store' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_store' %}active text-pink-600 dark:text-pink-400{% endif %}">Store</a>
-                    <a href="{% url 'brilltech_dashboard' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_dashboard' %}active text-pink-600 dark:text-pink-400{% endif %}">Dashboard</a>
-                    <a href="{% url 'teacher_landing' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium" target="_blank">
-                        Teacher Portal <i class="fas fa-external-link-alt text-xs ml-1"></i>
-                    </a>
+                    <a href="{% url 'brilltech_about' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_about' %}active text-pink-600 dark:text-pink-400{% endif %}">About</a>
+                    <a href="{% url 'brilltech_contact' %}" class="nav-link text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 font-medium {% if request.resolver_match.url_name == 'brilltech_contact' %}active text-pink-600 dark:text-pink-400{% endif %}">Contact</a>
                 </div>
                 
                 <!-- Right Side: Theme Toggle + CTA -->
@@ -411,15 +408,12 @@
              class="lg:hidden glass-card dark:glass-dark border-t border-purple-100 dark:border-purple-500/20">
             <div class="px-4 py-4 space-y-3">
                 <a href="{% url 'brilltech_landing' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Home</a>
+                <a href="{% url 'brilltech_apps' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Apps</a>
                 <a href="{% url 'brilltech_services' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Services</a>
-                <a href="{% url 'brilltech_learning' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Learning</a>
-                <a href="{% url 'brilltech_store' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Store</a>
-                <a href="{% url 'brilltech_dashboard' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Dashboard</a>
-                <a href="{% url 'teacher_landing' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors" target="_blank">
-                    Teacher Portal <i class="fas fa-external-link-alt text-xs ml-1"></i>
-                </a>
+                <a href="{% url 'brilltech_about' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">About</a>
+                <a href="{% url 'brilltech_contact' %}" class="block px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-500/20 hover:text-pink-600 dark:hover:text-pink-400 font-medium transition-colors">Contact</a>
                 <div class="pt-3">
-                    <a href="{% url 'brilltech_services' %}" class="btn-primary block text-center px-6 py-3 rounded-full text-white font-semibold">
+                    <a href="{% url 'brilltech_contact' %}" class="btn-primary block text-center px-6 py-3 rounded-full text-white font-semibold">
                         Get Started
                     </a>
                 </div>
@@ -464,20 +458,21 @@
                     <h4 class="font-semibold text-lg mb-6 gradient-text">Quick Links</h4>
                     <ul class="space-y-3">
                         <li><a href="{% url 'brilltech_landing' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Home</a></li>
+                        <li><a href="{% url 'brilltech_apps' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Apps</a></li>
                         <li><a href="{% url 'brilltech_services' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Services</a></li>
-                        <li><a href="{% url 'brilltech_learning' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Learning</a></li>
-                        <li><a href="{% url 'brilltech_store' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Store</a></li>
+                        <li><a href="{% url 'brilltech_about' %}" class="text-gray-400 hover:text-pink-400 transition-colors">About Us</a></li>
+                        <li><a href="{% url 'brilltech_contact' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Contact</a></li>
                     </ul>
                 </div>
                 
-                <!-- Services -->
+                <!-- Our Apps -->
                 <div>
-                    <h4 class="font-semibold text-lg mb-6 gradient-text">Services</h4>
+                    <h4 class="font-semibold text-lg mb-6 gradient-text">Our Apps</h4>
                     <ul class="space-y-3">
-                        <li><a href="{% url 'brilltech_services' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Web Development</a></li>
-                        <li><a href="{% url 'brilltech_services' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Mobile Apps</a></li>
-                        <li><a href="{% url 'brilltech_services' %}" class="text-gray-400 hover:text-pink-400 transition-colors">IT Support</a></li>
-                        <li><a href="{% url 'brilltech_services' %}" class="text-gray-400 hover:text-pink-400 transition-colors">Cloud Solutions</a></li>
+                        <li><a href="{% url 'teacher_landing' %}" class="text-gray-400 hover:text-pink-400 transition-colors">EduTech Portal</a></li>
+                        <li><a href="{% url 'student_landing' %}" class="text-gray-400 hover:text-pink-400 transition-colors">ExamPrep Pro</a></li>
+                        <li><a href="{% url 'brilltech_apps' %}" class="text-gray-400 hover:text-pink-400 transition-colors">SchoolSync</a></li>
+                        <li><a href="{% url 'brilltech_apps' %}" class="text-gray-400 hover:text-pink-400 transition-colors">TutorMatch</a></li>
                     </ul>
                 </div>
                 

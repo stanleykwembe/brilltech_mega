@@ -118,6 +118,17 @@ urlpatterns = [
     path('brilltech/learning/', views.brilltech_learning, name='brilltech_learning'),
     path('brilltech/store/', views.brilltech_store, name='brilltech_store'),
     path('brilltech/dashboard/', views.brilltech_dashboard, name='brilltech_dashboard'),
+    path('brilltech/apps/', views.brilltech_apps, name='brilltech_apps'),
+    path('brilltech/about/', views.brilltech_about, name='brilltech_about'),
+    path('brilltech/contact/', views.brilltech_contact, name='brilltech_contact'),
+    
+    # BrillTech Admin Portal (separate from EduTech admin)
+    path('brilltech/admin/', views.brilltech_admin_dashboard, name='brilltech_admin_dashboard'),
+    path('brilltech/admin/login/', views.brilltech_admin_login, name='brilltech_admin_login'),
+    path('brilltech/admin/logout/', views.brilltech_admin_logout, name='brilltech_admin_logout'),
+    path('brilltech/admin/submissions/', views.brilltech_admin_submissions, name='brilltech_admin_submissions'),
+    path('brilltech/admin/submissions/<int:submission_id>/', views.brilltech_admin_submission_detail, name='brilltech_admin_submission_detail'),
+    path('brilltech/admin/change-password/', views.brilltech_admin_change_password, name='brilltech_admin_change_password'),
     
     # Public share links for students (token-based, no login required)
     path('share/<str:token>/', views.share_content_view, name='share_content_view'),

@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrillTech Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #EC4899, #A855F7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0F0A1F 0%, #1E1B4B 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 sidebar-gradient min-h-screen fixed left-0 top-0 p-6">
+            <!-- Logo -->
+            <a href="{% url 'brilltech_landing' %}" class="flex items-center space-x-3 mb-10">
+                <img src="{% static 'core/img/brilltech-logo.jpg' %}" alt="BrillTech" class="w-10 h-10 rounded-xl object-cover">
+                <span class="text-lg font-bold text-white">Brill<span class="gradient-text">Tech</span></span>
+            </a>
+            
+            <!-- Navigation -->
+            <nav class="space-y-2">
+                <a href="{% url 'brilltech_admin_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-pink-500/20 text-pink-400">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'brilltech_admin_submissions' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span>Submissions</span>
+                    {% if new_submissions > 0 %}
+                    <span class="ml-auto bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full">{{ new_submissions }}</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'brilltech_admin_change_password' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-key w-5"></i>
+                    <span>Change Password</span>
+                </a>
+            </nav>
+            
+            <!-- Logout -->
+            <div class="absolute bottom-6 left-6 right-6">
+                <a href="{% url 'brilltech_admin_logout' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+                    <p class="text-gray-600">Welcome back, {{ request.session.brilltech_admin_username }}</p>
+                </div>
+                <a href="{% url 'brilltech_landing' %}" target="_blank" class="text-sm text-gray-600 hover:text-pink-600 transition-colors">
+                    <i class="fas fa-external-link-alt mr-2"></i>View Website
+                </a>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-envelope text-white"></i>
+                        </div>
+                        <span class="text-3xl font-bold text-gray-900">{{ total_submissions }}</span>
+                    </div>
+                    <p class="text-gray-600">Total Submissions</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                            <i class="fas fa-bell text-white"></i>
+                        </div>
+                        <span class="text-3xl font-bold text-gray-900">{{ new_submissions }}</span>
+                    </div>
+                    <p class="text-gray-600">New Messages</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                            <i class="fas fa-eye text-white"></i>
+                        </div>
+                        <span class="text-3xl font-bold text-gray-900">{{ read_submissions }}</span>
+                    </div>
+                    <p class="text-gray-600">Read Messages</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
+                            <i class="fas fa-reply text-white"></i>
+                        </div>
+                        <span class="text-3xl font-bold text-gray-900">{{ replied_submissions }}</span>
+                    </div>
+                    <p class="text-gray-600">Replied</p>
+                </div>
+            </div>
+            
+            <!-- Recent Submissions -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-gray-900">Recent Submissions</h2>
+                    <a href="{% url 'brilltech_admin_submissions' %}" class="text-sm text-pink-600 hover:text-pink-700">View All</a>
+                </div>
+                
+                {% if recent_submissions %}
+                <div class="divide-y divide-gray-100">
+                    {% for submission in recent_submissions %}
+                    <a href="{% url 'brilltech_admin_submission_detail' submission.id %}" class="block p-6 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                    {{ submission.name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="font-semibold text-gray-900">{{ submission.name }}</h3>
+                                        {% if not submission.is_read %}
+                                        <span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-medium">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-sm text-gray-600">{{ submission.subject|default:"No Subject" }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">{{ submission.message|truncatewords:15 }}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400">{{ submission.created_at|timesince }} ago</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-gray-900 font-semibold mb-2">No Submissions Yet</h3>
+                    <p class="text-gray-500">Contact form submissions will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

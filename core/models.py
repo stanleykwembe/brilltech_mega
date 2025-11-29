@@ -1228,3 +1228,73 @@ class ContentShare(models.Model):
             from django.utils import timezone
             return timezone.now() < self.expires_at
         return True
+
+
+class BrillTechAdmin(models.Model):
+    """Admin users for BrillTech corporate website (separate from EduTech)"""
+    username = models.CharField(max_length=50, unique=True)
+    password_hash = models.CharField(max_length=255)
+    email = models.EmailField(blank=True)
+    full_name = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'BrillTech Admin'
+        verbose_name_plural = 'BrillTech Admins'
+    
+    def __str__(self):
+        return self.username
+    
+    def set_password(self, raw_password):
+        """Hash and set the password"""
+        from django.contrib.auth.hashers import make_password
+        self.password_hash = make_password(raw_password)
+    
+    def check_password(self, raw_password):
+        """Check if password matches"""
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_password, self.password_hash)
+
+
+class ContactSubmission(models.Model):
+    """Contact form submissions from BrillTech website"""
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('read', 'Read'),
+        ('replied', 'Replied'),
+        ('archived', 'Archived'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    company = models.CharField(max_length=100, blank=True)
+    subject = models.CharField(max_length=200, blank=True)
+    message = models.TextField()
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    is_read = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
+    
+    admin_notes = models.TextField(blank=True, help_text="Internal notes about this submission")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Contact Submission'
+        verbose_name_plural = 'Contact Submissions'
+    
+    def __str__(self):
+        return f"{self.name} - {self.subject or 'No Subject'} ({self.created_at.strftime('%Y-%m-%d')})"
+    
+    def mark_as_read(self):
+        """Mark submission as read"""
+        from django.utils import timezone
+        self.is_read = True
+        self.status = 'read'
+        self.read_at = timezone.now()
+        self.save()

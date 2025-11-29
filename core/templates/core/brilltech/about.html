@@ -1,0 +1,158 @@
+{% extends 'core/brilltech/base.html' %}
+{% load static %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="pt-32 pb-16 hero-gradient relative overflow-hidden">
+    <div class="blob w-96 h-96 bg-pink-500/30 -top-48 -left-48"></div>
+    <div class="blob w-80 h-80 bg-purple-500/30 top-20 right-10"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center">
+            <span class="inline-block px-4 py-2 rounded-full glass-dark-accent text-pink-400 text-sm font-medium mb-6">
+                <i class="fas fa-heart mr-2"></i>Our Story
+            </span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold font-display text-white mb-6">
+                Empowering Education Through <span class="gradient-text">Innovation</span>
+            </h1>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                We believe every student deserves access to quality education. BrillTech is on a mission to make this a reality.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 section-white relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {% for stat in stats %}
+            <div class="text-center">
+                <div class="text-4xl md:text-5xl font-bold gradient-text mb-2">{{ stat.number }}</div>
+                <div class="text-gray-600 dark:text-gray-400 font-medium">{{ stat.label }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="py-20 section-purple-light">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="text-3xl md:text-4xl font-bold font-display text-gray-900 dark:text-white mb-6">
+                    Our <span class="gradient-text">Mission</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 text-lg mb-6">
+                    At BrillTech, we're dedicated to democratizing education through technology. We build tools that empower teachers to create engaging content and help students achieve their full potential.
+                </p>
+                <p class="text-gray-600 dark:text-gray-300 text-lg mb-6">
+                    Our AI-powered platforms are designed specifically for the African educational landscape, supporting local curricula including Cambridge, Edexcel, CAPS, ZIMSEC, and more.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex items-center space-x-2 text-pink-600 dark:text-pink-400">
+                        <i class="fas fa-check-circle"></i>
+                        <span>AI-Powered Learning</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-pink-600 dark:text-pink-400">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Local Curriculum Support</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-pink-600 dark:text-pink-400">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Affordable Access</span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-dark-accent rounded-3xl p-8 neon-glow">
+                <div class="text-center">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-lightbulb text-3xl text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Our Vision</h3>
+                    <p class="text-gray-300">
+                        To become Africa's leading EdTech platform, enabling every learner to access world-class education regardless of their location or background.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Timeline Section -->
+<section class="py-20 section-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold font-display text-gray-900 dark:text-white mb-4">
+                Our <span class="gradient-text">Journey</span>
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Key milestones in our mission to transform education</p>
+        </div>
+        
+        <div class="relative">
+            <div class="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-pink-500 via-purple-500 to-pink-500"></div>
+            
+            {% for milestone in milestones %}
+            <div class="relative flex items-center mb-12 {% if forloop.counter|divisibleby:2 %}md:flex-row-reverse{% endif %}">
+                <div class="absolute left-8 md:left-1/2 w-4 h-4 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 transform -translate-x-1/2 border-4 border-white dark:border-slate-900 z-10"></div>
+                
+                <div class="ml-16 md:ml-0 md:w-1/2 {% if forloop.counter|divisibleby:2 %}md:pl-12{% else %}md:pr-12 md:text-right{% endif %}">
+                    <div class="glass-card dark:glass-dark rounded-2xl p-6 card-hover">
+                        <span class="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-semibold mb-3">
+                            {{ milestone.year }}
+                        </span>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ milestone.title }}</h3>
+                        <p class="text-gray-600 dark:text-gray-400">{{ milestone.description }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="py-20 section-purple-light">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold font-display text-gray-900 dark:text-white mb-4">
+                Meet Our <span class="gradient-text">Team</span>
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">The passionate people behind BrillTech</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% for member in team %}
+            <div class="glass-card dark:glass-dark rounded-2xl p-6 text-center card-hover group">
+                <img src="{{ member.image }}" alt="{{ member.name }}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-pink-500/30 group-hover:border-pink-500 transition-colors">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">{{ member.name }}</h3>
+                <p class="text-pink-600 dark:text-pink-400 font-medium text-sm mb-3">{{ member.role }}</p>
+                <p class="text-gray-600 dark:text-gray-400 text-sm">{{ member.bio }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 hero-gradient relative overflow-hidden">
+    <div class="blob w-64 h-64 bg-pink-500/30 top-0 right-0"></div>
+    <div class="blob w-48 h-48 bg-purple-500/30 bottom-0 left-20"></div>
+    
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-display text-white mb-6">
+            Join Us on This Journey
+        </h2>
+        <p class="text-xl text-gray-300 mb-8">
+            Whether you're an educator, student, or partner - we'd love to hear from you.
+        </p>
+        <a href="{% url 'brilltech_contact' %}" class="btn-primary px-8 py-4 rounded-full text-white font-semibold inline-flex items-center">
+            Get in Touch
+            <i class="fas fa-arrow-right ml-2"></i>
+        </a>
+    </div>
+</section>
+{% endblock %}
