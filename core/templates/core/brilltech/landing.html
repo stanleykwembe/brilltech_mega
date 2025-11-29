@@ -4,19 +4,12 @@
 {% block title %}Welcome to BrillTech{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="min-h-screen dark-mesh-gradient relative overflow-hidden pt-20">
+<!-- Hero Section - Dark for visual impact -->
+<section class="min-h-screen hero-gradient relative overflow-hidden pt-20">
     <!-- Animated Background Blobs -->
     <div class="blob w-96 h-96 bg-pink-500 top-20 -left-48 float-animation"></div>
     <div class="blob w-80 h-80 bg-purple-500 top-40 right-0 float-animation float-delay-1"></div>
     <div class="blob w-64 h-64 bg-fuchsia-500 bottom-20 left-1/4 float-animation float-delay-2"></div>
-    
-    <!-- Floating Particles -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="particle top-1/4 left-1/4 animate-pulse" style="animation: particle-float 8s infinite;"></div>
-        <div class="particle top-1/3 right-1/4 animate-pulse" style="animation: particle-float 10s infinite; animation-delay: -2s;"></div>
-        <div class="particle bottom-1/4 left-1/3 animate-pulse" style="animation: particle-float 12s infinite; animation-delay: -4s;"></div>
-    </div>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-32 pb-20 relative z-10">
         <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -68,7 +61,7 @@
             <div class="hero-visual relative">
                 <div class="relative">
                     <!-- Main Card -->
-                    <div class="glass-purple rounded-3xl p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500 neon-glow">
+                    <div class="glass-dark-accent rounded-3xl p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500 neon-glow">
                         <div class="flex items-center space-x-4 mb-6">
                             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
                                 <i class="fas fa-code text-white text-xl"></i>
@@ -104,7 +97,7 @@
                     </div>
                     
                     <!-- Floating Cards -->
-                    <div class="absolute -top-6 -right-6 glass-purple rounded-2xl p-4 shadow-xl float-animation border border-pink-500/30">
+                    <div class="absolute -top-6 -right-6 glass-dark-accent rounded-2xl p-4 shadow-xl float-animation border border-pink-500/30">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
                                 <i class="fas fa-check text-green-400"></i>
@@ -116,7 +109,7 @@
                         </div>
                     </div>
                     
-                    <div class="absolute -bottom-4 -left-6 glass-purple rounded-2xl p-4 shadow-xl float-animation float-delay-2 border border-purple-500/30">
+                    <div class="absolute -bottom-4 -left-6 glass-dark-accent rounded-2xl p-4 shadow-xl float-animation float-delay-2 border border-purple-500/30">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
                                 <i class="fas fa-users text-pink-400"></i>
@@ -140,145 +133,145 @@
     </div>
 </section>
 
-<!-- Trusted By Section -->
-<section class="py-12 bg-gradient-to-b from-purple-950/50 to-slate-900 border-y border-purple-500/20">
+<!-- Trusted By Section - Light with subtle purple tint -->
+<section class="py-12 section-white dark:bg-slate-900 border-y border-purple-100 dark:border-purple-500/20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p class="text-center text-gray-400 text-sm uppercase tracking-widest mb-8">Trusted by Industry Leaders</p>
-        <div class="flex flex-wrap justify-center items-center gap-12 opacity-60">
-            <div class="text-2xl font-bold text-gray-300 font-display">TechCorp</div>
-            <div class="text-2xl font-bold text-gray-300 font-display">InnovateCo</div>
-            <div class="text-2xl font-bold text-gray-300 font-display">FutureStack</div>
-            <div class="text-2xl font-bold text-gray-300 font-display">CloudFirst</div>
-            <div class="text-2xl font-bold text-gray-300 font-display">DataFlow</div>
+        <p class="text-center text-gray-500 dark:text-gray-400 text-sm uppercase tracking-widest mb-8">Trusted by Industry Leaders</p>
+        <div class="flex flex-wrap justify-center items-center gap-12 opacity-70">
+            <div class="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">TechCorp</div>
+            <div class="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">InnovateCo</div>
+            <div class="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">FutureStack</div>
+            <div class="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">CloudFirst</div>
+            <div class="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">DataFlow</div>
         </div>
     </div>
 </section>
 
-<!-- Overview Cards Section -->
-<section class="py-20 lg:py-32 bg-gradient-to-b from-slate-900 to-purple-950">
+<!-- Overview Cards Section - Light theme -->
+<section class="py-20 lg:py-32 section-purple-light">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6 section-title">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 dark:text-white mb-6 section-title">
                 Everything You Need to
                 <span class="gradient-text">Succeed</span>
             </h2>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto section-subtitle">
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto section-subtitle">
                 Discover our comprehensive suite of digital solutions designed to accelerate your business growth.
             </p>
         </div>
         
         <div class="grid md:grid-cols-2 gap-8 lg:gap-10">
             <!-- Services Card -->
-            <div class="overview-card glass-purple rounded-3xl p-8 lg:p-10 card-hover border border-purple-500/30">
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                     <i class="fas fa-cogs text-white text-2xl"></i>
                 </div>
-                <h3 class="text-2xl font-bold font-display text-white mb-4">Professional Services</h3>
-                <p class="text-gray-400 mb-6 leading-relaxed">
+                <h3 class="text-2xl font-bold font-display text-gray-900 dark:text-white mb-4">Professional Services</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                     From web development to IT support, our expert team delivers tailored solutions that drive results. We handle the technology so you can focus on what matters most - your business.
                 </p>
                 <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-pink-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-pink-500 mr-3"></i>
                         Custom Web & Mobile Development
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-pink-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-pink-500 mr-3"></i>
                         24/7 IT Support & Maintenance
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-pink-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-pink-500 mr-3"></i>
                         Enterprise Network Solutions
                     </li>
                 </ul>
-                <a href="{% url 'brilltech_services' %}" class="inline-flex items-center text-pink-400 font-semibold hover:text-pink-300 group">
+                <a href="{% url 'brilltech_services' %}" class="inline-flex items-center text-pink-600 dark:text-pink-400 font-semibold hover:text-pink-700 dark:hover:text-pink-300 group">
                     Explore Services
                     <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
                 </a>
             </div>
             
             <!-- Learning Card -->
-            <div class="overview-card glass-purple rounded-3xl p-8 lg:p-10 card-hover border border-purple-500/30">
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30">
                     <i class="fas fa-graduation-cap text-white text-2xl"></i>
                 </div>
-                <h3 class="text-2xl font-bold font-display text-white mb-4">Learning Platform</h3>
-                <p class="text-gray-400 mb-6 leading-relaxed">
+                <h3 class="text-2xl font-bold font-display text-gray-900 dark:text-white mb-4">Learning Platform</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                     Empower your team with our comprehensive digital skills training. Interactive courses, expert instructors, and certifications that matter in today's tech landscape.
                 </p>
                 <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-purple-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-purple-500 mr-3"></i>
                         Interactive Online Courses
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-purple-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-purple-500 mr-3"></i>
                         Industry-Recognized Certifications
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-purple-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-purple-500 mr-3"></i>
                         Personalized Learning Paths
                     </li>
                 </ul>
-                <a href="{% url 'brilltech_learning' %}" class="inline-flex items-center text-purple-400 font-semibold hover:text-purple-300 group">
+                <a href="{% url 'brilltech_learning' %}" class="inline-flex items-center text-purple-600 dark:text-purple-400 font-semibold hover:text-purple-700 dark:hover:text-purple-300 group">
                     Start Learning
                     <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
                 </a>
             </div>
             
             <!-- Store Card -->
-            <div class="overview-card glass-purple rounded-3xl p-8 lg:p-10 card-hover border border-purple-500/30">
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center mb-6 shadow-lg shadow-fuchsia-500/30">
                     <i class="fas fa-shopping-cart text-white text-2xl"></i>
                 </div>
-                <h3 class="text-2xl font-bold font-display text-white mb-4">Tech Store</h3>
-                <p class="text-gray-400 mb-6 leading-relaxed">
+                <h3 class="text-2xl font-bold font-display text-gray-900 dark:text-white mb-4">Tech Store</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                     Get the best hardware, software, and digital tools at competitive prices. From laptops to enterprise solutions, we've curated everything you need to power your success.
                 </p>
                 <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-fuchsia-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-fuchsia-500 mr-3"></i>
                         Premium Hardware Selection
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-fuchsia-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-fuchsia-500 mr-3"></i>
                         Licensed Software Solutions
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-fuchsia-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-fuchsia-500 mr-3"></i>
                         Fast Nationwide Delivery
                     </li>
                 </ul>
-                <a href="{% url 'brilltech_store' %}" class="inline-flex items-center text-fuchsia-400 font-semibold hover:text-fuchsia-300 group">
+                <a href="{% url 'brilltech_store' %}" class="inline-flex items-center text-fuchsia-600 dark:text-fuchsia-400 font-semibold hover:text-fuchsia-700 dark:hover:text-fuchsia-300 group">
                     Visit Store
                     <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
                 </a>
             </div>
             
             <!-- Dashboard Card -->
-            <div class="overview-card glass-purple rounded-3xl p-8 lg:p-10 card-hover border border-purple-500/30">
+            <div class="overview-card glass-card rounded-3xl p-8 lg:p-10 card-hover">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
                     <i class="fas fa-chart-line text-white text-2xl"></i>
                 </div>
-                <h3 class="text-2xl font-bold font-display text-white mb-4">Client Dashboard</h3>
-                <p class="text-gray-400 mb-6 leading-relaxed">
+                <h3 class="text-2xl font-bold font-display text-gray-900 dark:text-white mb-4">Client Dashboard</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                     Track your projects, manage subscriptions, and access all your BrillTech services from one powerful dashboard. Real-time insights at your fingertips.
                 </p>
                 <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-violet-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-violet-500 mr-3"></i>
                         Real-Time Project Tracking
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-violet-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-violet-500 mr-3"></i>
                         Comprehensive Analytics
                     </li>
-                    <li class="flex items-center text-gray-300">
-                        <i class="fas fa-check-circle text-violet-400 mr-3"></i>
+                    <li class="flex items-center text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-check-circle text-violet-500 mr-3"></i>
                         Unified Account Management
                     </li>
                 </ul>
-                <a href="{% url 'brilltech_dashboard' %}" class="inline-flex items-center text-violet-400 font-semibold hover:text-violet-300 group">
+                <a href="{% url 'brilltech_dashboard' %}" class="inline-flex items-center text-violet-600 dark:text-violet-400 font-semibold hover:text-violet-700 dark:hover:text-violet-300 group">
                     View Dashboard
                     <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
                 </a>
@@ -287,8 +280,8 @@
     </div>
 </section>
 
-<!-- Technology Showcase Section -->
-<section class="py-20 lg:py-32 dark-mesh-gradient relative overflow-hidden">
+<!-- Technology Showcase Section - Dark accent for contrast -->
+<section class="py-20 lg:py-32 hero-gradient relative overflow-hidden">
     <div class="blob w-80 h-80 bg-pink-500 top-0 -right-40 float-animation"></div>
     <div class="blob w-64 h-64 bg-purple-500 bottom-0 -left-32 float-animation float-delay-1"></div>
     
@@ -303,37 +296,37 @@
         </div>
         
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fab fa-react text-5xl text-cyan-400"></i>
                 </div>
                 <h4 class="font-semibold text-white">React</h4>
             </div>
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fab fa-python text-5xl text-yellow-400"></i>
                 </div>
                 <h4 class="font-semibold text-white">Python</h4>
             </div>
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fab fa-aws text-5xl text-orange-400"></i>
                 </div>
                 <h4 class="font-semibold text-white">AWS</h4>
             </div>
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fab fa-node-js text-5xl text-green-400"></i>
                 </div>
                 <h4 class="font-semibold text-white">Node.js</h4>
             </div>
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fab fa-docker text-5xl text-blue-400"></i>
                 </div>
                 <h4 class="font-semibold text-white">Docker</h4>
             </div>
-            <div class="tech-card glass-purple rounded-2xl p-6 text-center card-hover border border-purple-500/20">
+            <div class="tech-card glass-dark-accent rounded-2xl p-6 text-center card-hover border border-purple-500/20">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <i class="fas fa-database text-5xl text-pink-400"></i>
                 </div>
@@ -343,14 +336,14 @@
     </div>
 </section>
 
-<!-- Process Timeline Section -->
-<section class="py-20 lg:py-32 bg-gradient-to-b from-purple-950 to-slate-900">
+<!-- Process Timeline Section - Light -->
+<section class="py-20 lg:py-32 section-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6 section-title">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 dark:text-white mb-6 section-title">
                 Our <span class="gradient-text">Process</span>
             </h2>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto section-subtitle">
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto section-subtitle">
                 A streamlined approach to delivering exceptional results for every project.
             </p>
         </div>
@@ -363,10 +356,10 @@
                 <!-- Step 1 -->
                 <div class="timeline-item lg:flex items-center">
                     <div class="lg:w-1/2 lg:pr-16 lg:text-right mb-8 lg:mb-0">
-                        <div class="glass-purple rounded-2xl p-6 border border-purple-500/30 inline-block">
+                        <div class="glass-card rounded-2xl p-6 inline-block shadow-pink">
                             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 text-white font-bold text-xl mb-4">1</span>
-                            <h3 class="text-xl font-bold text-white mb-2">Discovery & Planning</h3>
-                            <p class="text-gray-400">We analyze your requirements, research your industry, and create a comprehensive project roadmap.</p>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Discovery & Planning</h3>
+                            <p class="text-gray-600 dark:text-gray-400">We analyze your requirements, research your industry, and create a comprehensive project roadmap.</p>
                         </div>
                     </div>
                     <div class="hidden lg:flex items-center justify-center w-8">
@@ -382,10 +375,10 @@
                         <div class="w-4 h-4 rounded-full bg-purple-500 shadow-lg shadow-purple-500/50"></div>
                     </div>
                     <div class="lg:w-1/2 lg:pl-16 mb-8 lg:mb-0">
-                        <div class="glass-purple rounded-2xl p-6 border border-purple-500/30 inline-block">
+                        <div class="glass-card rounded-2xl p-6 inline-block shadow-purple">
                             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white font-bold text-xl mb-4">2</span>
-                            <h3 class="text-xl font-bold text-white mb-2">Design & Prototype</h3>
-                            <p class="text-gray-400">Our designers create stunning mockups and interactive prototypes for your approval.</p>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Design & Prototype</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Our designers create stunning mockups and interactive prototypes for your approval.</p>
                         </div>
                     </div>
                 </div>
@@ -393,10 +386,10 @@
                 <!-- Step 3 -->
                 <div class="timeline-item lg:flex items-center">
                     <div class="lg:w-1/2 lg:pr-16 lg:text-right mb-8 lg:mb-0">
-                        <div class="glass-purple rounded-2xl p-6 border border-purple-500/30 inline-block">
+                        <div class="glass-card rounded-2xl p-6 inline-block shadow-pink">
                             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white font-bold text-xl mb-4">3</span>
-                            <h3 class="text-xl font-bold text-white mb-2">Development & Testing</h3>
-                            <p class="text-gray-400">Our expert developers bring designs to life with clean, efficient code and rigorous testing.</p>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Development & Testing</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Our expert developers bring designs to life with clean, efficient code and rigorous testing.</p>
                         </div>
                     </div>
                     <div class="hidden lg:flex items-center justify-center w-8">
@@ -412,10 +405,10 @@
                         <div class="w-4 h-4 rounded-full bg-violet-500 shadow-lg shadow-violet-500/50"></div>
                     </div>
                     <div class="lg:w-1/2 lg:pl-16">
-                        <div class="glass-purple rounded-2xl p-6 border border-purple-500/30 inline-block">
+                        <div class="glass-card rounded-2xl p-6 inline-block shadow-purple">
                             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 text-white font-bold text-xl mb-4">4</span>
-                            <h3 class="text-xl font-bold text-white mb-2">Launch & Support</h3>
-                            <p class="text-gray-400">We deploy your solution and provide ongoing maintenance and support to ensure success.</p>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Launch & Support</h3>
+                            <p class="text-gray-600 dark:text-gray-400">We deploy your solution and provide ongoing maintenance and support to ensure success.</p>
                         </div>
                     </div>
                 </div>
@@ -424,71 +417,71 @@
     </div>
 </section>
 
-<!-- Why Choose Us Section -->
-<section class="py-20 lg:py-32 dark-mesh-gradient relative overflow-hidden">
-    <div class="blob w-80 h-80 bg-pink-500 top-0 right-0 float-animation"></div>
-    <div class="blob w-64 h-64 bg-purple-500 bottom-0 left-0 float-animation float-delay-1"></div>
+<!-- Why Choose Us Section - Light with subtle gradient -->
+<section class="py-20 lg:py-32 mesh-gradient relative overflow-hidden">
+    <div class="blob w-80 h-80 bg-pink-400 top-0 right-0 float-animation opacity-30"></div>
+    <div class="blob w-64 h-64 bg-purple-400 bottom-0 left-0 float-animation float-delay-1 opacity-30"></div>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6 section-title">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 dark:text-white mb-6 section-title">
                 Why Choose <span class="gradient-text">BrillTech?</span>
             </h2>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto section-subtitle">
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto section-subtitle">
                 We're more than just a tech company. We're your partners in digital transformation.
             </p>
         </div>
         
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div class="feature-card text-center">
-                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30 transform hover:scale-110 transition-transform pulse-glow">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30 transform hover:scale-110 transition-transform">
                     <i class="fas fa-rocket text-white text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3">Fast Delivery</h3>
-                <p class="text-gray-400">Quick turnaround without compromising quality. Your time is valuable.</p>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Fast Delivery</h3>
+                <p class="text-gray-600 dark:text-gray-400">Quick turnaround without compromising quality. Your time is valuable.</p>
             </div>
             
             <div class="feature-card text-center">
                 <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30 transform hover:scale-110 transition-transform">
                     <i class="fas fa-shield-alt text-white text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3">Secure & Reliable</h3>
-                <p class="text-gray-400">Enterprise-grade security protocols protect your data around the clock.</p>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Secure & Reliable</h3>
+                <p class="text-gray-600 dark:text-gray-400">Enterprise-grade security protocols protect your data around the clock.</p>
             </div>
             
             <div class="feature-card text-center">
                 <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center mb-6 shadow-lg shadow-fuchsia-500/30 transform hover:scale-110 transition-transform">
                     <i class="fas fa-users text-white text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3">Expert Team</h3>
-                <p class="text-gray-400">Certified professionals with years of industry experience.</p>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Expert Team</h3>
+                <p class="text-gray-600 dark:text-gray-400">Certified professionals with years of industry experience.</p>
             </div>
             
             <div class="feature-card text-center">
                 <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30 transform hover:scale-110 transition-transform">
                     <i class="fas fa-headset text-white text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3">24/7 Support</h3>
-                <p class="text-gray-400">Round-the-clock assistance whenever you need us.</p>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">24/7 Support</h3>
+                <p class="text-gray-600 dark:text-gray-400">Round-the-clock assistance whenever you need us.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Testimonials Section -->
-<section class="py-20 lg:py-32 bg-gradient-to-b from-slate-900 to-purple-950">
+<!-- Testimonials Section - Light -->
+<section class="py-20 lg:py-32 section-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-white mb-6 section-title">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-display text-gray-900 dark:text-white mb-6 section-title">
                 What Our <span class="gradient-text">Clients Say</span>
             </h2>
-            <p class="text-lg text-gray-400 max-w-2xl mx-auto section-subtitle">
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto section-subtitle">
                 Don't just take our word for it. Here's what our clients have to say about working with BrillTech.
             </p>
         </div>
         
         <div class="grid md:grid-cols-3 gap-8">
-            <div class="testimonial-card glass-purple rounded-3xl p-8 border border-purple-500/30 card-hover">
+            <div class="testimonial-card glass-card rounded-3xl p-8 card-hover shadow-pink">
                 <div class="flex items-center mb-4">
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
@@ -496,19 +489,19 @@
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
                 </div>
-                <p class="text-gray-300 mb-6 italic">"BrillTech transformed our outdated systems into a modern, efficient platform. Their team was professional, responsive, and delivered beyond our expectations."</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 italic">"BrillTech transformed our outdated systems into a modern, efficient platform. Their team was professional, responsive, and delivered beyond our expectations."</p>
                 <div class="flex items-center">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center mr-4">
                         <span class="text-white font-bold">JM</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-white">James Miller</h4>
-                        <p class="text-sm text-gray-400">CEO, TechStart Inc.</p>
+                        <h4 class="font-semibold text-gray-900 dark:text-white">James Miller</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">CEO, TechStart Inc.</p>
                     </div>
                 </div>
             </div>
             
-            <div class="testimonial-card glass-purple rounded-3xl p-8 border border-purple-500/30 card-hover">
+            <div class="testimonial-card glass-card rounded-3xl p-8 card-hover shadow-purple">
                 <div class="flex items-center mb-4">
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
@@ -516,19 +509,19 @@
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
                 </div>
-                <p class="text-gray-300 mb-6 italic">"The learning platform they built for us has revolutionized how we train our employees. The interface is intuitive and the support is exceptional."</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 italic">"The learning platform they built for us has revolutionized how we train our employees. The interface is intuitive and the support is exceptional."</p>
                 <div class="flex items-center">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center mr-4">
                         <span class="text-white font-bold">SK</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-white">Sarah Khumalo</h4>
-                        <p class="text-sm text-gray-400">HR Director, Global Corp</p>
+                        <h4 class="font-semibold text-gray-900 dark:text-white">Sarah Khumalo</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">HR Director, Global Corp</p>
                     </div>
                 </div>
             </div>
             
-            <div class="testimonial-card glass-purple rounded-3xl p-8 border border-purple-500/30 card-hover">
+            <div class="testimonial-card glass-card rounded-3xl p-8 card-hover shadow-pink">
                 <div class="flex items-center mb-4">
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
@@ -536,14 +529,14 @@
                     <i class="fas fa-star text-yellow-400"></i>
                     <i class="fas fa-star text-yellow-400"></i>
                 </div>
-                <p class="text-gray-300 mb-6 italic">"Outstanding service from start to finish. BrillTech's expertise in cloud solutions helped us scale our infrastructure seamlessly."</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 italic">"Outstanding service from start to finish. BrillTech's expertise in cloud solutions helped us scale our infrastructure seamlessly."</p>
                 <div class="flex items-center">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center mr-4">
                         <span class="text-white font-bold">DV</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-white">David van Wyk</h4>
-                        <p class="text-sm text-gray-400">CTO, CloudScale SA</p>
+                        <h4 class="font-semibold text-gray-900 dark:text-white">David van Wyk</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">CTO, CloudScale SA</p>
                     </div>
                 </div>
             </div>
@@ -551,13 +544,13 @@
     </div>
 </section>
 
-<!-- Newsletter Section -->
-<section class="py-20 dark-mesh-gradient relative overflow-hidden">
-    <div class="blob w-64 h-64 bg-pink-500 top-0 left-1/4 float-animation"></div>
-    <div class="blob w-48 h-48 bg-purple-500 bottom-0 right-1/4 float-animation float-delay-2"></div>
+<!-- Newsletter Section - Light with dark card accent -->
+<section class="py-20 section-purple-light relative overflow-hidden">
+    <div class="blob w-64 h-64 bg-pink-400 top-0 left-1/4 float-animation opacity-30"></div>
+    <div class="blob w-48 h-48 bg-purple-400 bottom-0 right-1/4 float-animation float-delay-2 opacity-30"></div>
     
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="glass-purple rounded-3xl p-8 lg:p-12 border border-purple-500/30 text-center neon-glow">
+        <div class="glass-dark-accent rounded-3xl p-8 lg:p-12 text-center neon-glow">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                 <i class="fas fa-envelope text-white text-2xl"></i>
             </div>
@@ -578,7 +571,7 @@
     </div>
 </section>
 
-<!-- CTA Section -->
+<!-- CTA Section - Dark gradient for impact -->
 <section class="py-20 bg-gradient-to-br from-pink-600 via-purple-700 to-purple-900 relative overflow-hidden">
     <div class="absolute inset-0 opacity-10">
         <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
