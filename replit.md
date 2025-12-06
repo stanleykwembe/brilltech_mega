@@ -6,6 +6,7 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (December 2025)
 
+- **Social Login**: Added Google and Facebook social login via django-allauth for both Teacher and Student portals
 - **Admin Panel Reorganization**: Separated subscription management into Teacher Plans (`/panel/features/teachers/plans/`) and Student Plans (`/panel/features/student/plans/`)
 - **Admin Signup**: Added admin signup page at `/brilltech/signup/` for creating new administrator accounts
 - **Django Admin**: Moved to `/brilltech/admin/` for future company CRM use
@@ -137,3 +138,16 @@ Required secrets (set in Replit Secrets):
 - `OPENAI_API_KEY` - OpenAI API key for AI features
 - `EMAIL_HOST_USER` - Email sending (SMTP username)
 - `EMAIL_HOST_PASSWORD` - Email sending (SMTP password)
+
+### Social Login (Optional)
+To enable Google/Facebook login, add these secrets:
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID (from Google Cloud Console)
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `FACEBOOK_APP_ID` - Facebook App ID (from Facebook Developer Console)
+- `FACEBOOK_APP_SECRET` - Facebook App Secret
+
+**Setup Instructions:**
+1. **Google**: Go to [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth 2.0 Client ID
+   - Add authorized redirect URI: `https://your-domain/accounts/google/login/callback/`
+2. **Facebook**: Go to [Facebook Developers](https://developers.facebook.com/) → Create App → Facebook Login
+   - Add valid OAuth redirect URI: `https://your-domain/accounts/facebook/login/callback/`
