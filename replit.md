@@ -174,3 +174,29 @@ The Student Portal uses a pathway-based navigation for accessing learning conten
 - **Document Formats**: PDF, DOCX, TXT (for bulk uploads).
 - **Image Support**: Standard web formats.
 - **Export Formats**: JSON for AI-generated content.
+
+## Development Tools
+
+### Management Commands
+- **`python manage.py populate_dummy_data`**: Populates the database with test data including:
+  - Exam boards (ZIMSEC, Cambridge, Edexcel, AQA, IEB)
+  - Subjects (Biology, Chemistry, Physics, Mathematics, etc.)
+  - Grades 8-13
+  - Biology topics with subtopics for ZIMSEC
+  - Subscription plans (Free, Starter, Growth, Premium)
+  - Test user accounts
+
+### Test Accounts
+- **Admin**: `admin` / `admin123` - Has access to all portals (Admin, Content, Teacher, Student) for testing
+- **Teacher**: `test_teacher` / `teacher123` - Standard teacher account
+- **Student**: `test_student` / `student123` - Student enrolled in ZIMSEC Biology
+
+### Dummy Content for Testing
+ZIMSEC Biology includes:
+- 5 topics (Cell Biology, Human Biology, Plant Biology, Genetics, Ecology)
+- 20 subtopics across all topics
+- 5 study notes (one per topic)
+- 20 flashcards (4 per topic)
+- 8 MCQ questions with auto-marking (correct_option_index)
+- 2 structured questions with AI marking (model_answer, marking_guide)
+- 8 quizzes organized by topic and difficulty level
