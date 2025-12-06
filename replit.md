@@ -129,8 +129,21 @@ The platform uses intelligent role-based redirection to route users to their cor
   - **Free (R0)**: 2 exam boards, 2 different quizzes per topic (lifetime), unlimited retries, all subjects access, full notes/flashcards.
   - **Pro (R100/month)**: 5 exam boards, unlimited quizzes, all subjects, early access to new features.
 - **Quota System**: StudentQuizQuota tracks quiz attempts per topic. Free users can take 2 different quizzes per topic but retry unlimited times. Pro users have unlimited access.
-- **Progress Tracking**: StudentProgress tracks quizzes attempted/passed, average scores, notes viewed, flashcards reviewed per subject/topic.
+- **Progress Tracking**: StudentTopicProgress tracks notes viewed, videos watched, flashcards reviewed, quizzes attempted per subject/topic. Calculates completion percentages.
 - **Payment Integration**: PayFast integration for Pro subscriptions with IPN handling, signature verification, and automatic subscription activation.
+
+#### Student Pathway System
+The Student Portal uses a pathway-based navigation for accessing learning content:
+- **Subject Pathway Selection** (`/student/subject/<id>/pathway/`): Cards for Study, Revise, and Info pathways
+- **Study Pathway** (`/student/subject/<id>/study/`): Topics list with progress bars → Topic detail with tabbed content (Notes/Videos/Flashcards/Quizzes/Questions by difficulty level)
+- **Revise Pathway** (`/student/subject/<id>/revise/`): Quick flashcard review by topic, practice quizzes by difficulty (easy/medium/hard)
+- **Info Pathway** (`/student/subject/<id>/info/`): Syllabi browser, official exam papers, sample papers
+- **Progress Dashboard** (`/student/progress/`): Overall progress tracking with completion percentages, quiz scores by subject
+
+**Quiz Marking System**:
+- **MCQ Auto-Marking**: Uses `correct_option_index` field for instant auto-marking of multiple choice questions with fallback to `correct_answer` for legacy questions
+- **AI-Assisted Marking**: Structured/essay questions use GPT-3.5-turbo with model_answer and marking_guide to provide marks and constructive feedback
+- **Progress Tracking**: AJAX-based tracking updates StudentTopicProgress when students view notes, watch videos, or review flashcards
 
 ### AI Integration Architecture
 - **Service Layer**: `core/openai_service.py` for all AI interactions.
