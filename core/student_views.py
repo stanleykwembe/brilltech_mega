@@ -1024,11 +1024,19 @@ def student_flashcards(request):
         if subject_name not in flashcard_groups:
             flashcard_groups[subject_name] = {}
         
-        topic = flashcard.topic
-        if topic not in flashcard_groups[subject_name]:
-            flashcard_groups[subject_name][topic] = []
+        # Get topic info - use Topic FK if available, else legacy text
+        if flashcard.topic:
+            topic_name = flashcard.topic.name
+            topic_id = flashcard.topic.id
+        else:
+            topic_name = flashcard.topic_text or 'General'
+            topic_id = None
         
-        flashcard_groups[subject_name][topic].append(flashcard)
+        topic_key = (topic_name, topic_id)
+        if topic_key not in flashcard_groups[subject_name]:
+            flashcard_groups[subject_name][topic_key] = []
+        
+        flashcard_groups[subject_name][topic_key].append(flashcard)
     
     # Get review progress
     progress_data = {}
@@ -1077,7 +1085,9 @@ def student_flashcard_study(request, subject_id):
     # Get topic filter from query params (support both topic_id and legacy topic name)
     topic_id = request.GET.get('topic_id')
     topic_filter = request.GET.get('topic')
+    timed_mode = request.GET.get('timed', 'false') == 'true'
     topic_obj = None
+    topic_display_name = None
     
     # Get flashcards for this subject
     flashcards = Flashcard.objects.filter(
@@ -1091,9 +1101,11 @@ def student_flashcard_study(request, subject_id):
         topic_obj = Topic.objects.filter(id=topic_id).first()
         if topic_obj:
             flashcards = flashcards.filter(topic=topic_obj)
+            topic_display_name = topic_obj.name
     elif topic_filter:
         # Legacy text filter for backwards compatibility
         flashcards = flashcards.filter(topic_text=topic_filter)
+        topic_display_name = topic_filter
     
     flashcards = list(flashcards.order_by('?'))  # Randomize
     
@@ -1127,8 +1139,10 @@ def student_flashcard_study(request, subject_id):
         'student_profile': student_profile,
         'subject': subject,
         'flashcards': flashcards,
-        'topic_filter': topic_filter,
+        'topic_filter': topic_display_name,
+        'topic_id': topic_id,
         'total_cards': len(flashcards),
+        'timed_mode': timed_mode,
     }
     
     return render(request, 'core/student/flashcards/study.html', context)

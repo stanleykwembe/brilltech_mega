@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-100">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,308 +7,425 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .flashcard {
-            perspective: 1000px;
-            cursor: pointer;
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-attachment: fixed;
         }
         
-        .flashcard-inner {
+        .flashcard-container {
+            perspective: 2000px;
+        }
+        
+        .flashcard {
             position: relative;
             width: 100%;
-            height: 400px;
-            text-align: center;
-            transition: transform 0.6s;
+            min-height: 320px;
+            cursor: pointer;
             transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .flashcard.flipped .flashcard-inner {
+        .flashcard.flipped {
             transform: rotateY(180deg);
         }
         
-        .flashcard-front, .flashcard-back {
+        .flashcard-face {
             position: absolute;
             width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
+            min-height: 320px;
             backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
         
         .flashcard-front {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
         }
         
         .flashcard-back {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            background: linear-gradient(145deg, #10b981 0%, #059669 100%);
             transform: rotateY(180deg);
+            color: white;
         }
         
-        .flashcard-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-            line-height: 1.6;
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .timer-pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        .card-slide-in {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
-<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
-    <div class="min-h-full">
-        <header class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+<body class="min-h-screen">
+    <div x-data="flashcardApp()" x-init="init()" class="min-h-screen">
+        <header class="glass-card shadow-lg sticky top-0 z-50">
+            <div class="max-w-4xl mx-auto px-4 py-3">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <a href="{% url 'student_dashboard' %}" class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    <div class="flex items-center gap-3">
+                        <a href="{% url 'student_flashcards' %}" class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                            <i class="fas fa-arrow-left text-white"></i>
                         </a>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900">{{ subject.name }} Flashcards</h1>
+                            <h1 class="font-bold text-gray-800 text-lg">{{ subject.name }}</h1>
                             {% if topic_filter %}
-                                <p class="text-sm text-gray-600">Topic: {{ topic_filter }}</p>
+                            <p class="text-sm text-gray-500">{{ topic_filter }}</p>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="{% url 'student_flashcards' %}" class="text-sm text-gray-600 hover:text-purple-600">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Flashcards
-                        </a>
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleTimedMode()" 
+                                :class="timedMode ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'"
+                                class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2">
+                            <i class="fas fa-clock"></i>
+                            <span x-text="timedMode ? 'Timed' : 'Untimed'"></span>
+                        </button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <p class="text-sm text-gray-600">Progress</p>
-                        <p class="text-2xl font-bold text-gray-900">
-                            <span id="currentCard">1</span> / <span id="totalCards">{{ total_cards }}</span>
-                        </p>
+        <main class="max-w-xl mx-auto px-4 py-6">
+            <div class="glass-card rounded-2xl p-4 mb-6 shadow-xl">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Card</p>
+                            <p class="text-2xl font-bold text-gray-800">
+                                <span x-text="currentIndex + 1"></span>/<span>{{ total_cards }}</span>
+                            </p>
+                        </div>
+                        <div class="h-10 w-px bg-gray-200"></div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Mastered</p>
+                            <p class="text-2xl font-bold text-emerald-600" x-text="masteredCount"></p>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600">Cards Reviewed</p>
-                        <p class="text-2xl font-bold text-emerald-600" id="reviewedCount">0</p>
+                    
+                    <div x-show="timedMode" class="relative">
+                        <svg class="progress-ring w-14 h-14">
+                            <circle cx="28" cy="28" r="24" stroke="#e5e7eb" stroke-width="4" fill="none"/>
+                            <circle cx="28" cy="28" r="24" stroke="#f59e0b" stroke-width="4" fill="none"
+                                    stroke-linecap="round"
+                                    :stroke-dasharray="151"
+                                    :stroke-dashoffset="151 - (timeLeft / timerDuration) * 151"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-sm font-bold" :class="timeLeft <= 3 ? 'text-red-500 timer-pulse' : 'text-orange-500'" x-text="timeLeft"></span>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                         :style="`width: ${((currentIndex + 1) / totalCards) * 100}%`"></div>
                 </div>
             </div>
 
-            <div class="flashcard mb-6" id="flashcard" onclick="flipCard()">
-                <div class="flashcard-inner" id="flashcardInner">
-                    <div class="flashcard-front">
-                        <div>
-                            <div class="text-sm uppercase tracking-wide mb-4 opacity-75">Question</div>
-                            <div class="flashcard-text" id="frontText"></div>
-                            {% if flashcards.0.image_front %}
-                                <img id="frontImage" class="mt-4 max-w-sm mx-auto rounded-lg" alt="Front image">
-                            {% endif %}
-                            <div class="mt-6 text-sm opacity-75">
-                                <i class="fas fa-hand-pointer mr-2"></i> Click or press Space to flip
-                            </div>
+            <div class="flashcard-container mb-6 card-slide-in" :key="currentIndex">
+                <div class="flashcard" :class="isFlipped ? 'flipped' : ''" @click="flipCard()">
+                    <div class="flashcard-face flashcard-front">
+                        <div class="absolute top-4 left-4">
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                                <i class="fas fa-question-circle mr-1"></i> Question
+                            </span>
+                        </div>
+                        <div class="text-center px-4">
+                            <p class="text-xl md:text-2xl font-medium text-gray-800 leading-relaxed" x-text="currentCard.front_text"></p>
+                            <template x-if="currentCard.image_front">
+                                <img :src="currentCard.image_front" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Question image">
+                            </template>
+                        </div>
+                        <div class="absolute bottom-4 text-gray-400 text-sm">
+                            <i class="fas fa-hand-pointer mr-1"></i> Tap to reveal answer
                         </div>
                     </div>
-                    <div class="flashcard-back">
-                        <div>
-                            <div class="text-sm uppercase tracking-wide mb-4 opacity-75">Answer</div>
-                            <div class="flashcard-text" id="backText"></div>
-                            {% if flashcards.0.image_back %}
-                                <img id="backImage" class="mt-4 max-w-sm mx-auto rounded-lg" alt="Back image">
-                            {% endif %}
+                    
+                    <div class="flashcard-face flashcard-back">
+                        <div class="absolute top-4 left-4">
+                            <span class="px-3 py-1 bg-white/20 text-white rounded-full text-xs font-semibold">
+                                <i class="fas fa-lightbulb mr-1"></i> Answer
+                            </span>
+                        </div>
+                        <div class="text-center px-4">
+                            <p class="text-xl md:text-2xl font-medium leading-relaxed" x-text="currentCard.back_text"></p>
+                            <template x-if="currentCard.image_back">
+                                <img :src="currentCard.image_back" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Answer image">
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="markCard('review')" class="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-all duration-200">
-                        <i class="fas fa-redo mr-2"></i> Review Again
+            <div class="glass-card rounded-2xl p-4 shadow-xl mb-6">
+                <p class="text-center text-sm text-gray-500 mb-3">How well did you know this?</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <button @click="markCard('again')" class="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-semibold transition-all duration-300 flex flex-col items-center gap-1">
+                        <i class="fas fa-redo text-lg"></i>
+                        <span class="text-xs">Again</span>
                     </button>
-                    <button onclick="markCard('know')" class="px-6 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-all duration-200">
-                        <i class="fas fa-check mr-2"></i> I Know This
+                    <button @click="markCard('hard')" class="py-3 px-4 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl font-semibold transition-all duration-300 flex flex-col items-center gap-1">
+                        <i class="fas fa-brain text-lg"></i>
+                        <span class="text-xs">Hard</span>
+                    </button>
+                    <button @click="markCard('easy')" class="py-3 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-semibold transition-all duration-300 flex flex-col items-center gap-1">
+                        <i class="fas fa-check-circle text-lg"></i>
+                        <span class="text-xs">Easy</span>
                     </button>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between">
-                <button onclick="previousCard()" id="prevBtn" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-arrow-left mr-2"></i> Previous
+            <div class="flex items-center justify-between gap-4">
+                <button @click="previousCard()" 
+                        :disabled="currentIndex === 0"
+                        :class="currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/30'"
+                        class="btn-glass text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                    <i class="fas fa-chevron-left mr-2"></i> Previous
                 </button>
-                <div class="text-center text-sm text-gray-600">
-                    <p><kbd class="px-2 py-1 bg-gray-200 rounded">Space</kbd> Flip card</p>
-                    <p><kbd class="px-2 py-1 bg-gray-200 rounded">←</kbd> <kbd class="px-2 py-1 bg-gray-200 rounded">→</kbd> Navigate</p>
+                
+                <div class="text-center text-white/80 text-xs hidden sm:block">
+                    <p><kbd class="px-2 py-1 bg-white/20 rounded">Space</kbd> Flip</p>
+                    <p class="mt-1"><kbd class="px-2 py-1 bg-white/20 rounded">←</kbd> <kbd class="px-2 py-1 bg-white/20 rounded">→</kbd> Navigate</p>
                 </div>
-                <button onclick="nextCard()" id="nextBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200">
-                    Next <i class="fas fa-arrow-right ml-2"></i>
+                
+                <button @click="nextCard()" 
+                        class="btn-glass hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                    Next <i class="fas fa-chevron-right ml-2"></i>
                 </button>
-            </div>
-
-            <div id="completionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-4">
-                    <div class="text-center">
-                        <div class="w-20 h-20 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-trophy text-white text-4xl"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Great Work!</h3>
-                        <p class="text-gray-600 mb-6">You've reviewed all flashcards in this set.</p>
-                        <div class="mb-6">
-                            <p class="text-4xl font-bold text-emerald-600 mb-2" id="finalReviewedCount">0</p>
-                            <p class="text-gray-600">Cards Reviewed</p>
-                        </div>
-                        <div class="flex gap-4">
-                            <a href="{% url 'student_flashcards' %}" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 text-center rounded-lg font-semibold hover:bg-gray-300 transition-all duration-200">
-                                <i class="fas fa-arrow-left mr-2"></i> Back
-                            </a>
-                            <button onclick="restartStudy()" class="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200">
-                                <i class="fas fa-redo mr-2"></i> Restart
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
+
+        <div x-show="showCompletion" x-cloak 
+             class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100">
+            <div class="glass-card rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
+                 x-transition:enter="transition ease-out duration-300 delay-100"
+                 x-transition:enter-start="opacity-0 transform scale-90"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+                <div class="w-24 h-24 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <i class="fas fa-trophy text-white text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Great Work!</h3>
+                <p class="text-gray-500 mb-6">You've completed this flashcard set</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-emerald-50 rounded-xl p-4">
+                        <p class="text-3xl font-bold text-emerald-600" x-text="masteredCount"></p>
+                        <p class="text-xs text-emerald-600">Mastered</p>
+                    </div>
+                    <div class="bg-orange-50 rounded-xl p-4">
+                        <p class="text-3xl font-bold text-orange-600" x-text="reviewCount"></p>
+                        <p class="text-xs text-orange-600">Need Review</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <a href="{% url 'student_flashcards' %}" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all duration-300">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </a>
+                    <button @click="restartStudy()" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg">
+                        <i class="fas fa-redo mr-2"></i> Restart
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        const flashcardsData = [
-            {% for card in flashcards %}
-            {
-                front_text: "{{ card.front_text|escapejs }}",
-                back_text: "{{ card.back_text|escapejs }}",
-                image_front: {% if card.image_front %}"{{ card.image_front.url }}"{% else %}null{% endif %},
-                image_back: {% if card.image_back %}"{{ card.image_back.url }}"{% else %}null{% endif %}
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-
-        let currentIndex = 0;
-        let reviewedCount = 0;
-        let isFlipped = false;
-
-        function loadCard(index) {
-            if (index < 0 || index >= flashcardsData.length) return;
-            
-            currentIndex = index;
-            const card = flashcardsData[index];
-            
-            document.getElementById('frontText').textContent = card.front_text;
-            document.getElementById('backText').textContent = card.back_text;
-            
-            const frontImg = document.getElementById('frontImage');
-            const backImg = document.getElementById('backImage');
-            
-            if (frontImg) {
-                if (card.image_front) {
-                    frontImg.src = card.image_front;
-                    frontImg.style.display = 'block';
-                } else {
-                    frontImg.style.display = 'none';
-                }
-            }
-            
-            if (backImg) {
-                if (card.image_back) {
-                    backImg.src = card.image_back;
-                    backImg.style.display = 'block';
-                } else {
-                    backImg.style.display = 'none';
-                }
-            }
-            
-            document.getElementById('currentCard').textContent = index + 1;
-            
-            if (isFlipped) {
-                flipCard();
-            }
-            
-            updateButtons();
-            updateProgress();
-        }
-
-        function flipCard() {
-            const flashcard = document.getElementById('flashcard');
-            flashcard.classList.toggle('flipped');
-            isFlipped = !isFlipped;
-        }
-
-        function nextCard() {
-            if (currentIndex < flashcardsData.length - 1) {
-                loadCard(currentIndex + 1);
-            } else {
-                showCompletion();
-            }
-        }
-
-        function previousCard() {
-            if (currentIndex > 0) {
-                loadCard(currentIndex - 1);
-            }
-        }
-
-        function markCard(action) {
-            if (action === 'know') {
-                reviewedCount++;
-                document.getElementById('reviewedCount').textContent = reviewedCount;
+        function flashcardApp() {
+            return {
+                flashcards: [
+                    {% for card in flashcards %}
+                    {
+                        id: {{ card.id }},
+                        front_text: "{{ card.front_text|escapejs }}",
+                        back_text: "{{ card.back_text|escapejs }}",
+                        image_front: {% if card.image_front %}"{{ card.image_front.url }}"{% else %}null{% endif %},
+                        image_back: {% if card.image_back %}"{{ card.image_back.url }}"{% else %}null{% endif %}
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                currentIndex: 0,
+                isFlipped: false,
+                masteredCount: 0,
+                reviewCount: 0,
+                showCompletion: false,
+                timedMode: {% if timed_mode %}true{% else %}false{% endif %},
+                timerDuration: 15,
+                timeLeft: 15,
+                timerInterval: null,
                 
-                fetch('{% url "student_flashcard_study" subject.id %}', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'topic={{ topic_filter|urlencode }}'
-                });
-            }
-            
-            nextCard();
-        }
-
-        function updateButtons() {
-            document.getElementById('prevBtn').disabled = currentIndex === 0;
-        }
-
-        function updateProgress() {
-            const progress = ((currentIndex + 1) / flashcardsData.length) * 100;
-            document.getElementById('progressBar').style.width = progress + '%';
-        }
-
-        function showCompletion() {
-            document.getElementById('finalReviewedCount').textContent = reviewedCount;
-            document.getElementById('completionModal').classList.remove('hidden');
-        }
-
-        function restartStudy() {
-            reviewedCount = 0;
-            document.getElementById('reviewedCount').textContent = '0';
-            document.getElementById('completionModal').classList.add('hidden');
-            loadCard(0);
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                flipCard();
-            } else if (e.code === 'ArrowLeft') {
-                e.preventDefault();
-                previousCard();
-            } else if (e.code === 'ArrowRight') {
-                e.preventDefault();
-                nextCard();
-            }
-        });
-
-        if (flashcardsData.length > 0) {
-            loadCard(0);
+                get totalCards() {
+                    return this.flashcards.length;
+                },
+                
+                get currentCard() {
+                    return this.flashcards[this.currentIndex] || { front_text: '', back_text: '' };
+                },
+                
+                init() {
+                    if (this.flashcards.length > 0) {
+                        this.setupKeyboardNav();
+                        if (this.timedMode) {
+                            this.startTimer();
+                        }
+                    }
+                },
+                
+                setupKeyboardNav() {
+                    document.addEventListener('keydown', (e) => {
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            this.flipCard();
+                        } else if (e.code === 'ArrowLeft') {
+                            e.preventDefault();
+                            this.previousCard();
+                        } else if (e.code === 'ArrowRight') {
+                            e.preventDefault();
+                            this.nextCard();
+                        } else if (e.code === 'Digit1' || e.code === 'Numpad1') {
+                            this.markCard('again');
+                        } else if (e.code === 'Digit2' || e.code === 'Numpad2') {
+                            this.markCard('hard');
+                        } else if (e.code === 'Digit3' || e.code === 'Numpad3') {
+                            this.markCard('easy');
+                        }
+                    });
+                },
+                
+                flipCard() {
+                    this.isFlipped = !this.isFlipped;
+                },
+                
+                nextCard() {
+                    if (this.currentIndex < this.flashcards.length - 1) {
+                        this.isFlipped = false;
+                        this.currentIndex++;
+                        this.resetTimer();
+                    } else {
+                        this.showCompletion = true;
+                        this.stopTimer();
+                    }
+                },
+                
+                previousCard() {
+                    if (this.currentIndex > 0) {
+                        this.isFlipped = false;
+                        this.currentIndex--;
+                        this.resetTimer();
+                    }
+                },
+                
+                markCard(rating) {
+                    if (rating === 'easy') {
+                        this.masteredCount++;
+                        this.saveProgress();
+                    } else {
+                        this.reviewCount++;
+                    }
+                    this.nextCard();
+                },
+                
+                saveProgress() {
+                    const card = this.currentCard;
+                    fetch('{% url "student_flashcard_study" subject.id %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `flashcard_id=${card.id}`
+                    });
+                },
+                
+                toggleTimedMode() {
+                    this.timedMode = !this.timedMode;
+                    if (this.timedMode) {
+                        this.startTimer();
+                    } else {
+                        this.stopTimer();
+                    }
+                },
+                
+                startTimer() {
+                    this.timeLeft = this.timerDuration;
+                    this.timerInterval = setInterval(() => {
+                        this.timeLeft--;
+                        if (this.timeLeft <= 0) {
+                            if (!this.isFlipped) {
+                                this.flipCard();
+                            }
+                            this.timeLeft = this.timerDuration;
+                        }
+                    }, 1000);
+                },
+                
+                stopTimer() {
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                },
+                
+                resetTimer() {
+                    if (this.timedMode) {
+                        this.timeLeft = this.timerDuration;
+                    }
+                },
+                
+                restartStudy() {
+                    this.currentIndex = 0;
+                    this.isFlipped = false;
+                    this.masteredCount = 0;
+                    this.reviewCount = 0;
+                    this.showCompletion = false;
+                    this.resetTimer();
+                }
+            };
         }
     </script>
 </body>

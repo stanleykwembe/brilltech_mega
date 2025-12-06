@@ -52,10 +52,10 @@
                             
                             <div class="p-6">
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {% for topic, cards in topics.items %}
+                                    {% for topic_info, cards in topics.items %}
                                         <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition-all duration-200">
                                             <div class="flex items-start justify-between mb-3">
-                                                <h4 class="font-bold text-gray-900 flex-1">{{ topic }}</h4>
+                                                <h4 class="font-bold text-gray-900 flex-1">{{ topic_info.0 }}</h4>
                                                 <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
                                                     {{ cards|length }}
                                                 </span>
@@ -63,7 +63,7 @@
                                             
                                             <div class="text-sm text-gray-600 mb-4">
                                                 <i class="fas fa-layer-group mr-1"></i> {{ cards|length }} card{{ cards|length|pluralize }}
-                                                {% with key=subject_name|add:"_"|add:topic %}
+                                                {% with key=subject_name|add:"_"|add:topic_info.0 %}
                                                     {% if key in progress_data %}
                                                         <br>
                                                         <i class="fas fa-check-circle text-green-600 mr-1"></i> {{ progress_data|get_item:key }} reviewed
@@ -73,9 +73,15 @@
                                             
                                             {% for student_subject in student_subjects %}
                                                 {% if student_subject.subject.name == subject_name %}
-                                                    <a href="{% url 'student_flashcard_study' student_subject.subject.id %}?topic={{ topic|urlencode }}" class="block w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center rounded-lg font-semibold hover:shadow-lg transition-all duration-200">
-                                                        <i class="fas fa-play mr-2"></i> Study Now
-                                                    </a>
+                                                    {% if topic_info.1 %}
+                                                        <a href="{% url 'student_flashcard_study' student_subject.subject.id %}?topic_id={{ topic_info.1 }}" class="block w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center rounded-lg font-semibold hover:shadow-lg transition-all duration-200">
+                                                            <i class="fas fa-play mr-2"></i> Study Now
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="{% url 'student_flashcard_study' student_subject.subject.id %}?topic={{ topic_info.0|urlencode }}" class="block w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center rounded-lg font-semibold hover:shadow-lg transition-all duration-200">
+                                                            <i class="fas fa-play mr-2"></i> Study Now
+                                                        </a>
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endfor %}
                                         </div>
