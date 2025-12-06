@@ -755,7 +755,8 @@ class Note(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
-    topic = models.CharField(max_length=200)
+    topic_text = models.CharField(max_length=200, blank=True, help_text="Legacy topic text field")
+    topic = models.ForeignKey('Topic', on_delete=models.SET_NULL, null=True, blank=True, related_name='notes')
     
     full_version = models.FileField(upload_to='notes/full/%Y/%m/', null=True, blank=True)
     summary_version = models.FileField(upload_to='notes/summary/%Y/%m/', null=True, blank=True)
@@ -771,6 +772,12 @@ class Note(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.subject.name}"
+    
+    def get_topic_name(self):
+        """Get topic name from FK or legacy text field"""
+        if self.topic:
+            return self.topic.name
+        return self.topic_text
 
 
 class Flashcard(models.Model):
@@ -778,7 +785,8 @@ class Flashcard(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
-    topic = models.CharField(max_length=200)
+    topic_text = models.CharField(max_length=200, blank=True, help_text="Legacy topic text field")
+    topic = models.ForeignKey('Topic', on_delete=models.SET_NULL, null=True, blank=True, related_name='flashcards')
     
     front_text = models.TextField()
     back_text = models.TextField()
@@ -792,7 +800,8 @@ class Flashcard(models.Model):
         ordering = ['subject', 'topic']
     
     def __str__(self):
-        return f"{self.subject.name} - {self.topic[:50]}"
+        topic_name = self.topic.name if self.topic else self.topic_text
+        return f"{self.subject.name} - {topic_name[:50]}"
 
 
 class InteractiveQuestion(models.Model):
@@ -802,6 +811,7 @@ class InteractiveQuestion(models.Model):
         ('true_false', 'True/False'),
         ('fill_blank', 'Fill in the Blank'),
         ('matching', 'Matching'),
+        ('structured', 'Structured Question'),
         ('essay', 'Essay/Free Response'),
     ]
     
@@ -814,7 +824,8 @@ class InteractiveQuestion(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
-    topic = models.CharField(max_length=200)
+    topic_text = models.CharField(max_length=200, blank=True, help_text="Legacy topic text field")
+    topic = models.ForeignKey('Topic', on_delete=models.SET_NULL, null=True, blank=True, related_name='questions')
     
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS)
@@ -822,14 +833,22 @@ class InteractiveQuestion(models.Model):
     question_text = models.TextField()
     question_image = models.ImageField(upload_to='questions/images/', null=True, blank=True)
     
-    # For MCQ - JSON array of options
-    options = models.JSONField(null=True, blank=True)
+    # For MCQ - JSON array of options with correct answer index
+    options = models.JSONField(null=True, blank=True, help_text='[{"text": "Option A", "is_correct": true}, ...]')
     
     # Correct answer(s) - can be text, index, or JSON for complex types
     correct_answer = models.TextField()
     
+    # For MCQ auto-marking - store which option index is correct
+    correct_option_index = models.IntegerField(null=True, blank=True, help_text="0-based index of correct MCQ option")
+    
     # For matching questions - JSON with pairs
     matching_pairs = models.JSONField(null=True, blank=True)
+    
+    # Solution/model answer for structured questions (for AI marking)
+    model_answer = models.TextField(blank=True, help_text="Model answer for structured/essay questions")
+    marking_guide = models.TextField(blank=True, help_text="Marking criteria for AI grading")
+    max_marks = models.IntegerField(default=1, help_text="Maximum marks for this question")
     
     explanation = models.TextField(blank=True)
     points = models.IntegerField(default=1)
@@ -1478,3 +1497,85 @@ class StudentVideoBookmark(models.Model):
     
     def __str__(self):
         return f"{self.student.user.username} bookmarked {self.video.title}"
+
+
+class Syllabus(models.Model):
+    """Syllabi for different exam boards and subjects"""
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True)
+    
+    title = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
+    year = models.IntegerField(null=True, blank=True, help_text="Syllabus year/version")
+    
+    file = models.FileField(upload_to='syllabi/%Y/%m/', null=True, blank=True)
+    external_url = models.URLField(max_length=500, blank=True, help_text="Link to external syllabus")
+    
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['exam_board', 'subject', '-year']
+        verbose_name_plural = 'Syllabi'
+    
+    def __str__(self):
+        return f"{self.exam_board.abbreviation} - {self.subject.name} Syllabus ({self.year or 'N/A'})"
+
+
+class StudentTopicProgress(models.Model):
+    """Track detailed student progress per topic for the pathway system"""
+    student = models.ForeignKey('StudentProfile', on_delete=models.CASCADE, related_name='topic_progress')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    
+    # Notes progress
+    notes_read_count = models.IntegerField(default=0)
+    notes_completed = models.BooleanField(default=False)
+    
+    # Videos progress
+    videos_watched_count = models.IntegerField(default=0)
+    videos_total = models.IntegerField(default=0)
+    
+    # Flashcards progress
+    flashcards_reviewed_count = models.IntegerField(default=0)
+    flashcards_mastered_count = models.IntegerField(default=0)
+    
+    # Quiz progress by difficulty
+    quizzes_easy_completed = models.IntegerField(default=0)
+    quizzes_easy_passed = models.IntegerField(default=0)
+    quizzes_medium_completed = models.IntegerField(default=0)
+    quizzes_medium_passed = models.IntegerField(default=0)
+    quizzes_hard_completed = models.IntegerField(default=0)
+    quizzes_hard_passed = models.IntegerField(default=0)
+    
+    # Overall scores
+    average_quiz_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_time_spent_minutes = models.IntegerField(default=0)
+    
+    last_activity = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['student', 'subject', 'topic']
+        ordering = ['-last_activity']
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.subject.name} - {self.topic.name}"
+    
+    def get_completion_percentage(self):
+        """Calculate overall topic completion percentage"""
+        total_items = 4  # notes, videos, flashcards, quizzes
+        completed = 0
+        
+        if self.notes_completed:
+            completed += 1
+        if self.videos_total > 0 and self.videos_watched_count >= self.videos_total:
+            completed += 1
+        if self.flashcards_mastered_count > 0:
+            completed += 0.5 + (0.5 if self.flashcards_mastered_count >= 10 else 0)
+        if self.quizzes_easy_passed > 0 or self.quizzes_medium_passed > 0 or self.quizzes_hard_passed > 0:
+            completed += 1
+        
+        return int((completed / total_items) * 100)

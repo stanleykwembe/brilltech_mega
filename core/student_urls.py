@@ -33,4 +33,12 @@ urlpatterns = [
     path('videos/', student_views.student_video_library, name='student_video_library'),
     path('videos/<int:video_id>/', student_views.student_video_player, name='student_video_player'),
     path('videos/ajax/filters/', student_views.student_video_ajax_filters, name='student_video_ajax_filters'),
+    
+    # Student Pathway System
+    path('subject/<int:subject_id>/', student_views.student_subject_pathway, name='student_subject_pathway'),
+    path('subject/<int:subject_id>/study/', student_views.student_study_pathway, name='student_study_pathway'),
+    path('subject/<int:subject_id>/study/<int:topic_id>/', student_views.student_topic_detail, name='student_topic_detail'),
+    path('subject/<int:subject_id>/info/', student_views.student_info_pathway, name='student_info_pathway'),
+    path('subject/<int:subject_id>/revise/', student_views.student_revise_pathway, name='student_revise_pathway'),
+    path('progress/', student_views.student_progress_dashboard, name='student_progress_dashboard'),
 ]

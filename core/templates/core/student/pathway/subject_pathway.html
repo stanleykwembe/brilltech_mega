@@ -1,0 +1,112 @@
+{% extends 'core/student/base.html' %}
+
+{% block title %}{{ subject.name }} - Choose Your Path{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-8" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="mb-8">
+            <a href="{% url 'student_dashboard' %}" class="inline-flex items-center text-gray-600 hover:text-emerald-600 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+        
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl shadow-lg mb-4">
+                <i class="fas fa-book-open text-white text-3xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ subject.name }}</h1>
+            <p class="text-lg text-gray-600">{{ exam_board.abbreviation }} | Choose your learning path</p>
+            
+            <div class="mt-6 inline-flex items-center bg-white rounded-full px-6 py-3 shadow-sm">
+                <span class="text-gray-600 mr-3">Overall Progress</span>
+                <div class="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all duration-500" style="width: {{ overall_progress }}%"></div>
+                </div>
+                <span class="ml-3 font-bold text-emerald-600">{{ overall_progress }}%</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <a href="{% url 'student_study_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div class="h-40 bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="0.5"/>
+                            <circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="0.5"/>
+                        </svg>
+                    </div>
+                    <i class="fas fa-graduation-cap text-white text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Study</h2>
+                    <p class="text-gray-600 mb-4">Learn new topics with notes, videos, flashcards, and quizzes organized by topic.</p>
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span><i class="fas fa-folder-open mr-1"></i>{{ topics_count }} Topics</span>
+                        <span><i class="fas fa-video mr-1"></i>{{ videos_count }} Videos</span>
+                    </div>
+                </div>
+            </a>
+            
+            <a href="{% url 'student_revise_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div class="h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="0.5"/>
+                            <circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="0.5"/>
+                        </svg>
+                    </div>
+                    <i class="fas fa-redo-alt text-white text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Revise</h2>
+                    <p class="text-gray-600 mb-4">Quick review with flashcards and practice quizzes at different difficulty levels.</p>
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span><i class="fas fa-layer-group mr-1"></i>{{ flashcards_count }} Flashcards</span>
+                        <span><i class="fas fa-clipboard-list mr-1"></i>{{ quizzes_count }} Quizzes</span>
+                    </div>
+                </div>
+            </a>
+            
+            <a href="{% url 'student_info_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div class="h-40 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="0.5"/>
+                            <circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="0.5"/>
+                        </svg>
+                    </div>
+                    <i class="fas fa-info-circle text-white text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                </div>
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Info</h2>
+                    <p class="text-gray-600 mb-4">Access syllabi, sample papers, past papers, and exam guidelines.</p>
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span><i class="fas fa-file-alt mr-1"></i>Papers</span>
+                        <span><i class="fas fa-list-alt mr-1"></i>Syllabi</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm text-center">
+                <div class="text-3xl font-bold text-emerald-600">{{ notes_count }}</div>
+                <div class="text-gray-600 text-sm">Study Notes</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm text-center">
+                <div class="text-3xl font-bold text-blue-600">{{ videos_count }}</div>
+                <div class="text-gray-600 text-sm">Video Lessons</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm text-center">
+                <div class="text-3xl font-bold text-purple-600">{{ flashcards_count }}</div>
+                <div class="text-gray-600 text-sm">Flashcards</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm text-center">
+                <div class="text-3xl font-bold text-orange-600">{{ quizzes_count }}</div>
+                <div class="text-gray-600 text-sm">Quizzes</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -96,6 +96,9 @@ urlpatterns = [
     path('content/exam-paper/create/', views.upload_exam_paper, name='upload_exam_paper'),
     path('content/exam-papers/', views.manage_exam_papers, name='manage_exam_papers'),
     path('content/exam-paper/<int:paper_id>/delete/', views.delete_exam_paper, name='delete_exam_paper'),
+    path('content/syllabi/', views.manage_syllabi, name='manage_syllabi'),
+    path('content/syllabus/create/', views.create_syllabus, name='create_syllabus'),
+    path('content/syllabus/<int:syllabus_id>/delete/', views.delete_syllabus, name='delete_syllabus'),
     path('content/ajax/get-questions/', views.get_questions_ajax, name='get_questions_ajax'),
     
     # Teacher Assessment Builder

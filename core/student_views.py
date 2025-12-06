@@ -23,6 +23,68 @@ from .models import (
 )
 
 
+def mark_structured_question_with_ai(question_text, model_answer, marking_guide, student_answer, max_marks):
+    """Use AI to mark structured/essay questions and provide feedback"""
+    import os
+    try:
+        from openai import OpenAI
+        
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            return {'marks': 0, 'feedback': 'AI marking unavailable - no API key configured'}
+        
+        client = OpenAI(api_key=api_key)
+        
+        prompt = f"""You are an experienced exam marker. Mark the following student answer and provide constructive feedback.
+
+QUESTION:
+{question_text}
+
+MODEL ANSWER:
+{model_answer}
+
+MARKING CRITERIA:
+{marking_guide if marking_guide else 'Use your judgment based on the model answer.'}
+
+STUDENT ANSWER:
+{student_answer}
+
+MAXIMUM MARKS: {max_marks}
+
+Please provide:
+1. A mark out of {max_marks} (be fair but rigorous)
+2. Brief constructive feedback (2-3 sentences max)
+
+Respond in this exact JSON format:
+{{"marks": <number>, "feedback": "<feedback text>"}}"""
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert exam marker. Respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.3
+        )
+        
+        import json
+        result_text = response.choices[0].message.content.strip()
+        
+        # Try to parse JSON response
+        try:
+            result = json.loads(result_text)
+            marks = min(max(0, int(result.get('marks', 0))), max_marks)
+            feedback = result.get('feedback', 'No feedback provided.')
+            return {'marks': marks, 'feedback': feedback}
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try to extract marks from text
+            return {'marks': 0, 'feedback': 'AI marking encountered an error. Please review manually.'}
+            
+    except Exception as e:
+        return {'marks': 0, 'feedback': f'AI marking unavailable: {str(e)[:50]}'}
+
+
 def student_login_required(view_func):
     """Decorator to ensure user is a student and logged in"""
     @wraps(view_func)
@@ -628,13 +690,25 @@ def student_quiz_submit(request):
         
         # Check if answer is correct based on question type
         is_correct = False
+        points_earned = 0
+        ai_feedback = ''
         
         if question.question_type == 'mcq':
-            is_correct = student_answer == question.correct_answer
+            # Use correct_option_index if available, otherwise fall back to correct_answer
+            if question.correct_option_index is not None:
+                try:
+                    is_correct = int(student_answer) == question.correct_option_index
+                except (ValueError, TypeError):
+                    is_correct = student_answer == str(question.correct_option_index)
+            else:
+                is_correct = student_answer == question.correct_answer
+            points_earned = question.points if is_correct else 0
         elif question.question_type == 'true_false':
             is_correct = student_answer.lower() == question.correct_answer.lower()
+            points_earned = question.points if is_correct else 0
         elif question.question_type == 'fill_blank':
             is_correct = student_answer.strip().lower() == question.correct_answer.strip().lower()
+            points_earned = question.points if is_correct else 0
         elif question.question_type == 'matching':
             # For matching, student answer should be JSON
             import json
@@ -644,17 +718,36 @@ def student_quiz_submit(request):
                 is_correct = student_pairs == correct_pairs
             except:
                 is_correct = False
-        elif question.question_type == 'essay':
-            # Essays require manual grading
-            is_correct = None
+            points_earned = question.points if is_correct else 0
+        elif question.question_type in ['structured', 'essay']:
+            # Structured/essay questions - use AI marking if model answer available
+            if question.model_answer and student_answer.strip():
+                ai_result = mark_structured_question_with_ai(
+                    question_text=question.question_text,
+                    model_answer=question.model_answer,
+                    marking_guide=question.marking_guide,
+                    student_answer=student_answer,
+                    max_marks=question.max_marks
+                )
+                points_earned = ai_result.get('marks', 0)
+                ai_feedback = ai_result.get('feedback', '')
+                is_correct = points_earned >= (question.max_marks * 0.7)  # 70% threshold
+            else:
+                # No model answer - mark as pending
+                is_correct = None
+                points_earned = 0
         
         if is_correct:
-            score += question.points
+            score += points_earned
+        elif points_earned > 0:
+            score += points_earned  # Partial marks for structured
         
         answers[str(question.id)] = {
             'answer': student_answer,
             'is_correct': is_correct,
-            'points_earned': question.points if is_correct else 0
+            'points_earned': points_earned,
+            'ai_feedback': ai_feedback,
+            'max_marks': question.max_marks if question.question_type in ['structured', 'essay'] else question.points
         }
     
     # Calculate percentage
@@ -944,8 +1037,10 @@ def student_flashcard_study(request, subject_id):
         messages.error(request, 'You do not have access to this subject.')
         return redirect('student_flashcards')
     
-    # Get topic filter from query params
+    # Get topic filter from query params (support both topic_id and legacy topic name)
+    topic_id = request.GET.get('topic_id')
     topic_filter = request.GET.get('topic')
+    topic_obj = None
     
     # Get flashcards for this subject
     flashcards = Flashcard.objects.filter(
@@ -954,8 +1049,14 @@ def student_flashcard_study(request, subject_id):
         grade=student_profile.grade
     )
     
-    if topic_filter:
-        flashcards = flashcards.filter(topic=topic_filter)
+    # Filter by topic - support both FK and legacy text field
+    if topic_id:
+        topic_obj = Topic.objects.filter(id=topic_id).first()
+        if topic_obj:
+            flashcards = flashcards.filter(topic=topic_obj)
+    elif topic_filter:
+        # Legacy text filter for backwards compatibility
+        flashcards = flashcards.filter(topic_text=topic_filter)
     
     flashcards = list(flashcards.order_by('?'))  # Randomize
     
@@ -965,18 +1066,25 @@ def student_flashcard_study(request, subject_id):
     
     # Handle AJAX request for marking flashcard as reviewed
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        topic = request.POST.get('topic')
+        from .models import StudentTopicProgress
         
-        # Update progress
-        progress, created = StudentProgress.objects.get_or_create(
-            student=student_profile,
-            subject=subject,
-            topic=topic
-        )
-        progress.flashcards_reviewed += 1
-        progress.save()
+        flashcard_id = request.POST.get('flashcard_id')
         
-        return JsonResponse({'success': True, 'flashcards_reviewed': progress.flashcards_reviewed})
+        # Get the flashcard to find its topic
+        flashcard = Flashcard.objects.filter(id=flashcard_id).first()
+        if flashcard and flashcard.topic:
+            # Update StudentTopicProgress
+            progress, created = StudentTopicProgress.objects.get_or_create(
+                student=student_profile,
+                subject=subject,
+                topic=flashcard.topic
+            )
+            progress.flashcards_reviewed += 1
+            progress.save()
+            
+            return JsonResponse({'success': True, 'flashcards_reviewed': progress.flashcards_reviewed})
+        
+        return JsonResponse({'success': False, 'error': 'Flashcard not found'})
     
     context = {
         'student_profile': student_profile,
@@ -1522,3 +1630,388 @@ def student_video_ajax_filters(request):
         data = [{'id': c.id, 'name': c.name} for c in concepts]
     
     return JsonResponse({'items': data})
+
+
+# ===== STUDENT PATHWAY SYSTEM =====
+
+@student_login_required
+def student_subject_pathway(request, subject_id):
+    """Subject pathway selection - Study, Revise, or Info"""
+    from .models import StudentSubject, Topic, Note, Flashcard, StudentQuiz, ExamPaper, Syllabus, StudentTopicProgress
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    # Check if student has this subject enrolled
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    exam_board = student_subject.exam_board
+    
+    # Get progress stats
+    topics = Topic.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_active=True
+    ).count()
+    
+    notes_count = Note.objects.filter(
+        subject=subject,
+        exam_board=exam_board
+    ).count()
+    
+    flashcards_count = Flashcard.objects.filter(
+        subject=subject,
+        exam_board=exam_board
+    ).count()
+    
+    quizzes_count = StudentQuiz.objects.filter(
+        subject=subject,
+        exam_board=exam_board
+    ).count()
+    
+    videos_count = VideoLesson.objects.filter(
+        subject=subject,
+        is_active=True
+    ).count()
+    
+    # Calculate overall progress
+    progress = StudentTopicProgress.objects.filter(
+        student=student_profile,
+        subject=subject
+    )
+    avg_progress = 0
+    if progress.exists():
+        total_completion = sum(p.get_completion_percentage() for p in progress)
+        avg_progress = int(total_completion / max(topics, 1))
+    
+    context = {
+        'student_profile': student_profile,
+        'subject': subject,
+        'exam_board': exam_board,
+        'topics_count': topics,
+        'notes_count': notes_count,
+        'flashcards_count': flashcards_count,
+        'quizzes_count': quizzes_count,
+        'videos_count': videos_count,
+        'overall_progress': avg_progress,
+    }
+    
+    return render(request, 'core/student/pathway/subject_pathway.html', context)
+
+
+@student_login_required
+def student_study_pathway(request, subject_id):
+    """Study pathway - List of topics for a subject"""
+    from .models import StudentSubject, Topic, Note, VideoLesson, Flashcard, StudentQuiz, StudentTopicProgress
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    exam_board = student_subject.exam_board
+    
+    # Get all topics for this subject
+    topics = Topic.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_active=True
+    ).order_by('order', 'name')
+    
+    # Annotate with content counts and progress
+    topics_with_data = []
+    for topic in topics:
+        progress = StudentTopicProgress.objects.filter(
+            student=student_profile,
+            subject=subject,
+            topic=topic
+        ).first()
+        
+        topics_with_data.append({
+            'topic': topic,
+            'notes_count': Note.objects.filter(subject=subject, topic=topic).count(),
+            'videos_count': VideoLesson.objects.filter(subject=subject, topic=topic, is_active=True).count(),
+            'flashcards_count': Flashcard.objects.filter(subject=subject, topic=topic).count(),
+            'quizzes_count': StudentQuiz.objects.filter(subject=subject, topic=topic.name).count(),
+            'progress': progress.get_completion_percentage() if progress else 0,
+        })
+    
+    context = {
+        'student_profile': student_profile,
+        'subject': subject,
+        'exam_board': exam_board,
+        'topics_with_data': topics_with_data,
+    }
+    
+    return render(request, 'core/student/pathway/study_topics.html', context)
+
+
+@student_login_required
+def student_topic_detail(request, subject_id, topic_id):
+    """Topic detail with tabbed content - Notes, Videos, Flashcards, Quizzes"""
+    from .models import StudentSubject, Topic, Note, VideoLesson, Flashcard, StudentQuiz, InteractiveQuestion, StudentTopicProgress
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    exam_board = student_subject.exam_board
+    
+    topic = get_object_or_404(Topic, id=topic_id, subject=subject, is_active=True)
+    
+    # Get content for this topic
+    notes = Note.objects.filter(subject=subject, topic=topic).order_by('-created_at')
+    videos = VideoLesson.objects.filter(subject=subject, topic=topic, is_active=True).order_by('order', '-created_at')
+    flashcards = Flashcard.objects.filter(subject=subject, topic=topic).order_by('-created_at')
+    
+    # Get quizzes grouped by difficulty
+    quizzes_easy = StudentQuiz.objects.filter(
+        subject=subject, topic=topic.name, difficulty='easy'
+    ).order_by('-created_at')
+    quizzes_medium = StudentQuiz.objects.filter(
+        subject=subject, topic=topic.name, difficulty='medium'
+    ).order_by('-created_at')
+    quizzes_hard = StudentQuiz.objects.filter(
+        subject=subject, topic=topic.name, difficulty='hard'
+    ).order_by('-created_at')
+    
+    # Get structured questions for this topic
+    structured_questions = InteractiveQuestion.objects.filter(
+        subject=subject,
+        topic=topic,
+        question_type='structured'
+    ).order_by('difficulty', '-created_at')
+    
+    active_tab = request.GET.get('tab', 'notes')
+    
+    # AJAX endpoint for tracking content views
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        content_type = request.POST.get('content_type')  # notes, videos, flashcards
+        content_id = request.POST.get('content_id')
+        
+        progress, created = StudentTopicProgress.objects.get_or_create(
+            student=student_profile,
+            subject=subject,
+            topic=topic
+        )
+        
+        if content_type == 'notes' and content_id:
+            progress.notes_viewed += 1
+        elif content_type == 'videos' and content_id:
+            progress.videos_watched += 1
+        elif content_type == 'flashcards' and content_id:
+            progress.flashcards_reviewed += 1
+        
+        progress.save()
+        return JsonResponse({
+            'success': True, 
+            'progress_percentage': progress.get_completion_percentage()
+        })
+    
+    # Get current progress for display
+    topic_progress, _ = StudentTopicProgress.objects.get_or_create(
+        student=student_profile,
+        subject=subject,
+        topic=topic
+    )
+    
+    context = {
+        'student_profile': student_profile,
+        'subject': subject,
+        'exam_board': exam_board,
+        'topic': topic,
+        'notes': notes,
+        'videos': videos,
+        'flashcards': flashcards,
+        'quizzes_easy': quizzes_easy,
+        'quizzes_medium': quizzes_medium,
+        'quizzes_hard': quizzes_hard,
+        'structured_questions': structured_questions,
+        'active_tab': active_tab,
+        'topic_progress': topic_progress,
+    }
+    
+    return render(request, 'core/student/pathway/topic_detail.html', context)
+
+
+@student_login_required
+def student_info_pathway(request, subject_id):
+    """Info pathway - Syllabi, sample papers, exam guidelines"""
+    from .models import StudentSubject, Syllabus, OfficialExamPaper, ExamPaper
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    exam_board = student_subject.exam_board
+    
+    # Get syllabi
+    syllabi = Syllabus.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_active=True
+    ).order_by('-year')
+    
+    # Get official exam papers
+    official_papers = OfficialExamPaper.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_public=True
+    ).order_by('-year', 'session')[:20]
+    
+    # Get sample/practice papers
+    sample_papers = ExamPaper.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_pro_content=False
+    ).order_by('-year', '-created_at')[:10]
+    
+    context = {
+        'student_profile': student_profile,
+        'subject': subject,
+        'exam_board': exam_board,
+        'syllabi': syllabi,
+        'official_papers': official_papers,
+        'sample_papers': sample_papers,
+    }
+    
+    return render(request, 'core/student/pathway/info_pathway.html', context)
+
+
+@student_login_required
+def student_revise_pathway(request, subject_id):
+    """Revise pathway - Quick flashcard review and practice quizzes"""
+    from .models import StudentSubject, Topic, Flashcard, StudentQuiz, StudentTopicProgress
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    exam_board = student_subject.exam_board
+    
+    # Get topics with flashcards
+    topics_with_flashcards = Topic.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        is_active=True,
+        flashcards__isnull=False
+    ).distinct().order_by('order', 'name')
+    
+    # Get quick quiz options (by difficulty)
+    easy_quizzes = StudentQuiz.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        difficulty='easy'
+    ).order_by('?')[:5]
+    
+    medium_quizzes = StudentQuiz.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        difficulty='medium'
+    ).order_by('?')[:5]
+    
+    hard_quizzes = StudentQuiz.objects.filter(
+        subject=subject,
+        exam_board=exam_board,
+        difficulty='hard'
+    ).order_by('?')[:5]
+    
+    # Get flashcard counts by topic
+    flashcard_topics = []
+    for topic in topics_with_flashcards:
+        count = Flashcard.objects.filter(subject=subject, topic=topic).count()
+        flashcard_topics.append({
+            'topic': topic,
+            'count': count
+        })
+    
+    context = {
+        'student_profile': student_profile,
+        'subject': subject,
+        'exam_board': exam_board,
+        'flashcard_topics': flashcard_topics,
+        'easy_quizzes': easy_quizzes,
+        'medium_quizzes': medium_quizzes,
+        'hard_quizzes': hard_quizzes,
+    }
+    
+    return render(request, 'core/student/pathway/revise_pathway.html', context)
+
+
+@student_login_required
+def student_progress_dashboard(request):
+    """Student progress dashboard with percentages and stats"""
+    from .models import StudentSubject, StudentTopicProgress, StudentQuizAttempt
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    # Get all enrolled subjects with progress
+    subjects_data = []
+    student_subjects = StudentSubject.objects.filter(
+        student=student_profile
+    ).select_related('subject', 'exam_board')
+    
+    for ss in student_subjects:
+        topic_progress = StudentTopicProgress.objects.filter(
+            student=student_profile,
+            subject=ss.subject
+        )
+        
+        topics_total = Topic.objects.filter(
+            subject=ss.subject,
+            exam_board=ss.exam_board,
+            is_active=True
+        ).count()
+        
+        topics_completed = topic_progress.filter(notes_completed=True).count()
+        
+        avg_quiz_score = 0
+        if topic_progress.exists():
+            scores = [p.average_quiz_score for p in topic_progress if p.average_quiz_score > 0]
+            if scores:
+                avg_quiz_score = sum(scores) / len(scores)
+        
+        overall_progress = 0
+        if topic_progress.exists():
+            total = sum(p.get_completion_percentage() for p in topic_progress)
+            overall_progress = int(total / max(topics_total, 1))
+        
+        subjects_data.append({
+            'subject': ss.subject,
+            'exam_board': ss.exam_board,
+            'topics_total': topics_total,
+            'topics_completed': topics_completed,
+            'avg_quiz_score': round(avg_quiz_score, 1),
+            'overall_progress': overall_progress,
+        })
+    
+    # Recent quiz attempts
+    recent_attempts = StudentQuizAttempt.objects.filter(
+        student=student_profile
+    ).select_related('quiz', 'quiz__subject').order_by('-started_at')[:10]
+    
+    context = {
+        'student_profile': student_profile,
+        'subjects_data': subjects_data,
+        'recent_attempts': recent_attempts,
+    }
+    
+    return render(request, 'core/student/pathway/progress_dashboard.html', context)

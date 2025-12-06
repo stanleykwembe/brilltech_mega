@@ -4347,6 +4347,97 @@ def delete_exam_paper(request, paper_id):
 
 
 @require_content_manager
+def manage_syllabi(request):
+    """List and manage syllabi"""
+    from .models import Syllabus
+    
+    subject_filter = request.GET.get('subject', '')
+    board_filter = request.GET.get('board', '')
+    search_query = request.GET.get('search', '')
+    
+    syllabi = Syllabus.objects.all().select_related('subject', 'exam_board', 'grade')
+    
+    if subject_filter:
+        syllabi = syllabi.filter(subject_id=subject_filter)
+    if board_filter:
+        syllabi = syllabi.filter(exam_board_id=board_filter)
+    if search_query:
+        syllabi = syllabi.filter(title__icontains=search_query)
+    
+    syllabi = syllabi.order_by('-year', 'exam_board', 'subject')
+    
+    subjects = Subject.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'syllabi': syllabi,
+        'subjects': subjects,
+        'exam_boards': exam_boards,
+        'subject_filter': subject_filter,
+        'board_filter': board_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/content/syllabi_list.html', context)
+
+
+@require_content_manager
+def create_syllabus(request):
+    """Create a new syllabus"""
+    from .models import Syllabus
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        exam_board_id = request.POST.get('exam_board')
+        grade_id = request.POST.get('grade')
+        year = request.POST.get('year')
+        description = request.POST.get('description', '')
+        external_url = request.POST.get('external_url', '')
+        syllabus_file = request.FILES.get('file')
+        
+        syllabus = Syllabus.objects.create(
+            title=title,
+            subject_id=subject_id,
+            exam_board_id=exam_board_id,
+            grade_id=grade_id if grade_id else None,
+            year=int(year) if year else None,
+            description=description,
+            external_url=external_url,
+            file=syllabus_file,
+            created_by=request.user
+        )
+        
+        messages.success(request, f'Syllabus "{title}" created successfully!')
+        return redirect('manage_syllabi')
+    
+    subjects = Subject.objects.all()
+    grades = Grade.objects.all()
+    exam_boards = ExamBoard.objects.all()
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+    }
+    
+    return render(request, 'core/content/syllabus_form.html', context)
+
+
+@require_content_manager
+def delete_syllabus(request, syllabus_id):
+    """Delete syllabus"""
+    from .models import Syllabus
+    
+    if request.method == 'POST':
+        syllabus = get_object_or_404(Syllabus, id=syllabus_id)
+        syllabus.delete()
+        messages.success(request, 'Syllabus deleted successfully!')
+    
+    return redirect('manage_syllabi')
+
+
+@require_content_manager
 def get_questions_ajax(request):
     """AJAX endpoint to get filtered questions for quiz builder"""
     from .models import InteractiveQuestion

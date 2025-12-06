@@ -38,83 +38,110 @@
                         </div>
                         <h1 class="text-white text-xl font-bold tracking-tight">Content Portal</h1>
                     </div>
-                    <nav class="flex-1 px-3 space-y-1">
+                    <nav class="flex-1 px-3 space-y-1" x-data="{ teacherOpen: true, studentOpen: true }">
                         <a href="{% url 'content_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'content_dashboard' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
                             <i class="fas fa-th-large mr-3 text-lg"></i>
                             <span class="font-semibold">Dashboard</span>
                         </a>
-                        <a href="{% url 'content_papers' %}" class="sidebar-nav-item {% if 'papers' in request.resolver_match.url_name and 'formatted' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-file-pdf mr-3 text-lg"></i>
-                            <span>Past Papers</span>
-                        </a>
-                        <a href="{% url 'content_formatted_papers' %}" class="sidebar-nav-item {% if 'formatted' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-magic mr-3 text-lg"></i>
-                            <span>Formatted Papers</span>
-                        </a>
-                        <a href="{% url 'content_quizzes' %}" class="sidebar-nav-item {% if 'quizzes' in request.resolver_match.url_name and 'student' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-question-circle mr-3 text-lg"></i>
-                            <span>Quizzes</span>
-                        </a>
-                        <a href="{% url 'content_bulk_upload' %}" class="sidebar-nav-item {% if 'bulk_upload' in request.resolver_match.url_name and 'official' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-cloud-upload-alt mr-3 text-lg"></i>
-                            <span>Bulk Upload</span>
-                        </a>
-                        <a href="{% url 'official_papers_bulk_upload' %}" class="sidebar-nav-item {% if 'official_papers' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-file-archive mr-3 text-lg"></i>
-                            <span>Official Exam Papers</span>
-                        </a>
                         
-                        <!-- Divider -->
+                        <!-- Teacher Content Section -->
                         <div class="my-4 border-t border-gray-700"></div>
-                        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            Student Content
-                        </p>
+                        <button @click="teacherOpen = !teacherOpen" class="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-white transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-chalkboard-teacher mr-2 text-indigo-400"></i>
+                                Teacher Content
+                            </span>
+                            <i class="fas" :class="teacherOpen ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                        </button>
                         
-                        <a href="{% url 'manage_interactive_questions' %}" class="sidebar-nav-item {% if 'interactive_question' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-tasks mr-3 text-lg"></i>
-                            <span>Questions</span>
-                        </a>
-                        <a href="{% url 'manage_student_quizzes' %}" class="sidebar-nav-item {% if 'student_quiz' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-clipboard-list mr-3 text-lg"></i>
-                            <span>Student Quizzes</span>
-                        </a>
-                        <a href="{% url 'manage_notes' %}" class="sidebar-nav-item {% if 'note' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-book mr-3 text-lg"></i>
-                            <span>Notes</span>
-                        </a>
-                        <a href="{% url 'manage_flashcards' %}" class="sidebar-nav-item {% if 'flashcard' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-layer-group mr-3 text-lg"></i>
-                            <span>Flashcards</span>
-                        </a>
-                        <a href="{% url 'manage_exam_papers' %}" class="sidebar-nav-item {% if 'exam_paper' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-file-alt mr-3 text-lg"></i>
-                            <span>Exam Papers</span>
-                        </a>
+                        <div x-show="teacherOpen" x-collapse class="space-y-1 ml-2">
+                            <a href="{% url 'content_papers' %}" class="sidebar-nav-item {% if 'papers' in request.resolver_match.url_name and 'formatted' not in request.resolver_match.url_name and 'official' not in request.resolver_match.url_name and 'exam_paper' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-file-pdf mr-3"></i>
+                                <span>Past Papers</span>
+                            </a>
+                            <a href="{% url 'content_formatted_papers' %}" class="sidebar-nav-item {% if 'formatted' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-magic mr-3"></i>
+                                <span>Formatted Papers</span>
+                            </a>
+                            <a href="{% url 'content_quizzes' %}" class="sidebar-nav-item {% if 'quizzes' in request.resolver_match.url_name and 'student' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-question-circle mr-3"></i>
+                                <span>Teacher Quizzes</span>
+                            </a>
+                            <a href="{% url 'content_bulk_upload' %}" class="sidebar-nav-item {% if 'bulk_upload' in request.resolver_match.url_name and 'official' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-cloud-upload-alt mr-3"></i>
+                                <span>Bulk Upload</span>
+                            </a>
+                            <a href="{% url 'official_papers_bulk_upload' %}" class="sidebar-nav-item {% if 'official_papers' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-file-archive mr-3"></i>
+                                <span>Official Exam Papers</span>
+                            </a>
+                        </div>
                         
-                        <!-- Divider -->
+                        <!-- Student Content Section -->
                         <div class="my-4 border-t border-gray-700"></div>
-                        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            Video Lessons
-                        </p>
+                        <button @click="studentOpen = !studentOpen" class="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-white transition-colors">
+                            <span class="flex items-center">
+                                <i class="fas fa-graduation-cap mr-2 text-emerald-400"></i>
+                                Student Content
+                            </span>
+                            <i class="fas" :class="studentOpen ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                        </button>
                         
-                        <a href="{% url 'manage_topics' %}" class="sidebar-nav-item {% if 'topic' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-folder mr-3 text-lg"></i>
-                            <span>Topics</span>
-                        </a>
-                        <a href="{% url 'manage_subtopics' %}" class="sidebar-nav-item {% if 'subtopic' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-folder-open mr-3 text-lg"></i>
-                            <span>Subtopics</span>
-                        </a>
-                        <a href="{% url 'manage_concepts' %}" class="sidebar-nav-item {% if 'concept' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-lightbulb mr-3 text-lg"></i>
-                            <span>Concepts</span>
-                        </a>
-                        <a href="{% url 'manage_video_lessons' %}" class="sidebar-nav-item {% if 'video' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
-                            <i class="fas fa-video mr-3 text-lg"></i>
-                            <span>Video Lessons</span>
-                        </a>
+                        <div x-show="studentOpen" x-collapse class="space-y-1 ml-2">
+                            <!-- Content Hierarchy -->
+                            <p class="px-3 pt-2 text-xs text-gray-500 font-medium">Hierarchy</p>
+                            <a href="{% url 'manage_topics' %}" class="sidebar-nav-item {% if 'topic' in request.resolver_match.url_name and 'subtopic' not in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-folder mr-3"></i>
+                                <span>Topics</span>
+                            </a>
+                            <a href="{% url 'manage_subtopics' %}" class="sidebar-nav-item {% if 'subtopic' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-folder-open mr-3"></i>
+                                <span>Subtopics</span>
+                            </a>
+                            <a href="{% url 'manage_concepts' %}" class="sidebar-nav-item {% if 'concept' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-lightbulb mr-3"></i>
+                                <span>Concepts</span>
+                            </a>
+                            
+                            <!-- Study Materials -->
+                            <p class="px-3 pt-3 text-xs text-gray-500 font-medium">Study Materials</p>
+                            <a href="{% url 'manage_notes' %}" class="sidebar-nav-item {% if 'note' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>Notes</span>
+                            </a>
+                            <a href="{% url 'manage_video_lessons' %}" class="sidebar-nav-item {% if 'video' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-video mr-3"></i>
+                                <span>Video Lessons</span>
+                            </a>
+                            <a href="{% url 'manage_flashcards' %}" class="sidebar-nav-item {% if 'flashcard' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-layer-group mr-3"></i>
+                                <span>Flashcards</span>
+                            </a>
+                            
+                            <!-- Assessment -->
+                            <p class="px-3 pt-3 text-xs text-gray-500 font-medium">Assessment</p>
+                            <a href="{% url 'manage_interactive_questions' %}" class="sidebar-nav-item {% if 'interactive_question' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-tasks mr-3"></i>
+                                <span>Questions</span>
+                            </a>
+                            <a href="{% url 'manage_student_quizzes' %}" class="sidebar-nav-item {% if 'student_quiz' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-clipboard-list mr-3"></i>
+                                <span>Quizzes</span>
+                            </a>
+                            <a href="{% url 'manage_exam_papers' %}" class="sidebar-nav-item {% if 'exam_paper' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-file-alt mr-3"></i>
+                                <span>Exam Papers</span>
+                            </a>
+                            
+                            <!-- Info Materials -->
+                            <p class="px-3 pt-3 text-xs text-gray-500 font-medium">Info Materials</p>
+                            <a href="{% url 'manage_syllabi' %}" class="sidebar-nav-item {% if 'syllab' in request.resolver_match.url_name %}active{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white transition-all">
+                                <i class="fas fa-list-alt mr-3"></i>
+                                <span>Syllabi</span>
+                            </a>
+                        </div>
                         
-                        <!-- Divider -->
+                        <!-- Switch Portal -->
                         <div class="my-4 border-t border-gray-700"></div>
                         <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                             Switch Portal

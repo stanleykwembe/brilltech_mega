@@ -1,0 +1,123 @@
+{% extends 'core/student/base.html' %}
+
+{% block title %}My Progress{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-8" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="mb-6">
+            <a href="{% url 'student_dashboard' %}" class="inline-flex items-center text-gray-600 hover:text-emerald-600 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex items-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center mr-6">
+                    <i class="fas fa-chart-line text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">My Progress</h1>
+                    <p class="text-gray-600">Track your learning journey across all subjects</p>
+                </div>
+            </div>
+        </div>
+        
+        {% if subjects_data %}
+            <div class="grid gap-6 mb-8">
+                {% for item in subjects_data %}
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-emerald-100 to-blue-100 rounded-xl flex items-center justify-center mr-4">
+                                        <i class="fas fa-book text-emerald-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900">{{ item.subject.name }}</h3>
+                                        <p class="text-gray-500">{{ item.exam_board.abbreviation }}</p>
+                                    </div>
+                                </div>
+                                <a href="{% url 'student_subject_pathway' item.subject.id %}" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm">
+                                    Continue <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+                                    <span class="text-lg font-bold text-emerald-600">{{ item.overall_progress }}%</span>
+                                </div>
+                                <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all duration-500" style="width: {{ item.overall_progress }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div class="text-2xl font-bold text-gray-900">{{ item.topics_completed }}/{{ item.topics_total }}</div>
+                                    <div class="text-sm text-gray-500">Topics Completed</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div class="text-2xl font-bold text-emerald-600">{{ item.avg_quiz_score }}%</div>
+                                    <div class="text-sm text-gray-500">Avg Quiz Score</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div class="text-2xl font-bold text-blue-600">{{ item.topics_total }}</div>
+                                    <div class="text-sm text-gray-500">Total Topics</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div class="text-sm text-gray-900 font-medium">{{ item.exam_board.abbreviation }}</div>
+                                    <div class="text-sm text-gray-500">Exam Board</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No subjects enrolled yet</h3>
+                <p class="text-gray-600 mb-4">Complete your onboarding to start tracking progress.</p>
+                <a href="{% url 'student_onboarding' %}" class="inline-flex items-center px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600">
+                    Complete Onboarding <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        {% endif %}
+        
+        {% if recent_attempts %}
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-500 to-blue-500 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-history mr-3"></i>Recent Quiz Attempts
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        {% for attempt in recent_attempts %}
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 {% if attempt.percentage >= 70 %}bg-green-100{% elif attempt.percentage >= 50 %}bg-yellow-100{% else %}bg-red-100{% endif %} rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas {% if attempt.percentage >= 70 %}fa-check text-green-600{% elif attempt.percentage >= 50 %}fa-minus text-yellow-600{% else %}fa-times text-red-600{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">{{ attempt.quiz.title }}</h4>
+                                        <p class="text-sm text-gray-500">{{ attempt.quiz.subject.name }} | {{ attempt.started_at|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold {% if attempt.percentage >= 70 %}text-green-600{% elif attempt.percentage >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ attempt.percentage|floatformat:0 }}%
+                                    </div>
+                                    <div class="text-sm text-gray-500">{{ attempt.score }}/{{ attempt.quiz.questions.count }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
