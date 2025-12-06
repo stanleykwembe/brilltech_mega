@@ -88,20 +88,20 @@
         </div>
     </a>
 
-    <!-- Subscription Plans -->
-    <a href="{% url 'admin_subscription_plans' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+    <!-- Teacher Subscription Plans -->
+    <a href="{% url 'admin_teacher_subscription_plans' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
         <div class="p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="rounded-md bg-orange-500 p-3">
-                        <i class="fas fa-crown text-white text-xl"></i>
+                        <i class="fas fa-chalkboard-teacher text-white text-xl"></i>
                     </div>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Subscription Plans</dt>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Teacher Plans</dt>
                         <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">{{ plans_count }}</div>
+                            <div class="text-2xl font-semibold text-gray-900">{{ teacher_plans_count }}</div>
                         </dd>
                     </dl>
                 </div>
@@ -109,7 +109,33 @@
         </div>
         <div class="bg-gray-50 px-5 py-3">
             <div class="text-sm">
-                <span class="font-medium text-orange-600 hover:text-orange-700">Manage plans <i class="fas fa-arrow-right ml-1"></i></span>
+                <span class="font-medium text-orange-600 hover:text-orange-700">Manage teacher plans <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+
+    <!-- Student Subscription Plans -->
+    <a href="{% url 'admin_student_subscription_plans' %}" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="rounded-md bg-emerald-500 p-3">
+                        <i class="fas fa-user-graduate text-white text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Student Plans</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">{{ student_plans_count }}</div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3">
+            <div class="text-sm">
+                <span class="font-medium text-emerald-600 hover:text-emerald-700">Manage student pricing <i class="fas fa-arrow-right ml-1"></i></span>
             </div>
         </div>
     </a>
@@ -127,9 +153,10 @@
                 <p>Use this section to configure your platform's core features:</p>
                 <ul class="list-disc ml-5 mt-2 space-y-1">
                     <li><strong>Exam Boards</strong> - Educational systems like IEB, CAPS, Cambridge</li>
-                    <li><strong>Subjects</strong> - Available subjects for teachers</li>
+                    <li><strong>Subjects</strong> - Available subjects for teachers and students</li>
                     <li><strong>Grades</strong> - Grade levels (1-12)</li>
-                    <li><strong>Subscription Plans</strong> - Pricing tiers and quotas</li>
+                    <li><strong>Teacher Plans</strong> - Pricing tiers for teacher subscriptions (Free, Starter, Growth, Premium)</li>
+                    <li><strong>Student Plans</strong> - Pricing tiers for student subscriptions (per subject, bundles, tutor add-on)</li>
                 </ul>
             </div>
         </div>

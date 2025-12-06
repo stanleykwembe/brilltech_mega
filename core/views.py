@@ -2228,19 +2228,22 @@ def admin_api_test(request):
 def admin_features(request):
     """Feature Management dashboard"""
     
-    from .models import SubscriptionPlan
+    from .models import SubscriptionPlan, StudentSubscriptionPricing
     
     # Get counts for each feature type
     exam_boards_count = ExamBoard.objects.count()
     subjects_count = Subject.objects.count()
     grades_count = Grade.objects.count()
-    plans_count = SubscriptionPlan.objects.count()
+    teacher_plans_count = SubscriptionPlan.objects.count()
+    # Student pricing is a single config row, show 4 for the 4 pricing tiers
+    student_plans_count = 4 if StudentSubscriptionPricing.objects.filter(is_active=True).exists() else 0
     
     context = {
         'exam_boards_count': exam_boards_count,
         'subjects_count': subjects_count,
         'grades_count': grades_count,
-        'plans_count': plans_count,
+        'teacher_plans_count': teacher_plans_count,
+        'student_plans_count': student_plans_count,
     }
     
     return render(request, 'core/admin/features.html', context)
@@ -2354,8 +2357,8 @@ def admin_grades(request):
     return render(request, 'core/admin/grades.html', context)
 
 @require_admin
-def admin_subscription_plans(request):
-    """Subscription Plans management interface"""
+def admin_teacher_subscription_plans(request):
+    """Teacher Subscription Plans management interface"""
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -2370,7 +2373,7 @@ def admin_subscription_plans(request):
             plan.save()
             messages.success(request, f'{plan.name} plan updated successfully.')
         
-        return redirect('admin_subscription_plans')
+        return redirect('admin_teacher_subscription_plans')
     
     plans = SubscriptionPlan.objects.all().order_by('price')
     
@@ -2378,7 +2381,39 @@ def admin_subscription_plans(request):
         'plans': plans,
     }
     
-    return render(request, 'core/admin/subscription_plans.html', context)
+    return render(request, 'core/admin/teacher_subscription_plans.html', context)
+
+
+@require_admin
+def admin_student_subscription_plans(request):
+    """Student Subscription Pricing management interface"""
+    from .models import StudentSubscriptionPricing
+    
+    # Get or create the single pricing record
+    pricing = StudentSubscriptionPricing.get_current()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update':
+            pricing.per_subject_price = request.POST.get('per_subject_price', 100)
+            pricing.multi_subject_price = request.POST.get('multi_subject_price', 200)
+            pricing.all_access_price = request.POST.get('all_access_price', 300)
+            pricing.tutor_addon_price = request.POST.get('tutor_addon_price', 500)
+            pricing.per_subject_max = request.POST.get('per_subject_max', 3)
+            pricing.multi_subject_min = request.POST.get('multi_subject_min', 4)
+            pricing.multi_subject_max = request.POST.get('multi_subject_max', 5)
+            pricing.is_active = request.POST.get('is_active') == 'on'
+            pricing.save()
+            messages.success(request, 'Student subscription pricing updated successfully.')
+        
+        return redirect('admin_student_subscription_plans')
+    
+    context = {
+        'pricing': pricing,
+    }
+    
+    return render(request, 'core/admin/student_subscription_plans.html', context)
 
 @require_admin
 def admin_communications(request):
