@@ -6,10 +6,11 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (December 2025)
 
+- **CRM System**: Added full CRM system to BrillTech Admin Portal with Tasks, Leads, Sales Pipeline, Mailing Lists, and Email Campaigns
 - **Social Login**: Added Google and Facebook social login via django-allauth for both Teacher and Student portals
 - **Admin Panel Reorganization**: Separated subscription management into Teacher Plans (`/panel/features/teachers/plans/`) and Student Plans (`/panel/features/student/plans/`)
 - **Admin Signup**: Added admin signup page at `/brilltech/signup/` for creating new administrator accounts
-- **Django Admin**: Moved to `/brilltech/admin/` for future company CRM use
+- **URL Restructure**: Custom BrillTech Admin Portal at `/brilltech/admin/`, Django admin moved to `/django-admin/`
 - **Student Pricing Model**: Implemented single-row configuration for all student subscription tiers (per-subject, multi-subject bundle, all-access, tutor add-on)
 
 ## User Preferences
@@ -41,8 +42,15 @@ Preferred communication style: Simple, everyday language.
 - `/panel/features/student/plans/` - Student pricing configuration
 - `/panel/users/` - User management
 - `/panel/communications/` - Announcements and email blasts
-- `/brilltech/admin/` - Django admin (for database-level access)
+- `/django-admin/` - Django admin (for database-level access)
 - `/brilltech/signup/` - Admin account signup
+
+### BrillTech Admin Portal (CRM)
+- `/brilltech/admin/` - BrillTech admin dashboard (dark theme)
+- `/brilltech/admin/crm/tasks/` - Task management (CRUD, priorities, statuses)
+- `/brilltech/admin/crm/leads/` - Lead management with sales pipeline
+- `/brilltech/admin/crm/mailing/` - Mailing lists and subscribers
+- `/brilltech/admin/crm/campaigns/` - Email campaign management
 
 ### Student Portal
 - `/student/login/` - Student login

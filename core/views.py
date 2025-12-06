@@ -6292,15 +6292,16 @@ def crm_leads_list(request):
     if source_filter:
         leads = leads.filter(source=source_filter)
     
-    pipeline_counts = {}
+    pipeline_stages = []
     for stage, label in CRMLead.PIPELINE_CHOICES:
-        pipeline_counts[stage] = CRMLead.objects.filter(pipeline_stage=stage).count()
+        count = CRMLead.objects.filter(pipeline_stage=stage).count()
+        pipeline_stages.append({'stage': stage, 'label': label, 'count': count})
     
     return render(request, 'core/brilltech/admin/crm/leads_list.html', {
         'leads': leads,
         'pipeline_filter': pipeline_filter,
         'source_filter': source_filter,
-        'pipeline_counts': pipeline_counts,
+        'pipeline_stages': pipeline_stages,
         'pipeline_choices': CRMLead.PIPELINE_CHOICES,
         'source_choices': CRMLead.SOURCE_CHOICES,
     })

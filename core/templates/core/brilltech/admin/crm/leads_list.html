@@ -14,10 +14,10 @@
 
 <!-- Pipeline Overview -->
 <div class="grid grid-cols-7 gap-3 mb-6">
-    {% for stage, label in pipeline_choices %}
-    <a href="?pipeline={{ stage }}" class="bg-white rounded-xl p-4 shadow-sm border {% if pipeline_filter == stage %}border-pink-500{% else %}border-gray-100{% endif %} hover:border-pink-300 transition-colors text-center">
-        <div class="text-2xl font-bold text-gray-900">{{ pipeline_counts|default_if_none:0 }}</div>
-        <div class="text-xs text-gray-500 truncate">{{ label }}</div>
+    {% for item in pipeline_stages %}
+    <a href="?pipeline={{ item.stage }}" class="bg-white rounded-xl p-4 shadow-sm border {% if pipeline_filter == item.stage %}border-pink-500{% else %}border-gray-100{% endif %} hover:border-pink-300 transition-colors text-center">
+        <div class="text-2xl font-bold text-gray-900">{{ item.count }}</div>
+        <div class="text-xs text-gray-500 truncate">{{ item.label }}</div>
     </a>
     {% endfor %}
 </div>
