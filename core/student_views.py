@@ -1740,6 +1740,7 @@ def student_subject_pathway(request, subject_id):
 @student_login_required
 def student_study_pathway(request, subject_id):
     """Study pathway - New layout with sidebar topics and tabbed content"""
+    from django.shortcuts import get_object_or_404
     from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz, StudentTopicProgress
     
     student_profile = StudentProfile.objects.get(user=request.user)
@@ -1791,6 +1792,7 @@ def student_study_pathway(request, subject_id):
 @student_login_required
 def student_topic_content_ajax(request, subject_id, topic_id):
     """AJAX endpoint to load topic content for the study layout"""
+    from django.shortcuts import get_object_or_404
     from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz
     import json
     
