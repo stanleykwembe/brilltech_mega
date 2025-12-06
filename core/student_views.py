@@ -973,10 +973,12 @@ def student_note_view(request, note_id):
         return redirect('student_notes')
     
     # Update progress - mark note as viewed
+    # Get topic name (note.topic is a ForeignKey, StudentProgress.topic is CharField)
+    topic_name = note.topic.name if note.topic else (note.topic_text or 'General')
     progress, created = StudentProgress.objects.get_or_create(
         student=student_profile,
         subject=note.subject,
-        topic=note.topic
+        topic=topic_name
     )
     progress.notes_viewed = True
     progress.save()
