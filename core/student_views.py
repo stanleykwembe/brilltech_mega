@@ -1134,7 +1134,6 @@ def student_flashcard_study(request, subject_id):
     flashcards = list(flashcards.order_by('?'))  # Randomize
     
     if not flashcards:
-        messages.warning(request, 'No flashcards available for this subject.')
         return redirect('student_flashcards')
     
     # Handle AJAX request for marking flashcard as reviewed
@@ -1272,11 +1271,40 @@ def student_subscription(request):
     # Get current exam board count
     current_board_count = StudentExamBoard.objects.filter(student=student_profile).count()
     
+    # Get pricing from admin-configurable model
+    pricing = {}
+    try:
+        from .models import StudentSubscriptionPricing
+        for tier in StudentSubscriptionPricing.objects.all():
+            pricing[tier.tier_type] = {
+                'price': tier.price,
+                'min_subjects': tier.min_subjects,
+                'max_subjects': tier.max_subjects,
+                'description': tier.description,
+            }
+    except Exception:
+        # Default pricing if not configured
+        pricing = {
+            'per_subject': {'price': 100, 'min_subjects': 1, 'max_subjects': 3, 'description': 'Pay per subject'},
+            'bundle_medium': {'price': 200, 'min_subjects': 4, 'max_subjects': 5, 'description': '4-5 subjects bundle'},
+            'bundle_all': {'price': 300, 'min_subjects': None, 'max_subjects': None, 'description': 'All subjects access'},
+            'tutor_addon': {'price': 500, 'min_subjects': None, 'max_subjects': None, 'description': 'Tutor support add-on'},
+        }
+    
+    # Get current student subscription if any
+    from .models import StudentSubscription
+    active_subscription = StudentSubscription.objects.filter(
+        student=student_profile, 
+        is_active=True
+    ).first()
+    
     context = {
         'student_profile': student_profile,
         'is_pro': is_pro,
         'current_board_count': current_board_count,
         'board_limit': student_profile.get_exam_board_limit(),
+        'pricing': pricing,
+        'active_subscription': active_subscription,
     }
     
     return render(request, 'core/student/subscription.html', context)

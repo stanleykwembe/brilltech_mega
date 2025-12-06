@@ -87,9 +87,8 @@ def require_teacher(view_func):
     """Decorator to ensure user is a teacher (not admin, content manager, or student)"""
     @login_required
     def wrapper(request, *args, **kwargs):
-        # Redirect students to their own portal
+        # Redirect students to their own portal (no message to avoid accumulation)
         if hasattr(request.user, 'student_profile'):
-            messages.info(request, 'Redirecting you to the student portal.')
             if not request.user.student_profile.onboarding_completed:
                 return redirect('student_onboarding')
             return redirect('student_dashboard')

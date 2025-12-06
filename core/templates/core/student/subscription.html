@@ -9,6 +9,7 @@
     <style>
         .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
         .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .pricing-card:hover { transform: translateY(-4px); }
     </style>
 </head>
 <body class="h-full bg-gray-50">
@@ -18,241 +19,200 @@
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 border-2 border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border-2 border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border-2 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-2 border-blue-200 text-blue-800{% endif %}">
-                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
-                        {{ message }}
+                    <div class="mb-6 p-4 rounded-xl flex items-start gap-3 {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border border-yellow-200 text-yellow-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
+                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                        <span>{{ message }}</span>
                     </div>
                 {% endfor %}
             {% endif %}
 
             <div class="mb-8 text-center">
-                <h2 class="text-4xl font-bold text-gray-900 mb-3">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">
                     <i class="fas fa-crown text-yellow-500 mr-2"></i>
-                    Your Subscription
+                    Subscription Plans
                 </h2>
-                <p class="text-lg text-gray-600">Manage your EduTech plan and features</p>
+                <p class="text-gray-600">Choose the plan that works best for your learning journey</p>
             </div>
 
-            <div class="mb-8 bg-white rounded-2xl shadow-lg p-8 border-2 {% if is_pro %}border-yellow-400{% else %}border-gray-300{% endif %}">
-                <div class="text-center">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-3">Current Plan</h3>
-                    <div class="inline-block px-8 py-4 rounded-full text-2xl font-bold {% if is_pro %}text-white{% else %}bg-gray-200 text-gray-700{% endif %}" 
-                         {% if is_pro %}style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"{% endif %}>
-                        {% if is_pro %}
-                            <i class="fas fa-star mr-2"></i>PRO
-                        {% else %}
-                            FREE
+            {% if active_subscription %}
+            <div class="mb-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold mb-1">Your Active Subscription</h3>
+                        <p class="opacity-90">
+                            {% if active_subscription.pricing_tier %}
+                                {{ active_subscription.pricing_tier.get_tier_type_display }} - R{{ active_subscription.pricing_tier.price }}/month
+                            {% else %}
+                                Premium Plan
+                            {% endif %}
+                        </p>
+                        {% if active_subscription.has_tutor_addon %}
+                            <span class="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-white/20 rounded-full text-sm">
+                                <i class="fas fa-chalkboard-teacher"></i> Tutor Support Active
+                            </span>
                         {% endif %}
                     </div>
-                    {% if is_pro %}
-                        <p class="text-gray-600 mt-3">R100/month - Auto-renewing</p>
-                    {% else %}
-                        <p class="text-gray-600 mt-3">Free Forever</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-300 hover:shadow-xl transition-all duration-200">
-                    <div class="text-center mb-6">
-                        <div class="inline-block px-6 py-2 bg-gray-200 rounded-full text-xl font-bold text-gray-700 mb-3">
-                            FREE
-                        </div>
-                        <p class="text-3xl font-bold text-gray-900">R0</p>
-                        <p class="text-gray-600">Forever free</p>
-                    </div>
-                    
-                    <div class="space-y-4 mb-6">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">2 Exam Boards</p>
-                                <p class="text-sm text-gray-600">Choose from all available boards</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">2 Quizzes per Topic</p>
-                                <p class="text-sm text-gray-600">Lifetime access to 2 different quizzes per topic</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">All Subjects</p>
-                                <p class="text-sm text-gray-600">Access to all available subjects</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">Notes & Flashcards</p>
-                                <p class="text-sm text-gray-600">Full access to study materials</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-times-circle text-gray-400 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-500">Unlimited Quizzes</p>
-                                <p class="text-sm text-gray-500">Upgrade to unlock</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-times-circle text-gray-400 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-500">5 Exam Boards</p>
-                                <p class="text-sm text-gray-500">Upgrade to unlock</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-times-circle text-gray-400 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-500">Early Access to Features</p>
-                                <p class="text-sm text-gray-500">Upgrade to unlock</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if not is_pro %}
-                        <div class="text-center py-3 bg-gray-100 rounded-lg">
-                            <p class="text-sm font-semibold text-gray-700">Your Current Plan</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-8 border-2 border-yellow-400 hover:shadow-xl transition-all duration-200 relative">
-                    <div class="absolute top-0 right-0 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold rounded-bl-2xl rounded-tr-2xl">
-                        <i class="fas fa-star mr-1"></i> BEST VALUE
-                    </div>
-                    
-                    <div class="text-center mb-6 mt-4">
-                        <div class="inline-block px-6 py-2 rounded-full text-xl font-bold text-white mb-3" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-                            PRO
-                        </div>
-                        <p class="text-4xl font-bold text-gray-900">R100</p>
-                        <p class="text-gray-600">per month</p>
-                    </div>
-                    
-                    <div class="space-y-4 mb-6">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">5 Exam Boards</p>
-                                <p class="text-sm text-gray-700">More boards for comprehensive prep</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">Unlimited Quizzes</p>
-                                <p class="text-sm text-gray-700">Take as many quizzes as you want</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">All Subjects</p>
-                                <p class="text-sm text-gray-700">Access to all available subjects</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">Notes & Flashcards</p>
-                                <p class="text-sm text-gray-700">Full access to study materials</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">Priority Support</p>
-                                <p class="text-sm text-gray-700">Get help when you need it</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">Early Access</p>
-                                <p class="text-sm text-gray-700">Be first to try new features</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="font-semibold text-gray-900">All Exam Papers</p>
-                                <p class="text-sm text-gray-700">Including PRO-exclusive papers</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if is_pro %}
-                        <div class="text-center py-3 rounded-lg text-white font-semibold" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                            <i class="fas fa-check mr-2"></i> Your Current Plan
-                        </div>
-                    {% else %}
-                        <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-lg text-white font-bold hover:shadow-lg transition-all duration-200" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-                            <i class="fas fa-arrow-up mr-2"></i> Upgrade to PRO
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if is_pro %}
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
-                <h3 class="text-2xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-cog mr-2 text-purple-600"></i>
-                    Manage Subscription
-                </h3>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="font-semibold text-gray-900">Exam Boards</p>
-                            <p class="text-sm text-gray-600">Currently using {{ current_board_count }} of {{ board_limit }} available boards</p>
-                        </div>
-                        <a href="{% url 'student_onboarding' %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200">
-                            Manage Boards
-                        </a>
-                    </div>
-                    
-                    <div class="flex items-center justify-between p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                        <div>
-                            <p class="font-semibold text-gray-900">Cancel Subscription</p>
-                            <p class="text-sm text-gray-600">Downgrade to Free plan (keeps your data)</p>
-                        </div>
-                        <button onclick="showCancelModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200">
-                            Cancel PRO
-                        </button>
+                    <div class="text-right">
+                        <p class="text-sm opacity-80">Next billing date</p>
+                        <p class="font-semibold">{{ active_subscription.end_date|date:"M d, Y" }}</p>
                     </div>
                 </div>
             </div>
             {% endif %}
 
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200 pricing-card transition-all duration-300 flex flex-col">
+                    <div class="text-center mb-4">
+                        <span class="inline-block px-4 py-1 bg-gray-100 rounded-full text-sm font-semibold text-gray-700 mb-3">Per Subject</span>
+                        <div class="text-4xl font-bold text-gray-900">
+                            R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0 }}{% else %}100{% endif %}
+                        </div>
+                        <p class="text-gray-600 text-sm">per subject/month</p>
+                    </div>
+                    <div class="flex-1 space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>1-3 subjects individually priced</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Full access to chosen subjects</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Unlimited quizzes per subject</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>All notes & flashcards</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        Select Plan
+                    </a>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-400 pricing-card transition-all duration-300 flex flex-col relative">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+                        POPULAR
+                    </div>
+                    <div class="text-center mb-4 mt-2">
+                        <span class="inline-block px-4 py-1 bg-blue-100 rounded-full text-sm font-semibold text-blue-700 mb-3">4-5 Subjects</span>
+                        <div class="text-4xl font-bold text-gray-900">
+                            R{% if pricing.bundle_medium %}{{ pricing.bundle_medium.price|floatformat:0 }}{% else %}200{% endif %}
+                        </div>
+                        <p class="text-gray-600 text-sm">flat rate/month</p>
+                    </div>
+                    <div class="flex-1 space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>4-5 subjects included</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Better value than per-subject</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Unlimited quizzes</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>All study materials</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition">
+                        Select Plan
+                    </a>
+                </div>
+
+                <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-6 border-2 border-yellow-400 pricing-card transition-all duration-300 flex flex-col relative">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold rounded-full">
+                        BEST VALUE
+                    </div>
+                    <div class="text-center mb-4 mt-2">
+                        <span class="inline-block px-4 py-1 bg-yellow-100 rounded-full text-sm font-semibold text-yellow-700 mb-3">All Access</span>
+                        <div class="text-4xl font-bold text-gray-900">
+                            R{% if pricing.bundle_all %}{{ pricing.bundle_all.price|floatformat:0 }}{% else %}300{% endif %}
+                        </div>
+                        <p class="text-gray-600 text-sm">flat rate/month</p>
+                    </div>
+                    <div class="flex-1 space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <span class="font-semibold">All subjects included</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Unlimited everything</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>All exam papers</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Priority support</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-500 hover:to-orange-500 transition">
+                        Select Plan
+                    </a>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-lg p-6 border-2 border-purple-300 pricing-card transition-all duration-300 flex flex-col">
+                    <div class="text-center mb-4">
+                        <span class="inline-block px-4 py-1 bg-purple-100 rounded-full text-sm font-semibold text-purple-700 mb-3">Add-On</span>
+                        <div class="text-4xl font-bold text-gray-900">
+                            +R{% if pricing.tutor_addon %}{{ pricing.tutor_addon.price|floatformat:0 }}{% else %}500{% endif %}
+                        </div>
+                        <p class="text-gray-600 text-sm">per month</p>
+                    </div>
+                    <div class="flex-1 space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-chalkboard-teacher text-purple-500"></i>
+                            <span class="font-semibold">Live Tutor Support</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>1-on-1 tutoring sessions</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Direct messaging with tutors</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-check text-emerald-500"></i>
+                            <span>Homework help</span>
+                        </div>
+                    </div>
+                    <button class="block text-center py-3 rounded-xl font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition">
+                        Add to Plan
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white rounded-2xl shadow-lg p-8">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6">
-                    <i class="fas fa-question-circle mr-2 text-blue-600"></i>
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-question-circle mr-2 text-blue-500"></i>
                     Frequently Asked Questions
                 </h3>
-                <div class="space-y-4">
-                    <div class="border-b border-gray-200 pb-4">
-                        <h4 class="font-semibold text-gray-900 mb-2">How does the free plan work?</h4>
-                        <p class="text-gray-600">The free plan gives you lifetime access to 2 exam boards and 2 different quizzes per topic. You can retake the same quizzes unlimited times to practice!</p>
-                    </div>
-                    <div class="border-b border-gray-200 pb-4">
-                        <h4 class="font-semibold text-gray-900 mb-2">What happens when I upgrade to PRO?</h4>
-                        <p class="text-gray-600">You'll immediately get access to unlimited quizzes, up to 5 exam boards, and all PRO-exclusive content. Your payment is secure through PayFast.</p>
-                    </div>
-                    <div class="border-b border-gray-200 pb-4">
-                        <h4 class="font-semibold text-gray-900 mb-2">Can I cancel my PRO subscription?</h4>
-                        <p class="text-gray-600">Yes! You can cancel anytime from this page. You'll continue to have PRO access until the end of your current billing period, then automatically downgrade to Free.</p>
-                    </div>
-                    <div class="border-b border-gray-200 pb-4">
-                        <h4 class="font-semibold text-gray-900 mb-2">Is my payment secure?</h4>
-                        <p class="text-gray-600">Absolutely! We use PayFast, South Africa's leading payment gateway, with industry-standard encryption to protect your payment information.</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">How does per-subject pricing work?</h4>
+                        <p class="text-gray-600 text-sm">For 1-3 subjects, you pay R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0 }}{% else %}100{% endif %} per subject. For example, 2 subjects would cost R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0|add:pricing.per_subject.price|floatformat:0 }}{% else %}200{% endif %}/month.</p>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">What if I have more than 2 exam boards and downgrade?</h4>
-                        <p class="text-gray-600">Your existing selections will be kept, but you'll need to update them to 2 or fewer boards. We'll send you a reminder email.</p>
+                        <h4 class="font-semibold text-gray-900 mb-2">When should I choose the bundle?</h4>
+                        <p class="text-gray-600 text-sm">If you need 4+ subjects, the bundle plans offer significant savings compared to individual pricing.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Can I change my plan?</h4>
+                        <p class="text-gray-600 text-sm">Yes! You can upgrade or downgrade at any time. Changes take effect on your next billing date.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">What's included in tutor support?</h4>
+                        <p class="text-gray-600 text-sm">The R{% if pricing.tutor_addon %}{{ pricing.tutor_addon.price|floatformat:0 }}{% else %}500{% endif %} add-on gives you access to qualified tutors for live sessions and homework help.</p>
                     </div>
                 </div>
             </div>
@@ -260,36 +220,17 @@
     </div>
 
     <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Cancel PRO Subscription?</h3>
-                <p class="text-gray-600">Are you sure you want to cancel your PRO subscription and downgrade to Free?</p>
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Cancel Subscription?</h3>
+            <p class="text-gray-600 mb-6">Are you sure you want to cancel? You'll lose access to premium features at the end of your billing period.</p>
+            <div class="flex gap-3">
+                <button onclick="hideCancelModal()" class="flex-1 py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                    Keep Plan
+                </button>
+                <a href="{% url 'student_subscription_cancel' %}" class="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white text-center hover:bg-red-600 transition">
+                    Cancel
+                </a>
             </div>
-            
-            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-6">
-                <p class="text-sm text-gray-700 font-semibold mb-2">You will lose:</p>
-                <ul class="text-sm text-gray-600 space-y-1">
-                    <li><i class="fas fa-times text-red-500 mr-2"></i>Unlimited quizzes</li>
-                    <li><i class="fas fa-times text-red-500 mr-2"></i>Access to 5 exam boards</li>
-                    <li><i class="fas fa-times text-red-500 mr-2"></i>PRO-exclusive content</li>
-                    <li><i class="fas fa-times text-red-500 mr-2"></i>Priority support</li>
-                </ul>
-            </div>
-
-            <form method="POST" action="{% url 'student_subscription_cancel' %}">
-                {% csrf_token %}
-                <div class="flex space-x-3">
-                    <button type="button" onclick="hideCancelModal()" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all duration-200">
-                        Keep PRO
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all duration-200">
-                        Yes, Cancel
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -298,7 +239,6 @@
             document.getElementById('cancelModal').classList.remove('hidden');
             document.getElementById('cancelModal').classList.add('flex');
         }
-
         function hideCancelModal() {
             document.getElementById('cancelModal').classList.add('hidden');
             document.getElementById('cancelModal').classList.remove('flex');
