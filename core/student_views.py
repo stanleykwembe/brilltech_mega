@@ -1029,7 +1029,16 @@ def student_flashcards(request):
     if subject_filter:
         flashcards = flashcards.filter(subject_id=subject_filter)
     if topic_filter:
-        flashcards = flashcards.filter(topic__icontains=topic_filter)
+        flashcards = flashcards.filter(topic__name__icontains=topic_filter)
+    
+    # Get unique topics for filter dropdown
+    topic_ids = Flashcard.objects.filter(
+        subject_id__in=subject_ids,
+        exam_board_id__in=exam_board_ids,
+        grade=student_profile.grade,
+        topic__isnull=False
+    ).values_list('topic_id', flat=True).distinct()
+    all_topics = Topic.objects.filter(id__in=topic_ids).values_list('name', flat=True).order_by('name')
     
     # Group flashcards by subject and topic
     flashcard_groups = {}
@@ -1067,6 +1076,7 @@ def student_flashcards(request):
         'student_profile': student_profile,
         'flashcard_groups': flashcard_groups,
         'student_subjects': student_subjects,
+        'all_topics': all_topics,
         'progress_data': progress_data,
         'selected_subject': subject_filter,
         'selected_topic': topic_filter,
