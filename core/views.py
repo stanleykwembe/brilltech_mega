@@ -19,7 +19,7 @@ import os
 import mimetypes
 import secrets
 from datetime import timedelta
-from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken, SubscribedSubject
+from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken, SubscribedSubject, SubscriptionPlan
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 from .subscription_utils import require_premium, get_user_subscription
 
@@ -2364,9 +2364,9 @@ def admin_subscription_plans(request):
             plan_id = request.POST.get('plan_id')
             plan = get_object_or_404(SubscriptionPlan, id=plan_id)
             plan.price = request.POST.get('price')
-            plan.max_subjects = request.POST.get('max_subjects')
-            plan.lesson_plan_quota = request.POST.get('lesson_plan_quota')
-            plan.ai_model = request.POST.get('ai_model', '')
+            plan.allowed_subjects_count = request.POST.get('allowed_subjects_count', 0)
+            plan.monthly_ai_generations = request.POST.get('monthly_ai_generations', 0)
+            plan.can_use_ai = request.POST.get('can_use_ai') == 'on'
             plan.save()
             messages.success(request, f'{plan.name} plan updated successfully.')
         
