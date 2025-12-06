@@ -5956,11 +5956,17 @@ def manage_video_lessons(request):
 def add_video_lesson(request):
     """Add a new video lesson"""
     from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    import json
     
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject').filter(is_active=True).order_by('subject__name', 'order', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
     concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    # Build JSON for Alpine.js dynamic filtering
+    topics_json = json.dumps([{'id': t.id, 'name': t.name, 'subject_id': t.subject_id} for t in topics])
+    subtopics_json = json.dumps([{'id': s.id, 'name': s.name, 'topic_id': s.topic_id} for s in subtopics])
+    concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
@@ -5984,6 +5990,9 @@ def add_video_lesson(request):
                 'topics': topics,
                 'subtopics': subtopics,
                 'concepts': concepts,
+                'topics_json': topics_json,
+                'subtopics_json': subtopics_json,
+                'concepts_json': concepts_json,
                 'form_data': request.POST,
             })
         
@@ -6023,6 +6032,9 @@ def add_video_lesson(request):
         'topics': topics,
         'subtopics': subtopics,
         'concepts': concepts,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
+        'concepts_json': concepts_json,
     })
 
 
@@ -6030,12 +6042,18 @@ def add_video_lesson(request):
 def edit_video_lesson(request, video_id):
     """Edit an existing video lesson"""
     from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    import json
     
     video = get_object_or_404(VideoLesson, id=video_id)
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject').filter(is_active=True).order_by('subject__name', 'order', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
     concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    # Build JSON for Alpine.js dynamic filtering
+    topics_json = json.dumps([{'id': t.id, 'name': t.name, 'subject_id': t.subject_id} for t in topics])
+    subtopics_json = json.dumps([{'id': s.id, 'name': s.name, 'topic_id': s.topic_id} for s in subtopics])
+    concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
@@ -6059,8 +6077,10 @@ def edit_video_lesson(request, video_id):
                 'topics': topics,
                 'subtopics': subtopics,
                 'concepts': concepts,
-                'video': video,
-                'is_edit': True,
+                'topics_json': topics_json,
+                'subtopics_json': subtopics_json,
+                'concepts_json': concepts_json,
+                'video_lesson': video,
             })
         
         try:
@@ -6097,8 +6117,10 @@ def edit_video_lesson(request, video_id):
         'topics': topics,
         'subtopics': subtopics,
         'concepts': concepts,
-        'video': video,
-        'is_edit': True,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
+        'concepts_json': concepts_json,
+        'video_lesson': video,
     })
 
 
