@@ -2162,3 +2162,199 @@ def student_progress_dashboard(request):
     }
     
     return render(request, 'core/student/pathway/progress_dashboard.html', context)
+
+
+@student_login_required
+def student_settings(request):
+    """Student account settings page"""
+    from .models import StudentSubscriptionPricing, StudentSubscription, StudentSubject
+    
+    student_profile = request.user.student_profile
+    
+    # Get subscription info
+    try:
+        subscription = StudentSubscription.objects.get(student=student_profile)
+    except StudentSubscription.DoesNotExist:
+        subscription = None
+    
+    # Get pricing info
+    pricing = StudentSubscriptionPricing.get_current()
+    
+    # Get student's subjects
+    student_subjects = StudentSubject.objects.filter(student=student_profile).select_related('subject', 'exam_board')
+    subjects_count = student_subjects.count()
+    
+    # Calculate current tier price
+    if subjects_count <= pricing.per_subject_max:
+        current_price = pricing.per_subject_price * subjects_count
+        plan_name = f"Per Subject ({subjects_count} subject{'s' if subjects_count != 1 else ''})"
+    elif subjects_count <= pricing.multi_subject_max:
+        current_price = pricing.multi_subject_price
+        plan_name = f"Multi Subject ({subjects_count} subjects)"
+    else:
+        current_price = pricing.all_access_price
+        plan_name = "All Access"
+    
+    if request.method == 'POST':
+        # Handle profile updates
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        
+        user = request.user
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+        
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('student_settings')
+    
+    context = {
+        'student_profile': student_profile,
+        'subscription': subscription,
+        'pricing': pricing,
+        'student_subjects': student_subjects,
+        'subjects_count': subjects_count,
+        'current_price': current_price,
+        'plan_name': plan_name,
+    }
+    
+    return render(request, 'core/student/settings/settings.html', context)
+
+
+@student_login_required
+def student_change_password(request):
+    """Change password view"""
+    student_profile = request.user.student_profile
+    
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password', '')
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        user = request.user
+        
+        if not user.check_password(current_password):
+            messages.error(request, 'Current password is incorrect.')
+            return redirect('student_settings')
+        
+        if new_password != confirm_password:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('student_settings')
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+            return redirect('student_settings')
+        
+        user.set_password(new_password)
+        user.save()
+        
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, user)
+        
+        messages.success(request, 'Password changed successfully!')
+        return redirect('student_settings')
+    
+    return redirect('student_settings')
+
+
+@student_login_required
+def student_support(request):
+    """Student support page - list enquiries"""
+    from .models import SupportEnquiry
+    
+    student_profile = request.user.student_profile
+    
+    # Get all enquiries for this student
+    enquiries = SupportEnquiry.objects.filter(student=student_profile).order_by('-created_at')
+    
+    # Filter by status
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        enquiries = enquiries.filter(status=status_filter)
+    
+    context = {
+        'student_profile': student_profile,
+        'enquiries': enquiries,
+        'selected_status': status_filter,
+    }
+    
+    return render(request, 'core/student/support/list.html', context)
+
+
+@student_login_required
+def student_support_new(request):
+    """Create new support enquiry"""
+    from .models import SupportEnquiry, StudentSubject
+    
+    student_profile = request.user.student_profile
+    
+    # Get student's subjects for the form
+    student_subjects = StudentSubject.objects.filter(student=student_profile).select_related('subject')
+    
+    if request.method == 'POST':
+        enquiry_type = request.POST.get('enquiry_type', 'system')
+        subject = request.POST.get('subject', '')
+        message = request.POST.get('message', '')
+        related_subject_id = request.POST.get('related_subject', '')
+        related_topic = request.POST.get('related_topic', '')
+        
+        if not subject or not message:
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('student_support_new')
+        
+        # Check if tutor support requires subscription
+        if enquiry_type == 'tutor':
+            try:
+                subscription = student_profile.subscription_record
+                if not subscription.has_tutor_support:
+                    messages.warning(request, 'Tutor support requires the R500 add-on. Your enquiry will be submitted as a system support request.')
+                    enquiry_type = 'system'
+            except:
+                messages.warning(request, 'Tutor support requires a subscription add-on. Your enquiry will be submitted as a system support request.')
+                enquiry_type = 'system'
+        
+        enquiry = SupportEnquiry.objects.create(
+            student=student_profile,
+            enquiry_type=enquiry_type,
+            subject=subject,
+            message=message,
+            related_topic=related_topic,
+        )
+        
+        if related_subject_id:
+            try:
+                enquiry.related_subject_id = int(related_subject_id)
+                enquiry.save()
+            except:
+                pass
+        
+        messages.success(request, 'Your support enquiry has been submitted. We will get back to you soon!')
+        return redirect('student_support')
+    
+    context = {
+        'student_profile': student_profile,
+        'student_subjects': student_subjects,
+    }
+    
+    return render(request, 'core/student/support/new.html', context)
+
+
+@student_login_required
+def student_support_view(request, enquiry_id):
+    """View a support enquiry"""
+    from .models import SupportEnquiry
+    
+    student_profile = request.user.student_profile
+    
+    try:
+        enquiry = SupportEnquiry.objects.get(id=enquiry_id, student=student_profile)
+    except SupportEnquiry.DoesNotExist:
+        messages.error(request, 'Enquiry not found.')
+        return redirect('student_support')
+    
+    context = {
+        'student_profile': student_profile,
+        'enquiry': enquiry,
+    }
+    
+    return render(request, 'core/student/support/view.html', context)

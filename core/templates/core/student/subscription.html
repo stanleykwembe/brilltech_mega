@@ -6,27 +6,14 @@
     <title>Subscription - EduTech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
 </head>
-<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
+<body class="h-full bg-gray-50">
     <div class="min-h-full">
-        <header class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="fas fa-graduation-cap text-white text-xl"></i>
-                        </div>
-                        <h1 class="text-2xl font-bold text-gray-900">EduTech</h1>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="{% url 'student_dashboard' %}" class="text-sm text-gray-600 hover:text-purple-600">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
-                        </a>
-                        <span class="text-sm text-gray-600">{{ user.username }}</span>
-                    </div>
-                </div>
-            </div>
-        </header>
+        {% include 'core/student/partials/navbar.html' with active_page='settings' %}
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {% if messages %}

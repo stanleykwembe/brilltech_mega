@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Support Enquiry - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        {% include 'core/student/partials/navbar.html' with active_page='support' %}
+
+        <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="mb-6">
+                <a href="{% url 'student_support' %}" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Support
+                </a>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    <i class="fas fa-plus-circle text-indigo-600 mr-2"></i>
+                    New Enquiry
+                </h1>
+                <p class="text-gray-600 mt-1">Submit a question or request help</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-xl {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'warning' %}bg-amber-100 text-amber-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="bg-white rounded-2xl p-6 card-shadow">
+                {% csrf_token %}
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type of Enquiry *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="enquiry_type" value="tutor" class="peer sr-only">
+                                <div class="p-4 border-2 border-gray-200 rounded-xl text-center peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition">
+                                    <i class="fas fa-chalkboard-teacher text-2xl text-purple-500 mb-2"></i>
+                                    <p class="font-medium text-gray-900">Tutor Help</p>
+                                    <p class="text-xs text-gray-500">Get academic help</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="enquiry_type" value="system" class="peer sr-only" checked>
+                                <div class="p-4 border-2 border-gray-200 rounded-xl text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 transition">
+                                    <i class="fas fa-cog text-2xl text-blue-500 mb-2"></i>
+                                    <p class="font-medium text-gray-900">System Support</p>
+                                    <p class="text-xs text-gray-500">Technical issues</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="enquiry_type" value="billing" class="peer sr-only">
+                                <div class="p-4 border-2 border-gray-200 rounded-xl text-center peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-amber-300 transition">
+                                    <i class="fas fa-credit-card text-2xl text-amber-500 mb-2"></i>
+                                    <p class="font-medium text-gray-900">Billing</p>
+                                    <p class="text-xs text-gray-500">Payment queries</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="enquiry_type" value="content" class="peer sr-only">
+                                <div class="p-4 border-2 border-gray-200 rounded-xl text-center peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition">
+                                    <i class="fas fa-book text-2xl text-green-500 mb-2"></i>
+                                    <p class="font-medium text-gray-900">Content Issue</p>
+                                    <p class="text-xs text-gray-500">Report problems</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subject Line *</label>
+                        <input type="text" name="subject" required placeholder="Brief summary of your question" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Message *</label>
+                        <textarea name="message" required rows="6" placeholder="Describe your question or issue in detail..." class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Related Subject (optional)</label>
+                            <select name="related_subject" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 outline-none">
+                                <option value="">Select a subject...</option>
+                                {% for ss in student_subjects %}
+                                    <option value="{{ ss.subject.id }}">{{ ss.subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Related Topic (optional)</label>
+                            <input type="text" name="related_topic" placeholder="e.g., Cell Division" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 rounded-xl p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-indigo-500 mt-1"></i>
+                            <div class="text-sm text-indigo-800">
+                                <p class="font-medium mb-1">About Tutor Support</p>
+                                <p>Tutor support requires the R500/month add-on. If you don't have this, your tutor enquiries will be converted to system support.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-lg">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Submit Enquiry
+                        </button>
+                        <a href="{% url 'student_support' %}" class="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

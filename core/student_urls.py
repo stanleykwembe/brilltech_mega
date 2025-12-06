@@ -42,4 +42,11 @@ urlpatterns = [
     path('subject/<int:subject_id>/info/', student_views.student_info_pathway, name='student_info_pathway'),
     path('subject/<int:subject_id>/revise/', student_views.student_revise_pathway, name='student_revise_pathway'),
     path('progress/', student_views.student_progress_dashboard, name='student_progress_dashboard'),
+    
+    # Settings and Support
+    path('settings/', student_views.student_settings, name='student_settings'),
+    path('settings/password/', student_views.student_change_password, name='student_change_password'),
+    path('support/', student_views.student_support, name='student_support'),
+    path('support/new/', student_views.student_support_new, name='student_support_new'),
+    path('support/<int:enquiry_id>/', student_views.student_support_view, name='student_support_view'),
 ]

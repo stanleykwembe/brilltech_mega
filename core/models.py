@@ -1579,3 +1579,134 @@ class StudentTopicProgress(models.Model):
             completed += 1
         
         return int((completed / total_items) * 100)
+
+
+class StudentSubscriptionPricing(models.Model):
+    """Admin-configurable pricing for student subscriptions"""
+    per_subject_price = models.DecimalField(max_digits=10, decimal_places=2, default=100.00, help_text="Price per subject (R100 default)")
+    multi_subject_price = models.DecimalField(max_digits=10, decimal_places=2, default=200.00, help_text="Price for 4-5 subjects (R200 default)")
+    all_access_price = models.DecimalField(max_digits=10, decimal_places=2, default=300.00, help_text="Price for all subjects (R300 default)")
+    tutor_addon_price = models.DecimalField(max_digits=10, decimal_places=2, default=500.00, help_text="Tutor email support add-on (R500 default)")
+    
+    per_subject_max = models.IntegerField(default=3, help_text="Max subjects for per-subject pricing")
+    multi_subject_min = models.IntegerField(default=4, help_text="Min subjects for multi-subject tier")
+    multi_subject_max = models.IntegerField(default=5, help_text="Max subjects for multi-subject tier")
+    
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Student Subscription Pricing"
+        verbose_name_plural = "Student Subscription Pricing"
+    
+    def __str__(self):
+        return f"Student Pricing: R{self.per_subject_price}/subject, R{self.multi_subject_price}/4-5, R{self.all_access_price}/all"
+    
+    @classmethod
+    def get_current(cls):
+        pricing = cls.objects.filter(is_active=True).first()
+        if not pricing:
+            pricing = cls.objects.create()
+        return pricing
+    
+    def calculate_price(self, num_subjects, total_subjects_available, has_tutor=False):
+        base_price = 0
+        if num_subjects <= self.per_subject_max:
+            base_price = self.per_subject_price * num_subjects
+        elif num_subjects <= self.multi_subject_max:
+            base_price = self.multi_subject_price
+        else:
+            base_price = self.all_access_price
+        
+        if has_tutor:
+            base_price += self.tutor_addon_price
+        
+        return base_price
+
+
+class StudentSubscription(models.Model):
+    """Tracks student subscription status"""
+    STATUS_CHOICES = [
+        ('free', 'Free'),
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    PLAN_CHOICES = [
+        ('free', 'Free'),
+        ('per_subject', 'Per Subject (1-3)'),
+        ('multi_subject', 'Multi Subject (4-5)'),
+        ('all_access', 'All Access'),
+    ]
+    
+    student = models.OneToOneField('StudentProfile', on_delete=models.CASCADE, related_name='subscription_record')
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='free')
+    has_tutor_support = models.BooleanField(default=False)
+    
+    subjects_count = models.IntegerField(default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    started_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.get_plan_display()} ({self.status})"
+    
+    @property
+    def is_active(self):
+        from django.utils import timezone
+        if self.status == 'active' and self.expires_at:
+            return self.expires_at > timezone.now()
+        return self.status == 'free'
+
+
+class SupportEnquiry(models.Model):
+    """Student support enquiries/tickets"""
+    TYPE_CHOICES = [
+        ('tutor', 'Tutor Help'),
+        ('system', 'System Support'),
+        ('billing', 'Billing Query'),
+        ('content', 'Content Issue'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+    
+    student = models.ForeignKey('StudentProfile', on_delete=models.CASCADE, related_name='support_enquiries')
+    enquiry_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='system')
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    
+    related_subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, help_text="Related academic subject if applicable")
+    related_topic = models.CharField(max_length=200, blank=True)
+    
+    response = models.TextField(blank=True)
+    responded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='support_responses')
+    responded_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Support Enquiries"
+    
+    def __str__(self):
+        return f"[{self.get_status_display()}] {self.subject} - {self.student.user.username}"

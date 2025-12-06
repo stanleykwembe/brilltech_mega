@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from .models import (
     Subject, Grade, ExamBoard, UserProfile, UploadedDocument, 
     GeneratedAssignment, UsageQuota, SubscriptionPlan, UserSubscription, PayFastPayment,
-    SubscribedSubject, PastPaper, Quiz, QuizResponse, ClassGroup, AssignmentShare
+    SubscribedSubject, PastPaper, Quiz, QuizResponse, ClassGroup, AssignmentShare,
+    StudentSubscriptionPricing, StudentSubscription, SupportEnquiry
 )
 
 # Unregister the default User admin
@@ -290,6 +291,64 @@ class AssignmentShareAdmin(admin.ModelAdmin):
     search_fields = ['teacher__username', 'class_group__name']
     readonly_fields = ['token', 'shared_at', 'last_accessed', 'view_count']
     ordering = ['-shared_at']
+
+@admin.register(StudentSubscriptionPricing)
+class StudentSubscriptionPricingAdmin(admin.ModelAdmin):
+    list_display = ['per_subject_price', 'multi_subject_price', 'all_access_price', 'tutor_addon_price', 'is_active', 'updated_at']
+    fieldsets = (
+        ('Per-Subject Pricing (1-3 subjects)', {
+            'fields': ('per_subject_price', 'per_subject_max'),
+            'description': 'Students pay this amount for each subject they select (1-3 subjects)'
+        }),
+        ('Multi-Subject Pricing (4-5 subjects)', {
+            'fields': ('multi_subject_price', 'multi_subject_min', 'multi_subject_max'),
+            'description': 'Flat rate for students selecting 4-5 subjects'
+        }),
+        ('All Access Pricing', {
+            'fields': ('all_access_price',),
+            'description': 'Flat rate for unlimited subject access'
+        }),
+        ('Tutor Add-on', {
+            'fields': ('tutor_addon_price',),
+            'description': 'Additional fee for tutor email support'
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
+
+@admin.register(StudentSubscription)
+class StudentSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['student', 'plan', 'status', 'has_tutor_support', 'subjects_count', 'amount_paid', 'expires_at']
+    list_filter = ['plan', 'status', 'has_tutor_support']
+    search_fields = ['student__user__username', 'student__user__email']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+
+@admin.register(SupportEnquiry)
+class SupportEnquiryAdmin(admin.ModelAdmin):
+    list_display = ['subject', 'student', 'enquiry_type', 'priority', 'status', 'created_at', 'responded_at']
+    list_filter = ['enquiry_type', 'priority', 'status', 'created_at']
+    search_fields = ['subject', 'message', 'student__user__username']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Enquiry Details', {
+            'fields': ('student', 'enquiry_type', 'subject', 'message', 'priority', 'status')
+        }),
+        ('Related Content', {
+            'fields': ('related_subject', 'related_topic'),
+            'classes': ('collapse',)
+        }),
+        ('Response', {
+            'fields': ('response', 'responded_by', 'responded_at')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 # Customize admin site
 admin.site.site_header = "EduTech Platform Admin"

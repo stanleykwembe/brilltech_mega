@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Enquiry - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        {% include 'core/student/partials/navbar.html' with active_page='support' %}
+
+        <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="mb-6">
+                <a href="{% url 'student_support' %}" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Support
+                </a>
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ enquiry.subject }}</h1>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="px-2 py-1 rounded text-xs font-medium
+                                {% if enquiry.enquiry_type == 'tutor' %}bg-purple-100 text-purple-700
+                                {% elif enquiry.enquiry_type == 'billing' %}bg-amber-100 text-amber-700
+                                {% elif enquiry.enquiry_type == 'content' %}bg-blue-100 text-blue-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ enquiry.get_enquiry_type_display }}
+                            </span>
+                            <span class="px-2 py-1 rounded text-xs font-medium
+                                {% if enquiry.status == 'open' %}bg-yellow-100 text-yellow-700
+                                {% elif enquiry.status == 'in_progress' %}bg-blue-100 text-blue-700
+                                {% elif enquiry.status == 'resolved' %}bg-green-100 text-green-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ enquiry.get_status_display }}
+                            </span>
+                            <span class="text-sm text-gray-500">
+                                Submitted {{ enquiry.created_at|date:"M d, Y" }} at {{ enquiry.created_at|time:"H:i" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-2xl p-6 card-shadow">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <i class="fas fa-user text-emerald-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">You</p>
+                            <p class="text-xs text-gray-500">{{ enquiry.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="prose prose-sm max-w-none text-gray-700">
+                        {{ enquiry.message|linebreaks }}
+                    </div>
+                    {% if enquiry.related_subject or enquiry.related_topic %}
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <p class="text-sm text-gray-500">
+                                {% if enquiry.related_subject %}
+                                    <span class="mr-3"><i class="fas fa-book mr-1"></i> {{ enquiry.related_subject.name }}</span>
+                                {% endif %}
+                                {% if enquiry.related_topic %}
+                                    <span><i class="fas fa-tag mr-1"></i> {{ enquiry.related_topic }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if enquiry.response %}
+                    <div class="bg-indigo-50 rounded-2xl p-6 card-shadow border-l-4 border-indigo-500">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                                <i class="fas fa-headset text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">
+                                    {% if enquiry.responded_by %}{{ enquiry.responded_by.get_full_name|default:enquiry.responded_by.username }}{% else %}Support Team{% endif %}
+                                </p>
+                                {% if enquiry.responded_at %}
+                                    <p class="text-xs text-gray-500">{{ enquiry.responded_at|date:"M d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="prose prose-sm max-w-none text-gray-700">
+                            {{ enquiry.response|linebreaks }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bg-amber-50 rounded-2xl p-6 card-shadow text-center">
+                        <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-clock text-amber-500 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Awaiting Response</h3>
+                        <p class="text-sm text-gray-600">Our team will get back to you soon. Thank you for your patience!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

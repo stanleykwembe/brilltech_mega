@@ -16,27 +16,7 @@
 </head>
 <body class="h-full bg-gray-50">
     <div class="min-h-full">
-        <!-- Header -->
-        <header class="bg-white card-shadow sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                            <i class="fas fa-graduation-cap text-white text-lg"></i>
-                        </div>
-                        <span class="text-xl font-bold text-gray-900 hidden sm:block">EduTech</span>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-sm text-gray-600 hidden sm:block">
-                            Hi, <strong class="text-gray-900">{{ user.username }}</strong>
-                        </span>
-                        <a href="{% url 'student_logout' %}" class="p-2 text-gray-500 hover:text-red-500 transition-colors" title="Logout">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </header>
+        {% include 'core/student/partials/navbar.html' with active_page='dashboard' %}
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <!-- Welcome Banner -->
@@ -243,39 +223,6 @@
                         {% endif %}
                     </div>
 
-                    <!-- Quick Links -->
-                    <div class="bg-white rounded-2xl p-4 sm:p-6 card-shadow">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-link text-gray-500"></i>
-                            Quick Links
-                        </h2>
-                        <div class="space-y-2">
-                            <a href="{% url 'student_notes' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                                    <i class="fas fa-sticky-note text-emerald-600 text-sm"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">All Notes</span>
-                            </a>
-                            <a href="{% url 'student_flashcards' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                                    <i class="fas fa-layer-group text-purple-600 text-sm"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">Flashcards</span>
-                            </a>
-                            <a href="{% url 'student_quizzes_list' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                                    <i class="fas fa-brain text-blue-600 text-sm"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">All Quizzes</span>
-                            </a>
-                            <a href="{% url 'student_exam_papers' %}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                                    <i class="fas fa-file-alt text-orange-600 text-sm"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">Exam Papers</span>
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>

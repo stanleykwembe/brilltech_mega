@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        {% include 'core/student/partials/navbar.html' with active_page='support' %}
+
+        <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                        <i class="fas fa-headset text-indigo-600 mr-2"></i>
+                        Support Centre
+                    </h1>
+                    <p class="text-gray-600 mt-1">Get help from our team or a tutor</p>
+                </div>
+                <a href="{% url 'student_support_new' %}" class="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-lg">
+                    <i class="fas fa-plus"></i>
+                    New Enquiry
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-xl {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'warning' %}bg-amber-100 text-amber-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="bg-white rounded-2xl p-6 card-shadow mb-6">
+                <form method="get" class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+                        <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:border-indigo-500 outline-none">
+                            <option value="">All Enquiries</option>
+                            <option value="open" {% if selected_status == 'open' %}selected{% endif %}>Open</option>
+                            <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="resolved" {% if selected_status == 'resolved' %}selected{% endif %}>Resolved</option>
+                            <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>Closed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                    </button>
+                    {% if selected_status %}
+                        <a href="{% url 'student_support' %}" class="px-4 py-2 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+
+            {% if enquiries %}
+                <div class="space-y-4">
+                    {% for enquiry in enquiries %}
+                        <a href="{% url 'student_support_view' enquiry.id %}" class="block bg-white rounded-xl p-5 card-shadow hover:shadow-lg transition">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 rounded text-xs font-medium
+                                            {% if enquiry.enquiry_type == 'tutor' %}bg-purple-100 text-purple-700
+                                            {% elif enquiry.enquiry_type == 'billing' %}bg-amber-100 text-amber-700
+                                            {% elif enquiry.enquiry_type == 'content' %}bg-blue-100 text-blue-700
+                                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                            {{ enquiry.get_enquiry_type_display }}
+                                        </span>
+                                        <span class="px-2 py-1 rounded text-xs font-medium
+                                            {% if enquiry.status == 'open' %}bg-yellow-100 text-yellow-700
+                                            {% elif enquiry.status == 'in_progress' %}bg-blue-100 text-blue-700
+                                            {% elif enquiry.status == 'resolved' %}bg-green-100 text-green-700
+                                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                            {{ enquiry.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <h3 class="font-semibold text-gray-900 truncate">{{ enquiry.subject }}</h3>
+                                    <p class="text-sm text-gray-600 line-clamp-2 mt-1">{{ enquiry.message|truncatewords:30 }}</p>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <p class="text-sm text-gray-500">{{ enquiry.created_at|date:"M d, Y" }}</p>
+                                    <p class="text-xs text-gray-400">{{ enquiry.created_at|time:"H:i" }}</p>
+                                    {% if enquiry.response %}
+                                        <span class="inline-flex items-center gap-1 text-xs text-green-600 mt-1">
+                                            <i class="fas fa-check-circle"></i> Replied
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-2xl p-12 card-shadow text-center">
+                    <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-inbox text-indigo-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No Enquiries Yet</h3>
+                    <p class="text-gray-600 mb-6">Need help? Submit a new enquiry and our team will assist you.</p>
+                    <a href="{% url 'student_support_new' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition">
+                        <i class="fas fa-plus"></i>
+                        Submit Your First Enquiry
+                    </a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>
