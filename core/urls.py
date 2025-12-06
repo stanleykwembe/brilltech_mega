@@ -134,6 +134,28 @@ urlpatterns = [
     path('brilltech/admin/submissions/<int:submission_id>/', views.brilltech_admin_submission_detail, name='brilltech_admin_submission_detail'),
     path('brilltech/admin/change-password/', views.brilltech_admin_change_password, name='brilltech_admin_change_password'),
     
+    # BrillTech CRM - Tasks
+    path('brilltech/admin/crm/tasks/', views.crm_tasks_list, name='crm_tasks_list'),
+    path('brilltech/admin/crm/tasks/create/', views.crm_task_create, name='crm_task_create'),
+    path('brilltech/admin/crm/tasks/<int:task_id>/edit/', views.crm_task_edit, name='crm_task_edit'),
+    path('brilltech/admin/crm/tasks/<int:task_id>/delete/', views.crm_task_delete, name='crm_task_delete'),
+    
+    # BrillTech CRM - Leads
+    path('brilltech/admin/crm/leads/', views.crm_leads_list, name='crm_leads_list'),
+    path('brilltech/admin/crm/leads/create/', views.crm_lead_create, name='crm_lead_create'),
+    path('brilltech/admin/crm/leads/<int:lead_id>/', views.crm_lead_detail, name='crm_lead_detail'),
+    path('brilltech/admin/crm/leads/<int:lead_id>/edit/', views.crm_lead_edit, name='crm_lead_edit'),
+    path('brilltech/admin/crm/leads/<int:lead_id>/delete/', views.crm_lead_delete, name='crm_lead_delete'),
+    path('brilltech/admin/crm/leads/<int:lead_id>/activity/', views.crm_activity_add, name='crm_activity_add'),
+    
+    # BrillTech CRM - Mailing
+    path('brilltech/admin/crm/mailing/', views.crm_mailing_lists, name='crm_mailing_lists'),
+    path('brilltech/admin/crm/mailing/create/', views.crm_mailing_list_create, name='crm_mailing_list_create'),
+    path('brilltech/admin/crm/mailing/<int:list_id>/', views.crm_mailing_list_detail, name='crm_mailing_list_detail'),
+    path('brilltech/admin/crm/mailing/<int:list_id>/subscriber/', views.crm_subscriber_add, name='crm_subscriber_add'),
+    path('brilltech/admin/crm/campaigns/', views.crm_email_campaigns, name='crm_email_campaigns'),
+    path('brilltech/admin/crm/campaigns/create/', views.crm_email_campaign_create, name='crm_email_campaign_create'),
+    
     # Content Manager - Topics/Subtopics/Concepts/Video Lessons Management
     path('content/topics/', views.manage_topics, name='manage_topics'),
     path('content/topics/add/', views.add_topic, name='add_topic'),

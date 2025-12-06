@@ -1,0 +1,65 @@
+{% extends 'core/brilltech/admin/crm/base_crm.html' %}
+{% block title %}Email Campaigns{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Email Campaigns</h1>
+        <p class="text-gray-600">Manage your email marketing campaigns</p>
+    </div>
+    <a href="{% url 'crm_email_campaign_create' %}" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity">
+        <i class="fas fa-plus mr-2"></i>New Campaign
+    </a>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Campaign</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Mailing List</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Sent / Recipients</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Date</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for campaign in campaigns %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4">
+                    <div class="font-medium text-gray-900">{{ campaign.name }}</div>
+                    <div class="text-sm text-gray-500">{{ campaign.subject }}</div>
+                </td>
+                <td class="px-6 py-4 text-gray-600">{{ campaign.mailing_list.name }}</td>
+                <td class="px-6 py-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium 
+                        {% if campaign.status == 'sent' %}bg-green-100 text-green-700
+                        {% elif campaign.status == 'sending' %}bg-blue-100 text-blue-700
+                        {% elif campaign.status == 'failed' %}bg-red-100 text-red-700
+                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                        {{ campaign.get_status_display }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-gray-600">
+                    {{ campaign.sent_count }} / {{ campaign.recipient_count }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                    {% if campaign.sent_at %}
+                    {{ campaign.sent_at|date:"M d, Y H:i" }}
+                    {% else %}
+                    {{ campaign.created_at|date:"M d, Y" }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                    <i class="fas fa-paper-plane text-4xl text-gray-300 mb-4"></i>
+                    <p>No campaigns yet. Create your first campaign!</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

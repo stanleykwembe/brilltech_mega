@@ -1710,3 +1710,200 @@ class SupportEnquiry(models.Model):
     
     def __str__(self):
         return f"[{self.get_status_display()}] {self.subject} - {self.student.user.username}"
+
+
+# ===== CRM MODELS FOR BRILLTECH ADMIN =====
+
+class CRMTask(models.Model):
+    """Tasks/Todo items for CRM"""
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    due_date = models.DateField(null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='crm_tasks')
+    related_lead = models.ForeignKey('CRMLead', on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_crm_tasks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "CRM Task"
+        verbose_name_plural = "CRM Tasks"
+    
+    def __str__(self):
+        return self.title
+
+
+class CRMLead(models.Model):
+    """Leads/Customers for CRM"""
+    PIPELINE_CHOICES = [
+        ('new', 'New Lead'),
+        ('contacted', 'Contacted'),
+        ('demo', 'Demo Scheduled'),
+        ('trial', 'Trial'),
+        ('proposal', 'Proposal Sent'),
+        ('won', 'Won'),
+        ('lost', 'Lost'),
+    ]
+    
+    SOURCE_CHOICES = [
+        ('website', 'Website'),
+        ('referral', 'Referral'),
+        ('social', 'Social Media'),
+        ('email', 'Email Campaign'),
+        ('event', 'Event/Conference'),
+        ('cold_call', 'Cold Call'),
+        ('partner', 'Partner'),
+        ('other', 'Other'),
+    ]
+    
+    TYPE_CHOICES = [
+        ('school', 'School'),
+        ('teacher', 'Individual Teacher'),
+        ('district', 'School District'),
+        ('publisher', 'Publisher'),
+        ('other', 'Other'),
+    ]
+    
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    company = models.CharField(max_length=200, blank=True, help_text="School or organization name")
+    job_title = models.CharField(max_length=100, blank=True)
+    lead_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='school')
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='website')
+    pipeline_stage = models.CharField(max_length=20, choices=PIPELINE_CHOICES, default='new')
+    notes = models.TextField(blank=True)
+    estimated_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_leads')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_leads')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "CRM Lead"
+        verbose_name_plural = "CRM Leads"
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.company}"
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+class CRMActivity(models.Model):
+    """Activity log for leads"""
+    TYPE_CHOICES = [
+        ('call', 'Phone Call'),
+        ('email', 'Email'),
+        ('meeting', 'Meeting'),
+        ('demo', 'Demo'),
+        ('note', 'Note'),
+        ('task', 'Task Completed'),
+        ('stage_change', 'Stage Change'),
+    ]
+    
+    lead = models.ForeignKey(CRMLead, on_delete=models.CASCADE, related_name='activities')
+    activity_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='note')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "CRM Activity"
+        verbose_name_plural = "CRM Activities"
+    
+    def __str__(self):
+        return f"{self.get_activity_type_display()}: {self.title}"
+
+
+class CRMMailingList(models.Model):
+    """Email list for marketing campaigns"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Mailing List"
+        verbose_name_plural = "Mailing Lists"
+    
+    def __str__(self):
+        return self.name
+    
+    @property
+    def subscriber_count(self):
+        return self.subscribers.filter(is_active=True).count()
+
+
+class CRMMailingSubscriber(models.Model):
+    """Subscribers for mailing lists"""
+    mailing_list = models.ForeignKey(CRMMailingList, on_delete=models.CASCADE, related_name='subscribers')
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    lead = models.ForeignKey(CRMLead, on_delete=models.SET_NULL, null=True, blank=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    unsubscribed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['mailing_list', 'email']
+        verbose_name = "Mailing Subscriber"
+        verbose_name_plural = "Mailing Subscribers"
+    
+    def __str__(self):
+        return f"{self.email} - {self.mailing_list.name}"
+
+
+class CRMEmailCampaign(models.Model):
+    """Email campaigns for marketing"""
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('scheduled', 'Scheduled'),
+        ('sending', 'Sending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    mailing_list = models.ForeignKey(CRMMailingList, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    recipient_count = models.IntegerField(default=0)
+    sent_count = models.IntegerField(default=0)
+    failed_count = models.IntegerField(default=0)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Email Campaign"
+        verbose_name_plural = "Email Campaigns"
+    
+    def __str__(self):
+        return self.name

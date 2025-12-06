@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRM{% endblock %} - BrillTech Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #EC4899, #A855F7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0F0A1F 0%, #1E1B4B 100%);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 sidebar-gradient min-h-screen fixed left-0 top-0 p-6 overflow-y-auto">
+            <!-- Logo -->
+            <a href="{% url 'brilltech_landing' %}" class="flex items-center space-x-3 mb-8">
+                <img src="{% static 'core/img/brilltech-logo.jpg' %}" alt="BrillTech" class="w-10 h-10 rounded-xl object-cover">
+                <span class="text-lg font-bold text-white">Brill<span class="gradient-text">Tech</span></span>
+            </a>
+            
+            <!-- Navigation -->
+            <nav class="space-y-1">
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-2 px-4">Main</p>
+                <a href="{% url 'brilltech_admin_dashboard' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'brilltech_admin_dashboard' %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'brilltech_admin_submissions' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if 'submissions' in request.path %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span>Submissions</span>
+                </a>
+                
+                <p class="text-xs text-gray-500 uppercase tracking-wider mt-6 mb-2 px-4">CRM</p>
+                <a href="{% url 'crm_tasks_list' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if 'tasks' in request.path %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-tasks w-5"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="{% url 'crm_leads_list' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if 'leads' in request.path %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-users w-5"></i>
+                    <span>Leads</span>
+                </a>
+                <a href="{% url 'crm_mailing_lists' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if 'mailing' in request.path %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-envelope w-5"></i>
+                    <span>Mailing Lists</span>
+                </a>
+                <a href="{% url 'crm_email_campaigns' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl {% if 'campaigns' in request.path %}bg-pink-500/20 text-pink-400{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors">
+                    <i class="fas fa-paper-plane w-5"></i>
+                    <span>Campaigns</span>
+                </a>
+                
+                <p class="text-xs text-gray-500 uppercase tracking-wider mt-6 mb-2 px-4">Settings</p>
+                <a href="{% url 'brilltech_admin_change_password' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-key w-5"></i>
+                    <span>Change Password</span>
+                </a>
+            </nav>
+            
+            <!-- Logout -->
+            <div class="absolute bottom-6 left-6 right-6">
+                <a href="{% url 'brilltech_admin_logout' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8 min-h-screen">
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

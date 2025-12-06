@@ -1,0 +1,35 @@
+{% extends 'core/brilltech/admin/crm/base_crm.html' %}
+{% block title %}Mailing Lists{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Mailing Lists</h1>
+        <p class="text-gray-600">Manage your email subscriber lists</p>
+    </div>
+    <a href="{% url 'crm_mailing_list_create' %}" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity">
+        <i class="fas fa-plus mr-2"></i>New List
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for list in mailing_lists %}
+    <a href="{% url 'crm_mailing_list_detail' list.id %}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover transition-all">
+        <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <i class="fas fa-envelope text-white"></i>
+            </div>
+            <span class="text-3xl font-bold text-gray-900">{{ list.subscriber_count }}</span>
+        </div>
+        <h3 class="font-semibold text-gray-900 mb-1">{{ list.name }}</h3>
+        <p class="text-sm text-gray-500">{{ list.description|truncatewords:10|default:'No description' }}</p>
+        <p class="text-xs text-gray-400 mt-4">Created {{ list.created_at|date:"M d, Y" }}</p>
+    </a>
+    {% empty %}
+    <div class="col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <i class="fas fa-envelope text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500">No mailing lists yet. Create your first list!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

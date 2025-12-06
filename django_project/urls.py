@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('brilltech/signup/', include('core.admin_signup_urls')),
-    path('brilltech/admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('api/', include('core.api_urls')),
     path('student/', include('core.student_urls')),

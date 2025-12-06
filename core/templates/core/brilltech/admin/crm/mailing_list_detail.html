@@ -1,0 +1,90 @@
+{% extends 'core/brilltech/admin/crm/base_crm.html' %}
+{% block title %}{{ mailing_list.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'crm_mailing_lists' %}" class="text-gray-600 hover:text-pink-600 transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Mailing Lists
+    </a>
+</div>
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ mailing_list.name }}</h1>
+        <p class="text-gray-600">{{ mailing_list.description|default:'No description' }}</p>
+    </div>
+    <a href="{% url 'crm_email_campaign_create' %}?list={{ mailing_list.id }}" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity">
+        <i class="fas fa-paper-plane mr-2"></i>Send Campaign
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div class="text-3xl font-bold text-gray-900">{{ mailing_list.subscriber_count }}</div>
+        <p class="text-gray-500">Active Subscribers</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div class="text-3xl font-bold text-gray-900">{{ subscribers.count }}</div>
+        <p class="text-gray-500">Total Subscribers</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div class="text-3xl font-bold text-gray-900">{{ mailing_list.created_at|date:"M d" }}</div>
+        <p class="text-gray-500">Created</p>
+    </div>
+</div>
+
+<!-- Add Subscriber -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h2 class="text-lg font-bold text-gray-900 mb-4">Add Subscriber</h2>
+    <form method="post" action="{% url 'crm_subscriber_add' mailing_list.id %}" class="flex gap-4">
+        {% csrf_token %}
+        <input type="text" name="first_name" placeholder="First Name"
+            class="px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 flex-1">
+        <input type="text" name="last_name" placeholder="Last Name"
+            class="px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 flex-1">
+        <input type="email" name="email" placeholder="Email Address *" required
+            class="px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 flex-1">
+        <button type="submit" class="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Add
+        </button>
+    </form>
+</div>
+
+<!-- Subscribers List -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-lg font-bold text-gray-900">Subscribers</h2>
+    </div>
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Email</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Name</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
+                <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Subscribed</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for subscriber in subscribers %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-gray-900">{{ subscriber.email }}</td>
+                <td class="px-6 py-4 text-gray-600">{{ subscriber.first_name }} {{ subscriber.last_name }}</td>
+                <td class="px-6 py-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium {% if subscriber.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                        {% if subscriber.is_active %}Active{% else %}Unsubscribed{% endif %}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">{{ subscriber.subscribed_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                    No subscribers yet. Add your first subscriber above!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

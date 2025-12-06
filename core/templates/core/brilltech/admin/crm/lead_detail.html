@@ -1,0 +1,170 @@
+{% extends 'core/brilltech/admin/crm/base_crm.html' %}
+{% block title %}{{ lead.full_name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'crm_leads_list' %}" class="text-gray-600 hover:text-pink-600 transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Leads
+    </a>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+    <!-- Lead Info -->
+    <div class="col-span-2 space-y-6">
+        <!-- Header Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ lead.full_name }}</h1>
+                    <p class="text-gray-600">{{ lead.job_title }} {% if lead.company %}at {{ lead.company }}{% endif %}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'crm_lead_edit' lead.id %}" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Edit
+                    </a>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Email</p>
+                    <a href="mailto:{{ lead.email }}" class="text-pink-600 hover:text-pink-700">{{ lead.email }}</a>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Phone</p>
+                    <p class="text-gray-900">{{ lead.phone|default:'-' }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Type</p>
+                    <p class="text-gray-900">{{ lead.get_lead_type_display }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Log -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900">Activity Log</h2>
+            </div>
+            
+            <!-- Add Activity Form -->
+            <form method="post" action="{% url 'crm_activity_add' lead.id %}" class="p-6 border-b border-gray-100 bg-gray-50">
+                {% csrf_token %}
+                <div class="flex gap-4">
+                    <select name="activity_type" class="px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500">
+                        {% for value, label in activity_types %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="title" required placeholder="Activity title..."
+                        class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500">
+                    <button type="submit" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add
+                    </button>
+                </div>
+                <textarea name="description" placeholder="Details (optional)..." rows="2"
+                    class="w-full mt-3 px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500"></textarea>
+            </form>
+            
+            <!-- Activities List -->
+            <div class="divide-y divide-gray-100">
+                {% for activity in activities %}
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center
+                            {% if activity.activity_type == 'call' %}bg-blue-100 text-blue-600
+                            {% elif activity.activity_type == 'email' %}bg-green-100 text-green-600
+                            {% elif activity.activity_type == 'meeting' %}bg-purple-100 text-purple-600
+                            {% elif activity.activity_type == 'demo' %}bg-orange-100 text-orange-600
+                            {% elif activity.activity_type == 'stage_change' %}bg-pink-100 text-pink-600
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            <i class="fas 
+                                {% if activity.activity_type == 'call' %}fa-phone
+                                {% elif activity.activity_type == 'email' %}fa-envelope
+                                {% elif activity.activity_type == 'meeting' %}fa-calendar
+                                {% elif activity.activity_type == 'demo' %}fa-desktop
+                                {% elif activity.activity_type == 'stage_change' %}fa-arrow-right
+                                {% else %}fa-sticky-note{% endif %}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">{{ activity.title }}</div>
+                            {% if activity.description %}
+                            <div class="text-sm text-gray-600 mt-1">{{ activity.description }}</div>
+                            {% endif %}
+                            <div class="text-xs text-gray-400 mt-2">{{ activity.created_at|date:"M d, Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-clock text-3xl text-gray-300 mb-2"></i>
+                    <p>No activities yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- Pipeline Stage -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Pipeline Stage</h3>
+            <span class="inline-block px-4 py-2 rounded-full text-sm font-medium 
+                {% if lead.pipeline_stage == 'won' %}bg-green-100 text-green-700
+                {% elif lead.pipeline_stage == 'lost' %}bg-red-100 text-red-700
+                {% elif lead.pipeline_stage == 'new' %}bg-blue-100 text-blue-700
+                {% else %}bg-purple-100 text-purple-700{% endif %}">
+                {{ lead.get_pipeline_stage_display }}
+            </span>
+        </div>
+        
+        <!-- Details -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Details</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs text-gray-400">Source</p>
+                    <p class="text-gray-900">{{ lead.get_source_display }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400">Estimated Value</p>
+                    <p class="text-gray-900 font-semibold">{% if lead.estimated_value %}R{{ lead.estimated_value|floatformat:0 }}{% else %}-{% endif %}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400">Created</p>
+                    <p class="text-gray-900">{{ lead.created_at|date:"M d, Y" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400">Assigned To</p>
+                    <p class="text-gray-900">{{ lead.assigned_to.username|default:'-' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes -->
+        {% if lead.notes %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Notes</h3>
+            <p class="text-gray-600 text-sm">{{ lead.notes }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Related Tasks -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Related Tasks</h3>
+            {% for task in tasks %}
+            <div class="py-2 border-b border-gray-100 last:border-0">
+                <a href="{% url 'crm_task_edit' task.id %}" class="text-gray-900 hover:text-pink-600">{{ task.title }}</a>
+                <p class="text-xs text-gray-400">{{ task.get_status_display }}</p>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-sm">No tasks</p>
+            {% endfor %}
+            <a href="{% url 'crm_task_create' %}?lead={{ lead.id }}" class="block mt-4 text-sm text-pink-600 hover:text-pink-700">
+                <i class="fas fa-plus mr-1"></i>Add Task
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

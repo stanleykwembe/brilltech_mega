@@ -5329,7 +5329,7 @@ def brilltech_admin_logout(request):
 @brilltech_admin_required
 def brilltech_admin_dashboard(request):
     """BrillTech admin dashboard with stats"""
-    from .models import ContactSubmission
+    from .models import ContactSubmission, CRMTask, CRMLead
     
     total_submissions = ContactSubmission.objects.count()
     new_submissions = ContactSubmission.objects.filter(status='new').count()
@@ -5338,12 +5338,17 @@ def brilltech_admin_dashboard(request):
     
     recent_submissions = ContactSubmission.objects.all()[:5]
     
+    total_leads = CRMLead.objects.count()
+    pending_tasks = CRMTask.objects.filter(status__in=['pending', 'in_progress']).count()
+    
     return render(request, 'core/brilltech/admin/dashboard.html', {
         'total_submissions': total_submissions,
         'new_submissions': new_submissions,
         'read_submissions': read_submissions,
         'replied_submissions': replied_submissions,
         'recent_submissions': recent_submissions,
+        'total_leads': total_leads,
+        'pending_tasks': pending_tasks,
     })
 
 
@@ -6171,3 +6176,404 @@ def delete_video_lesson(request, video_id):
         messages.success(request, f'Video lesson "{title}" deleted successfully.')
     
     return redirect('manage_video_lessons')
+
+
+# ============================================================================
+# BRILLTECH CRM VIEWS (Tasks, Leads, Activities, Mailing)
+# ============================================================================
+
+@brilltech_admin_required
+def crm_tasks_list(request):
+    """List all CRM tasks"""
+    from .models import CRMTask, CRMLead
+    
+    tasks = CRMTask.objects.select_related('assigned_to', 'related_lead', 'created_by').all()
+    
+    status_filter = request.GET.get('status', '')
+    priority_filter = request.GET.get('priority', '')
+    
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    if priority_filter:
+        tasks = tasks.filter(priority=priority_filter)
+    
+    return render(request, 'core/brilltech/admin/crm/tasks_list.html', {
+        'tasks': tasks,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+    })
+
+
+@brilltech_admin_required
+def crm_task_create(request):
+    """Create a new CRM task"""
+    from .models import CRMTask, CRMLead
+    from django.contrib.auth.models import User
+    
+    if request.method == 'POST':
+        task = CRMTask.objects.create(
+            title=request.POST.get('title'),
+            description=request.POST.get('description', ''),
+            priority=request.POST.get('priority', 'medium'),
+            status=request.POST.get('status', 'pending'),
+            due_date=request.POST.get('due_date') or None,
+            assigned_to_id=request.POST.get('assigned_to') or None,
+            related_lead_id=request.POST.get('related_lead') or None,
+        )
+        messages.success(request, f'Task "{task.title}" created successfully.')
+        return redirect('crm_tasks_list')
+    
+    leads = CRMLead.objects.all()
+    users = User.objects.filter(is_active=True)
+    
+    return render(request, 'core/brilltech/admin/crm/task_form.html', {
+        'leads': leads,
+        'users': users,
+    })
+
+
+@brilltech_admin_required
+def crm_task_edit(request, task_id):
+    """Edit a CRM task"""
+    from .models import CRMTask, CRMLead
+    from django.contrib.auth.models import User
+    
+    task = get_object_or_404(CRMTask, id=task_id)
+    
+    if request.method == 'POST':
+        task.title = request.POST.get('title')
+        task.description = request.POST.get('description', '')
+        task.priority = request.POST.get('priority', 'medium')
+        task.status = request.POST.get('status', 'pending')
+        task.due_date = request.POST.get('due_date') or None
+        task.assigned_to_id = request.POST.get('assigned_to') or None
+        task.related_lead_id = request.POST.get('related_lead') or None
+        task.save()
+        messages.success(request, f'Task "{task.title}" updated successfully.')
+        return redirect('crm_tasks_list')
+    
+    leads = CRMLead.objects.all()
+    users = User.objects.filter(is_active=True)
+    
+    return render(request, 'core/brilltech/admin/crm/task_form.html', {
+        'task': task,
+        'leads': leads,
+        'users': users,
+    })
+
+
+@brilltech_admin_required
+def crm_task_delete(request, task_id):
+    """Delete a CRM task"""
+    from .models import CRMTask
+    
+    task = get_object_or_404(CRMTask, id=task_id)
+    
+    if request.method == 'POST':
+        title = task.title
+        task.delete()
+        messages.success(request, f'Task "{title}" deleted successfully.')
+    
+    return redirect('crm_tasks_list')
+
+
+@brilltech_admin_required
+def crm_leads_list(request):
+    """List all CRM leads with pipeline filter"""
+    from .models import CRMLead
+    
+    leads = CRMLead.objects.select_related('assigned_to', 'created_by').all()
+    
+    pipeline_filter = request.GET.get('pipeline', '')
+    source_filter = request.GET.get('source', '')
+    
+    if pipeline_filter:
+        leads = leads.filter(pipeline_stage=pipeline_filter)
+    if source_filter:
+        leads = leads.filter(source=source_filter)
+    
+    pipeline_counts = {}
+    for stage, label in CRMLead.PIPELINE_CHOICES:
+        pipeline_counts[stage] = CRMLead.objects.filter(pipeline_stage=stage).count()
+    
+    return render(request, 'core/brilltech/admin/crm/leads_list.html', {
+        'leads': leads,
+        'pipeline_filter': pipeline_filter,
+        'source_filter': source_filter,
+        'pipeline_counts': pipeline_counts,
+        'pipeline_choices': CRMLead.PIPELINE_CHOICES,
+        'source_choices': CRMLead.SOURCE_CHOICES,
+    })
+
+
+@brilltech_admin_required
+def crm_lead_create(request):
+    """Create a new CRM lead"""
+    from .models import CRMLead, CRMActivity
+    from django.contrib.auth.models import User
+    
+    if request.method == 'POST':
+        lead = CRMLead.objects.create(
+            first_name=request.POST.get('first_name'),
+            last_name=request.POST.get('last_name'),
+            email=request.POST.get('email'),
+            phone=request.POST.get('phone', ''),
+            company=request.POST.get('company', ''),
+            job_title=request.POST.get('job_title', ''),
+            lead_type=request.POST.get('lead_type', 'school'),
+            source=request.POST.get('source', 'website'),
+            pipeline_stage=request.POST.get('pipeline_stage', 'new'),
+            notes=request.POST.get('notes', ''),
+            estimated_value=request.POST.get('estimated_value') or None,
+            assigned_to_id=request.POST.get('assigned_to') or None,
+        )
+        CRMActivity.objects.create(
+            lead=lead,
+            activity_type='note',
+            title='Lead Created',
+            description=f'Lead was created from source: {lead.get_source_display()}',
+        )
+        messages.success(request, f'Lead "{lead.full_name}" created successfully.')
+        return redirect('crm_lead_detail', lead_id=lead.id)
+    
+    users = User.objects.filter(is_active=True)
+    
+    return render(request, 'core/brilltech/admin/crm/lead_form.html', {
+        'users': users,
+        'pipeline_choices': CRMLead.PIPELINE_CHOICES,
+        'source_choices': CRMLead.SOURCE_CHOICES,
+        'type_choices': CRMLead.TYPE_CHOICES,
+    })
+
+
+@brilltech_admin_required
+def crm_lead_detail(request, lead_id):
+    """View lead details with activities"""
+    from .models import CRMLead, CRMActivity, CRMTask
+    
+    lead = get_object_or_404(CRMLead, id=lead_id)
+    activities = lead.activities.all()[:20]
+    tasks = lead.tasks.all()[:10]
+    
+    return render(request, 'core/brilltech/admin/crm/lead_detail.html', {
+        'lead': lead,
+        'activities': activities,
+        'tasks': tasks,
+        'pipeline_choices': CRMLead.PIPELINE_CHOICES,
+        'activity_types': CRMActivity.TYPE_CHOICES,
+    })
+
+
+@brilltech_admin_required
+def crm_lead_edit(request, lead_id):
+    """Edit a CRM lead"""
+    from .models import CRMLead, CRMActivity
+    from django.contrib.auth.models import User
+    
+    lead = get_object_or_404(CRMLead, id=lead_id)
+    old_stage = lead.pipeline_stage
+    
+    if request.method == 'POST':
+        lead.first_name = request.POST.get('first_name')
+        lead.last_name = request.POST.get('last_name')
+        lead.email = request.POST.get('email')
+        lead.phone = request.POST.get('phone', '')
+        lead.company = request.POST.get('company', '')
+        lead.job_title = request.POST.get('job_title', '')
+        lead.lead_type = request.POST.get('lead_type', 'school')
+        lead.source = request.POST.get('source', 'website')
+        lead.pipeline_stage = request.POST.get('pipeline_stage', 'new')
+        lead.notes = request.POST.get('notes', '')
+        lead.estimated_value = request.POST.get('estimated_value') or None
+        lead.assigned_to_id = request.POST.get('assigned_to') or None
+        lead.save()
+        
+        if old_stage != lead.pipeline_stage:
+            CRMActivity.objects.create(
+                lead=lead,
+                activity_type='stage_change',
+                title='Pipeline Stage Changed',
+                description=f'Stage changed from {dict(CRMLead.PIPELINE_CHOICES).get(old_stage)} to {lead.get_pipeline_stage_display()}',
+            )
+        
+        messages.success(request, f'Lead "{lead.full_name}" updated successfully.')
+        return redirect('crm_lead_detail', lead_id=lead.id)
+    
+    users = User.objects.filter(is_active=True)
+    
+    return render(request, 'core/brilltech/admin/crm/lead_form.html', {
+        'lead': lead,
+        'users': users,
+        'pipeline_choices': CRMLead.PIPELINE_CHOICES,
+        'source_choices': CRMLead.SOURCE_CHOICES,
+        'type_choices': CRMLead.TYPE_CHOICES,
+    })
+
+
+@brilltech_admin_required
+def crm_lead_delete(request, lead_id):
+    """Delete a CRM lead"""
+    from .models import CRMLead
+    
+    lead = get_object_or_404(CRMLead, id=lead_id)
+    
+    if request.method == 'POST':
+        name = lead.full_name
+        lead.delete()
+        messages.success(request, f'Lead "{name}" deleted successfully.')
+    
+    return redirect('crm_leads_list')
+
+
+@brilltech_admin_required
+def crm_activity_add(request, lead_id):
+    """Add an activity to a lead"""
+    from .models import CRMLead, CRMActivity
+    
+    lead = get_object_or_404(CRMLead, id=lead_id)
+    
+    if request.method == 'POST':
+        CRMActivity.objects.create(
+            lead=lead,
+            activity_type=request.POST.get('activity_type', 'note'),
+            title=request.POST.get('title'),
+            description=request.POST.get('description', ''),
+        )
+        messages.success(request, 'Activity added successfully.')
+    
+    return redirect('crm_lead_detail', lead_id=lead.id)
+
+
+@brilltech_admin_required
+def crm_mailing_lists(request):
+    """List all mailing lists"""
+    from .models import CRMMailingList
+    
+    mailing_lists = CRMMailingList.objects.all()
+    
+    return render(request, 'core/brilltech/admin/crm/mailing_lists.html', {
+        'mailing_lists': mailing_lists,
+    })
+
+
+@brilltech_admin_required
+def crm_mailing_list_create(request):
+    """Create a new mailing list"""
+    from .models import CRMMailingList
+    
+    if request.method == 'POST':
+        mailing_list = CRMMailingList.objects.create(
+            name=request.POST.get('name'),
+            description=request.POST.get('description', ''),
+        )
+        messages.success(request, f'Mailing list "{mailing_list.name}" created successfully.')
+        return redirect('crm_mailing_list_detail', list_id=mailing_list.id)
+    
+    return render(request, 'core/brilltech/admin/crm/mailing_list_form.html', {})
+
+
+@brilltech_admin_required
+def crm_mailing_list_detail(request, list_id):
+    """View mailing list with subscribers"""
+    from .models import CRMMailingList, CRMMailingSubscriber
+    
+    mailing_list = get_object_or_404(CRMMailingList, id=list_id)
+    subscribers = mailing_list.subscribers.all()
+    
+    return render(request, 'core/brilltech/admin/crm/mailing_list_detail.html', {
+        'mailing_list': mailing_list,
+        'subscribers': subscribers,
+    })
+
+
+@brilltech_admin_required
+def crm_subscriber_add(request, list_id):
+    """Add a subscriber to a mailing list"""
+    from .models import CRMMailingList, CRMMailingSubscriber
+    
+    mailing_list = get_object_or_404(CRMMailingList, id=list_id)
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        if not CRMMailingSubscriber.objects.filter(mailing_list=mailing_list, email=email).exists():
+            CRMMailingSubscriber.objects.create(
+                mailing_list=mailing_list,
+                email=email,
+                first_name=request.POST.get('first_name', ''),
+                last_name=request.POST.get('last_name', ''),
+            )
+            messages.success(request, f'Subscriber "{email}" added successfully.')
+        else:
+            messages.warning(request, f'Subscriber "{email}" already exists.')
+    
+    return redirect('crm_mailing_list_detail', list_id=list_id)
+
+
+@brilltech_admin_required
+def crm_email_campaigns(request):
+    """List all email campaigns"""
+    from .models import CRMEmailCampaign
+    
+    campaigns = CRMEmailCampaign.objects.select_related('mailing_list', 'created_by').all()
+    
+    return render(request, 'core/brilltech/admin/crm/email_campaigns.html', {
+        'campaigns': campaigns,
+    })
+
+
+@brilltech_admin_required
+def crm_email_campaign_create(request):
+    """Create a new email campaign"""
+    from .models import CRMEmailCampaign, CRMMailingList
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.utils import timezone
+    
+    if request.method == 'POST':
+        campaign = CRMEmailCampaign.objects.create(
+            name=request.POST.get('name'),
+            subject=request.POST.get('subject'),
+            body=request.POST.get('body'),
+            mailing_list_id=request.POST.get('mailing_list'),
+            status='draft',
+        )
+        
+        if request.POST.get('send_now') == 'true':
+            mailing_list = campaign.mailing_list
+            subscribers = mailing_list.subscribers.filter(is_active=True)
+            campaign.recipient_count = subscribers.count()
+            campaign.status = 'sending'
+            campaign.save()
+            
+            sent = 0
+            failed = 0
+            for subscriber in subscribers:
+                try:
+                    send_mail(
+                        subject=campaign.subject,
+                        message=campaign.body,
+                        from_email=settings.EMAIL_HOST_USER,
+                        recipient_list=[subscriber.email],
+                        fail_silently=False,
+                    )
+                    sent += 1
+                except:
+                    failed += 1
+            
+            campaign.sent_count = sent
+            campaign.failed_count = failed
+            campaign.status = 'sent' if failed == 0 else 'failed'
+            campaign.sent_at = timezone.now()
+            campaign.save()
+            
+            messages.success(request, f'Campaign sent to {sent} recipients.')
+        else:
+            messages.success(request, f'Campaign "{campaign.name}" saved as draft.')
+        
+        return redirect('crm_email_campaigns')
+    
+    mailing_lists = CRMMailingList.objects.all()
+    
+    return render(request, 'core/brilltech/admin/crm/email_campaign_form.html', {
+        'mailing_lists': mailing_lists,
+    })
