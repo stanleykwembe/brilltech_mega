@@ -130,6 +130,24 @@ urlpatterns = [
     path('brilltech/admin/submissions/<int:submission_id>/', views.brilltech_admin_submission_detail, name='brilltech_admin_submission_detail'),
     path('brilltech/admin/change-password/', views.brilltech_admin_change_password, name='brilltech_admin_change_password'),
     
+    # Content Manager - Topics/Subtopics/Concepts/Video Lessons Management
+    path('content/topics/', views.manage_topics, name='manage_topics'),
+    path('content/topics/add/', views.add_topic, name='add_topic'),
+    path('content/topics/<int:topic_id>/edit/', views.edit_topic, name='edit_topic'),
+    path('content/topics/<int:topic_id>/delete/', views.delete_topic, name='delete_topic'),
+    path('content/subtopics/', views.manage_subtopics, name='manage_subtopics'),
+    path('content/subtopics/add/', views.add_subtopic, name='add_subtopic'),
+    path('content/subtopics/<int:subtopic_id>/edit/', views.edit_subtopic, name='edit_subtopic'),
+    path('content/subtopics/<int:subtopic_id>/delete/', views.delete_subtopic, name='delete_subtopic'),
+    path('content/concepts/', views.manage_concepts, name='manage_concepts'),
+    path('content/concepts/add/', views.add_concept, name='add_concept'),
+    path('content/concepts/<int:concept_id>/edit/', views.edit_concept, name='edit_concept'),
+    path('content/concepts/<int:concept_id>/delete/', views.delete_concept, name='delete_concept'),
+    path('content/video-lessons/', views.manage_video_lessons, name='manage_video_lessons'),
+    path('content/video-lessons/add/', views.add_video_lesson, name='add_video_lesson'),
+    path('content/video-lessons/<int:video_id>/edit/', views.edit_video_lesson, name='edit_video_lesson'),
+    path('content/video-lessons/<int:video_id>/delete/', views.delete_video_lesson, name='delete_video_lesson'),
+    
     # Public share links for students (token-based, no login required)
     path('share/<str:token>/', views.share_content_view, name='share_content_view'),
     

@@ -13,11 +13,13 @@ from functools import wraps
 import secrets
 import os
 from datetime import timedelta
+from django.db.models import Q
 from .models import (
     StudentProfile, Grade, ExamBoard, Subject, 
     StudentExamBoard, StudentSubject, StudentQuiz,
     InteractiveQuestion, StudentQuizAttempt, StudentQuizQuota,
-    StudentProgress, Note, Flashcard, ExamPaper
+    StudentProgress, Note, Flashcard, ExamPaper,
+    VideoLesson, Topic, Subtopic, Concept
 )
 
 
@@ -1357,3 +1359,166 @@ EduTech Team''',
     }
     
     return render(request, 'core/student/subscription_cancel_confirm.html', context)
+
+
+@student_login_required
+def student_video_library(request):
+    """Browse video lessons with cascading filters"""
+    student_profile = request.user.student_profile
+    
+    # Get all active videos
+    videos = VideoLesson.objects.filter(is_active=True).select_related(
+        'subject', 'topic', 'subtopic', 'concept'
+    )
+    
+    # Get featured videos
+    featured_videos = videos.filter(is_featured=True)[:6]
+    
+    # Get filter parameters
+    subject_filter = request.GET.get('subject')
+    topic_filter = request.GET.get('topic')
+    subtopic_filter = request.GET.get('subtopic')
+    concept_filter = request.GET.get('concept')
+    search_query = request.GET.get('search', '').strip()
+    
+    # Apply filters
+    if subject_filter:
+        videos = videos.filter(subject_id=subject_filter)
+    if topic_filter:
+        videos = videos.filter(topic_id=topic_filter)
+    if subtopic_filter:
+        videos = videos.filter(subtopic_id=subtopic_filter)
+    if concept_filter:
+        videos = videos.filter(concept_id=concept_filter)
+    if search_query:
+        videos = videos.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(tags__icontains=search_query)
+        )
+    
+    # Order by featured first, then by order and created date
+    videos = videos.order_by('-is_featured', 'order', '-created_at')
+    
+    # Get all subjects with videos for filtering
+    subjects_with_videos = Subject.objects.filter(
+        video_lessons__is_active=True
+    ).distinct().order_by('name')
+    
+    # Get topics/subtopics/concepts for selected subject (for cascading dropdowns)
+    topics = []
+    subtopics = []
+    concepts = []
+    
+    if subject_filter:
+        topics = Topic.objects.filter(
+            subject_id=subject_filter,
+            is_active=True
+        ).order_by('order', 'name')
+        
+        if topic_filter:
+            subtopics = Subtopic.objects.filter(
+                topic_id=topic_filter,
+                is_active=True
+            ).order_by('order', 'name')
+            
+            if subtopic_filter:
+                concepts = Concept.objects.filter(
+                    subtopic_id=subtopic_filter,
+                    is_active=True
+                ).order_by('order', 'name')
+    
+    context = {
+        'student_profile': student_profile,
+        'videos': videos,
+        'featured_videos': featured_videos,
+        'subjects': subjects_with_videos,
+        'topics': topics,
+        'subtopics': subtopics,
+        'concepts': concepts,
+        'selected_subject': subject_filter,
+        'selected_topic': topic_filter,
+        'selected_subtopic': subtopic_filter,
+        'selected_concept': concept_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'core/student/video_library.html', context)
+
+
+@student_login_required
+def student_video_player(request, video_id):
+    """Watch individual video lesson"""
+    student_profile = request.user.student_profile
+    
+    try:
+        video = VideoLesson.objects.select_related(
+            'subject', 'topic', 'subtopic', 'concept'
+        ).get(id=video_id, is_active=True)
+    except VideoLesson.DoesNotExist:
+        messages.error(request, 'Video not found.')
+        return redirect('student_video_library')
+    
+    # Increment view count
+    video.view_count += 1
+    video.save(update_fields=['view_count'])
+    
+    # Get related videos from same topic/subtopic
+    related_videos = VideoLesson.objects.filter(is_active=True).exclude(id=video.id)
+    
+    if video.subtopic:
+        related_videos = related_videos.filter(subtopic=video.subtopic)
+    elif video.topic:
+        related_videos = related_videos.filter(topic=video.topic)
+    elif video.subject:
+        related_videos = related_videos.filter(subject=video.subject)
+    
+    related_videos = related_videos.select_related(
+        'subject', 'topic', 'subtopic', 'concept'
+    ).order_by('order', '-created_at')[:8]
+    
+    # Parse tags
+    tags_list = []
+    if video.tags:
+        tags_list = [tag.strip() for tag in video.tags.split(',') if tag.strip()]
+    
+    context = {
+        'student_profile': student_profile,
+        'video': video,
+        'related_videos': related_videos,
+        'tags_list': tags_list,
+        'embed_url': video.get_youtube_embed_url(),
+    }
+    
+    return render(request, 'core/student/video_player.html', context)
+
+
+def student_video_ajax_filters(request):
+    """AJAX endpoint for cascading filter dropdowns"""
+    filter_type = request.GET.get('type')
+    parent_id = request.GET.get('parent_id')
+    
+    data = []
+    
+    if filter_type == 'topics' and parent_id:
+        topics = Topic.objects.filter(
+            subject_id=parent_id,
+            is_active=True
+        ).order_by('order', 'name')
+        data = [{'id': t.id, 'name': t.name} for t in topics]
+    
+    elif filter_type == 'subtopics' and parent_id:
+        subtopics = Subtopic.objects.filter(
+            topic_id=parent_id,
+            is_active=True
+        ).order_by('order', 'name')
+        data = [{'id': s.id, 'name': s.name} for s in subtopics]
+    
+    elif filter_type == 'concepts' and parent_id:
+        concepts = Concept.objects.filter(
+            subtopic_id=parent_id,
+            is_active=True
+        ).order_by('order', 'name')
+        data = [{'id': c.id, 'name': c.name} for c in concepts]
+    
+    return JsonResponse({'items': data})

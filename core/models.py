@@ -1298,3 +1298,183 @@ class ContactSubmission(models.Model):
         self.status = 'read'
         self.read_at = timezone.now()
         self.save()
+
+
+# ============================================
+# VIDEO LESSON SYSTEM - Hierarchical Structure
+# Subject → Topic → Subtopic → Concept → VideoLesson
+# ============================================
+
+class Topic(models.Model):
+    """Topics belong to Subjects. Example: Mathematics → Algebra"""
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0, help_text="Display order within subject")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['subject', 'order', 'name']
+        unique_together = ['subject', 'name']
+    
+    def __str__(self):
+        return f"{self.subject.name} → {self.name}"
+
+
+class Subtopic(models.Model):
+    """Subtopics belong to Topics. Example: Algebra → Linear Equations"""
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='subtopics')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0, help_text="Display order within topic")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['topic', 'order', 'name']
+        unique_together = ['topic', 'name']
+    
+    def __str__(self):
+        return f"{self.topic.name} → {self.name}"
+    
+    def get_full_path(self):
+        return f"{self.topic.subject.name} → {self.topic.name} → {self.name}"
+
+
+class Concept(models.Model):
+    """Concepts belong to Subtopics. Example: Linear Equations → Solving for X"""
+    subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE, related_name='concepts')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0, help_text="Display order within subtopic")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['subtopic', 'order', 'name']
+        unique_together = ['subtopic', 'name']
+    
+    def __str__(self):
+        return f"{self.subtopic.name} → {self.name}"
+    
+    def get_full_path(self):
+        return f"{self.subtopic.topic.subject.name} → {self.subtopic.topic.name} → {self.subtopic.name} → {self.name}"
+
+
+class VideoLesson(models.Model):
+    """Video lessons linked to the Subject/Topic/Subtopic/Concept hierarchy"""
+    
+    # Hierarchy - can be linked at any level (Concept is most specific)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='video_lessons')
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
+    subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
+    
+    # Video details
+    title = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
+    youtube_url = models.URLField(max_length=500, help_text="YouTube video URL")
+    duration_minutes = models.IntegerField(default=0, help_text="Video duration in minutes")
+    thumbnail_url = models.URLField(max_length=500, blank=True, help_text="Custom thumbnail URL (auto-generated from YouTube if empty)")
+    
+    # Metadata
+    tags = models.CharField(max_length=500, blank=True, help_text="Comma-separated tags")
+    order = models.IntegerField(default=0, help_text="Display order")
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    
+    # Tracking
+    view_count = models.IntegerField(default=0)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_videos')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['subject', 'topic', 'subtopic', 'concept', 'order', '-created_at']
+    
+    def __str__(self):
+        return self.title
+    
+    def get_youtube_embed_url(self):
+        """Convert YouTube URL to embed URL"""
+        url = self.youtube_url
+        if 'youtube.com/watch?v=' in url:
+            video_id = url.split('v=')[1].split('&')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        elif 'youtu.be/' in url:
+            video_id = url.split('youtu.be/')[1].split('?')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        elif 'youtube.com/embed/' in url:
+            return url
+        return url
+    
+    def get_youtube_video_id(self):
+        """Extract YouTube video ID"""
+        url = self.youtube_url
+        if 'youtube.com/watch?v=' in url:
+            return url.split('v=')[1].split('&')[0]
+        elif 'youtu.be/' in url:
+            return url.split('youtu.be/')[1].split('?')[0]
+        elif 'youtube.com/embed/' in url:
+            return url.split('embed/')[1].split('?')[0]
+        return None
+    
+    def get_thumbnail(self):
+        """Get thumbnail URL (custom or from YouTube)"""
+        if self.thumbnail_url:
+            return self.thumbnail_url
+        video_id = self.get_youtube_video_id()
+        if video_id:
+            return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+        return None
+    
+    def get_hierarchy_path(self):
+        """Get full hierarchy path"""
+        parts = [self.subject.name]
+        if self.topic:
+            parts.append(self.topic.name)
+        if self.subtopic:
+            parts.append(self.subtopic.name)
+        if self.concept:
+            parts.append(self.concept.name)
+        return ' → '.join(parts)
+    
+    def get_tags_list(self):
+        """Get tags as a list"""
+        if self.tags:
+            return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+        return []
+
+
+class StudentVideoProgress(models.Model):
+    """Track student's video watching progress"""
+    student = models.ForeignKey('StudentProfile', on_delete=models.CASCADE, related_name='video_progress')
+    video = models.ForeignKey(VideoLesson, on_delete=models.CASCADE, related_name='student_progress')
+    
+    watched_seconds = models.IntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    last_watched_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['student', 'video']
+    
+    def __str__(self):
+        return f"{self.student.user.username} - {self.video.title}"
+
+
+class StudentVideoBookmark(models.Model):
+    """Student bookmarked/favourite videos"""
+    student = models.ForeignKey('StudentProfile', on_delete=models.CASCADE, related_name='video_bookmarks')
+    video = models.ForeignKey(VideoLesson, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['student', 'video']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.student.user.username} bookmarked {self.video.title}"

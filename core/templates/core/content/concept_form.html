@@ -1,0 +1,115 @@
+{% extends 'core/content/base.html' %}
+{% load static %}
+
+{% block title %}{% if concept %}Edit{% else %}Add{% endif %} Concept - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="heading-primary">{% if concept %}Edit{% else %}Add{% endif %} Concept</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">{% if concept %}Update concept details{% else %}Create a new learning concept{% endif %}</p>
+        </div>
+        <a href="{% url 'manage_concepts' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Concepts
+        </a>
+    </div>
+</div>
+
+<div class="stat-card max-w-2xl" x-data="{
+    subject: '{{ concept.subtopic.topic.subject_id|default:'' }}',
+    topic: '{{ concept.subtopic.topic_id|default:'' }}',
+    subtopic: '{{ concept.subtopic_id|default:'' }}',
+    topics: {{ topics_json|safe }},
+    subtopics: {{ subtopics_json|safe }},
+    get filteredTopics() {
+        if (!this.subject) return [];
+        return this.topics.filter(t => t.subject_id == this.subject);
+    },
+    get filteredSubtopics() {
+        if (!this.topic) return [];
+        return this.subtopics.filter(s => s.topic_id == this.topic);
+    }
+}">
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            <!-- Cascading Dropdowns -->
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">
+                    <i class="fas fa-sitemap mr-2 text-orange-500"></i>
+                    Select Hierarchy
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                        <select x-model="subject" @change="topic = ''; subtopic = ''" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                        <select x-model="topic" @change="subtopic = ''" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="">Select Topic</option>
+                            <template x-for="t in filteredTopics" :key="t.id">
+                                <option :value="t.id" x-text="t.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subtopic *</label>
+                        <select name="subtopic" x-model="subtopic" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="">Select Subtopic</option>
+                            <template x-for="s in filteredSubtopics" :key="s.id">
+                                <option :value="s.id" x-text="s.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Concept Name *</label>
+                <input type="text" name="name" required value="{{ concept.name|default:'' }}" placeholder="e.g., Solving for X, Ionic Bonding" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea name="description" rows="4" placeholder="Brief description of this concept..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{{ concept.description|default:'' }}</textarea>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Display Order</label>
+                <input type="number" name="order" value="{{ concept.order|default:0 }}" min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <p class="mt-1 text-xs text-gray-500">Lower numbers appear first</p>
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" name="is_active" id="is_active" {% if concept.is_active or not concept %}checked{% endif %} class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                <label for="is_active" class="ml-2 block text-sm font-medium text-gray-700">
+                    Active
+                </label>
+                <p class="ml-2 text-xs text-gray-500">(Visible to students)</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-end gap-4 pt-6 mt-6 border-t">
+            <a href="{% url 'manage_concepts' %}" class="px-6 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                Cancel
+            </a>
+            <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+                <i class="fas fa-save mr-2"></i>
+                {% if concept %}Update{% else %}Create{% endif %} Concept
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -5305,3 +5305,722 @@ def brilltech_admin_change_password(request):
         'error': error,
         'admin': admin,
     })
+
+
+# ============================================
+# CONTENT MANAGER - Topic/Subtopic/Concept/VideoLesson Management
+# ============================================
+
+@require_content_manager
+def manage_topics(request):
+    """List all topics with filters by subject"""
+    from .models import Topic, Subject
+    
+    topics = Topic.objects.select_related('subject').all()
+    subjects = Subject.objects.all().order_by('name')
+    
+    # Filter by subject
+    subject_id = request.GET.get('subject')
+    if subject_id:
+        topics = topics.filter(subject_id=subject_id)
+    
+    # Filter by active status
+    status = request.GET.get('status')
+    if status == 'active':
+        topics = topics.filter(is_active=True)
+    elif status == 'inactive':
+        topics = topics.filter(is_active=False)
+    
+    # Search by name
+    search = request.GET.get('search', '').strip()
+    if search:
+        topics = topics.filter(Q(name__icontains=search) | Q(description__icontains=search))
+    
+    topics = topics.order_by('subject__name', 'order', 'name')
+    
+    return render(request, 'core/content/topics_list.html', {
+        'topics': topics,
+        'subjects': subjects,
+        'selected_subject': subject_id,
+        'selected_status': status,
+        'search': search,
+    })
+
+
+@require_content_manager
+def add_topic(request):
+    """Add a new topic"""
+    from .models import Topic, Subject
+    
+    subjects = Subject.objects.all().order_by('name')
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not subject_id or not name:
+            messages.error(request, 'Subject and name are required.')
+            return render(request, 'core/content/topic_form.html', {
+                'subjects': subjects,
+                'form_data': request.POST,
+            })
+        
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            Topic.objects.create(
+                subject=subject,
+                name=name,
+                description=description,
+                order=int(order) if order else 0,
+                is_active=is_active,
+            )
+            messages.success(request, f'Topic "{name}" created successfully.')
+            return redirect('manage_topics')
+        except Subject.DoesNotExist:
+            messages.error(request, 'Invalid subject selected.')
+        except IntegrityError:
+            messages.error(request, 'A topic with this name already exists for this subject.')
+        except Exception as e:
+            messages.error(request, f'Error creating topic: {str(e)}')
+    
+    return render(request, 'core/content/topic_form.html', {
+        'subjects': subjects,
+    })
+
+
+@require_content_manager
+def edit_topic(request, topic_id):
+    """Edit an existing topic"""
+    from .models import Topic, Subject
+    
+    topic = get_object_or_404(Topic, id=topic_id)
+    subjects = Subject.objects.all().order_by('name')
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not subject_id or not name:
+            messages.error(request, 'Subject and name are required.')
+            return render(request, 'core/content/topic_form.html', {
+                'subjects': subjects,
+                'topic': topic,
+                'is_edit': True,
+            })
+        
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            topic.subject = subject
+            topic.name = name
+            topic.description = description
+            topic.order = int(order) if order else 0
+            topic.is_active = is_active
+            topic.save()
+            messages.success(request, f'Topic "{name}" updated successfully.')
+            return redirect('manage_topics')
+        except Subject.DoesNotExist:
+            messages.error(request, 'Invalid subject selected.')
+        except IntegrityError:
+            messages.error(request, 'A topic with this name already exists for this subject.')
+        except Exception as e:
+            messages.error(request, f'Error updating topic: {str(e)}')
+    
+    return render(request, 'core/content/topic_form.html', {
+        'subjects': subjects,
+        'topic': topic,
+        'is_edit': True,
+    })
+
+
+@require_content_manager
+def delete_topic(request, topic_id):
+    """Delete a topic"""
+    from .models import Topic
+    
+    topic = get_object_or_404(Topic, id=topic_id)
+    
+    if request.method == 'POST':
+        name = topic.name
+        topic.delete()
+        messages.success(request, f'Topic "{name}" deleted successfully.')
+    
+    return redirect('manage_topics')
+
+
+@require_content_manager
+def manage_subtopics(request):
+    """List all subtopics with filters"""
+    from .models import Subtopic, Topic, Subject
+    
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all()
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    
+    # Filter by subject
+    subject_id = request.GET.get('subject')
+    if subject_id:
+        subtopics = subtopics.filter(topic__subject_id=subject_id)
+        topics = topics.filter(subject_id=subject_id)
+    
+    # Filter by topic
+    topic_id = request.GET.get('topic')
+    if topic_id:
+        subtopics = subtopics.filter(topic_id=topic_id)
+    
+    # Filter by active status
+    status = request.GET.get('status')
+    if status == 'active':
+        subtopics = subtopics.filter(is_active=True)
+    elif status == 'inactive':
+        subtopics = subtopics.filter(is_active=False)
+    
+    # Search by name
+    search = request.GET.get('search', '').strip()
+    if search:
+        subtopics = subtopics.filter(Q(name__icontains=search) | Q(description__icontains=search))
+    
+    subtopics = subtopics.order_by('topic__subject__name', 'topic__name', 'order', 'name')
+    
+    return render(request, 'core/content/subtopics_list.html', {
+        'subtopics': subtopics,
+        'subjects': subjects,
+        'topics': topics,
+        'selected_subject': subject_id,
+        'selected_topic': topic_id,
+        'selected_status': status,
+        'search': search,
+    })
+
+
+@require_content_manager
+def add_subtopic(request):
+    """Add a new subtopic"""
+    from .models import Subtopic, Topic, Subject
+    
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    
+    if request.method == 'POST':
+        topic_id = request.POST.get('topic')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not topic_id or not name:
+            messages.error(request, 'Topic and name are required.')
+            return render(request, 'core/content/subtopic_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'form_data': request.POST,
+            })
+        
+        try:
+            topic = Topic.objects.get(id=topic_id)
+            Subtopic.objects.create(
+                topic=topic,
+                name=name,
+                description=description,
+                order=int(order) if order else 0,
+                is_active=is_active,
+            )
+            messages.success(request, f'Subtopic "{name}" created successfully.')
+            return redirect('manage_subtopics')
+        except Topic.DoesNotExist:
+            messages.error(request, 'Invalid topic selected.')
+        except IntegrityError:
+            messages.error(request, 'A subtopic with this name already exists for this topic.')
+        except Exception as e:
+            messages.error(request, f'Error creating subtopic: {str(e)}')
+    
+    return render(request, 'core/content/subtopic_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+    })
+
+
+@require_content_manager
+def edit_subtopic(request, subtopic_id):
+    """Edit an existing subtopic"""
+    from .models import Subtopic, Topic, Subject
+    
+    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    
+    if request.method == 'POST':
+        topic_id = request.POST.get('topic')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not topic_id or not name:
+            messages.error(request, 'Topic and name are required.')
+            return render(request, 'core/content/subtopic_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'subtopic': subtopic,
+                'is_edit': True,
+            })
+        
+        try:
+            topic = Topic.objects.get(id=topic_id)
+            subtopic.topic = topic
+            subtopic.name = name
+            subtopic.description = description
+            subtopic.order = int(order) if order else 0
+            subtopic.is_active = is_active
+            subtopic.save()
+            messages.success(request, f'Subtopic "{name}" updated successfully.')
+            return redirect('manage_subtopics')
+        except Topic.DoesNotExist:
+            messages.error(request, 'Invalid topic selected.')
+        except IntegrityError:
+            messages.error(request, 'A subtopic with this name already exists for this topic.')
+        except Exception as e:
+            messages.error(request, f'Error updating subtopic: {str(e)}')
+    
+    return render(request, 'core/content/subtopic_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+        'subtopic': subtopic,
+        'is_edit': True,
+    })
+
+
+@require_content_manager
+def delete_subtopic(request, subtopic_id):
+    """Delete a subtopic"""
+    from .models import Subtopic
+    
+    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
+    
+    if request.method == 'POST':
+        name = subtopic.name
+        subtopic.delete()
+        messages.success(request, f'Subtopic "{name}" deleted successfully.')
+    
+    return redirect('manage_subtopics')
+
+
+@require_content_manager
+def manage_concepts(request):
+    """List all concepts with filters"""
+    from .models import Concept, Subtopic, Topic, Subject
+    
+    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    # Filter by subject
+    subject_id = request.GET.get('subject')
+    if subject_id:
+        concepts = concepts.filter(subtopic__topic__subject_id=subject_id)
+        topics = topics.filter(subject_id=subject_id)
+        subtopics = subtopics.filter(topic__subject_id=subject_id)
+    
+    # Filter by topic
+    topic_id = request.GET.get('topic')
+    if topic_id:
+        concepts = concepts.filter(subtopic__topic_id=topic_id)
+        subtopics = subtopics.filter(topic_id=topic_id)
+    
+    # Filter by subtopic
+    subtopic_id = request.GET.get('subtopic')
+    if subtopic_id:
+        concepts = concepts.filter(subtopic_id=subtopic_id)
+    
+    # Filter by active status
+    status = request.GET.get('status')
+    if status == 'active':
+        concepts = concepts.filter(is_active=True)
+    elif status == 'inactive':
+        concepts = concepts.filter(is_active=False)
+    
+    # Search by name
+    search = request.GET.get('search', '').strip()
+    if search:
+        concepts = concepts.filter(Q(name__icontains=search) | Q(description__icontains=search))
+    
+    concepts = concepts.order_by('subtopic__topic__subject__name', 'subtopic__topic__name', 'subtopic__name', 'order', 'name')
+    
+    return render(request, 'core/content/concepts_list.html', {
+        'concepts': concepts,
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+        'selected_subject': subject_id,
+        'selected_topic': topic_id,
+        'selected_subtopic': subtopic_id,
+        'selected_status': status,
+        'search': search,
+    })
+
+
+@require_content_manager
+def add_concept(request):
+    """Add a new concept"""
+    from .models import Concept, Subtopic, Topic, Subject
+    
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    if request.method == 'POST':
+        subtopic_id = request.POST.get('subtopic')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not subtopic_id or not name:
+            messages.error(request, 'Subtopic and name are required.')
+            return render(request, 'core/content/concept_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'subtopics': subtopics,
+                'form_data': request.POST,
+            })
+        
+        try:
+            subtopic = Subtopic.objects.get(id=subtopic_id)
+            Concept.objects.create(
+                subtopic=subtopic,
+                name=name,
+                description=description,
+                order=int(order) if order else 0,
+                is_active=is_active,
+            )
+            messages.success(request, f'Concept "{name}" created successfully.')
+            return redirect('manage_concepts')
+        except Subtopic.DoesNotExist:
+            messages.error(request, 'Invalid subtopic selected.')
+        except IntegrityError:
+            messages.error(request, 'A concept with this name already exists for this subtopic.')
+        except Exception as e:
+            messages.error(request, f'Error creating concept: {str(e)}')
+    
+    return render(request, 'core/content/concept_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+    })
+
+
+@require_content_manager
+def edit_concept(request, concept_id):
+    """Edit an existing concept"""
+    from .models import Concept, Subtopic, Topic, Subject
+    
+    concept = get_object_or_404(Concept, id=concept_id)
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    if request.method == 'POST':
+        subtopic_id = request.POST.get('subtopic')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not subtopic_id or not name:
+            messages.error(request, 'Subtopic and name are required.')
+            return render(request, 'core/content/concept_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'subtopics': subtopics,
+                'concept': concept,
+                'is_edit': True,
+            })
+        
+        try:
+            subtopic = Subtopic.objects.get(id=subtopic_id)
+            concept.subtopic = subtopic
+            concept.name = name
+            concept.description = description
+            concept.order = int(order) if order else 0
+            concept.is_active = is_active
+            concept.save()
+            messages.success(request, f'Concept "{name}" updated successfully.')
+            return redirect('manage_concepts')
+        except Subtopic.DoesNotExist:
+            messages.error(request, 'Invalid subtopic selected.')
+        except IntegrityError:
+            messages.error(request, 'A concept with this name already exists for this subtopic.')
+        except Exception as e:
+            messages.error(request, f'Error updating concept: {str(e)}')
+    
+    return render(request, 'core/content/concept_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+        'concept': concept,
+        'is_edit': True,
+    })
+
+
+@require_content_manager
+def delete_concept(request, concept_id):
+    """Delete a concept"""
+    from .models import Concept
+    
+    concept = get_object_or_404(Concept, id=concept_id)
+    
+    if request.method == 'POST':
+        name = concept.name
+        concept.delete()
+        messages.success(request, f'Concept "{name}" deleted successfully.')
+    
+    return redirect('manage_concepts')
+
+
+@require_content_manager
+def manage_video_lessons(request):
+    """List all video lessons with filters"""
+    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    
+    videos = VideoLesson.objects.select_related('subject', 'topic', 'subtopic', 'concept', 'created_by').all()
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    # Filter by subject
+    subject_id = request.GET.get('subject')
+    if subject_id:
+        videos = videos.filter(subject_id=subject_id)
+        topics = topics.filter(subject_id=subject_id)
+        subtopics = subtopics.filter(topic__subject_id=subject_id)
+        concepts = concepts.filter(subtopic__topic__subject_id=subject_id)
+    
+    # Filter by topic
+    topic_id = request.GET.get('topic')
+    if topic_id:
+        videos = videos.filter(topic_id=topic_id)
+        subtopics = subtopics.filter(topic_id=topic_id)
+        concepts = concepts.filter(subtopic__topic_id=topic_id)
+    
+    # Filter by subtopic
+    subtopic_id = request.GET.get('subtopic')
+    if subtopic_id:
+        videos = videos.filter(subtopic_id=subtopic_id)
+        concepts = concepts.filter(subtopic_id=subtopic_id)
+    
+    # Filter by concept
+    concept_id = request.GET.get('concept')
+    if concept_id:
+        videos = videos.filter(concept_id=concept_id)
+    
+    # Filter by active status
+    status = request.GET.get('status')
+    if status == 'active':
+        videos = videos.filter(is_active=True)
+    elif status == 'inactive':
+        videos = videos.filter(is_active=False)
+    
+    # Filter by featured
+    featured = request.GET.get('featured')
+    if featured == 'yes':
+        videos = videos.filter(is_featured=True)
+    elif featured == 'no':
+        videos = videos.filter(is_featured=False)
+    
+    # Search by title/description/tags
+    search = request.GET.get('search', '').strip()
+    if search:
+        videos = videos.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    videos = videos.order_by('-created_at')
+    
+    return render(request, 'core/content/video_lessons_list.html', {
+        'videos': videos,
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+        'concepts': concepts,
+        'selected_subject': subject_id,
+        'selected_topic': topic_id,
+        'selected_subtopic': subtopic_id,
+        'selected_concept': concept_id,
+        'selected_status': status,
+        'selected_featured': featured,
+        'search': search,
+    })
+
+
+@require_content_manager
+def add_video_lesson(request):
+    """Add a new video lesson"""
+    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        topic_id = request.POST.get('topic') or None
+        subtopic_id = request.POST.get('subtopic') or None
+        concept_id = request.POST.get('concept') or None
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        youtube_url = request.POST.get('youtube_url', '').strip()
+        duration_minutes = request.POST.get('duration_minutes', 0)
+        thumbnail_url = request.POST.get('thumbnail_url', '').strip()
+        tags = request.POST.get('tags', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        is_featured = request.POST.get('is_featured') == 'on'
+        
+        if not subject_id or not title or not youtube_url:
+            messages.error(request, 'Subject, title, and YouTube URL are required.')
+            return render(request, 'core/content/video_lesson_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'subtopics': subtopics,
+                'concepts': concepts,
+                'form_data': request.POST,
+            })
+        
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            topic = Topic.objects.get(id=topic_id) if topic_id else None
+            subtopic = Subtopic.objects.get(id=subtopic_id) if subtopic_id else None
+            concept = Concept.objects.get(id=concept_id) if concept_id else None
+            
+            VideoLesson.objects.create(
+                subject=subject,
+                topic=topic,
+                subtopic=subtopic,
+                concept=concept,
+                title=title,
+                description=description,
+                youtube_url=youtube_url,
+                duration_minutes=int(duration_minutes) if duration_minutes else 0,
+                thumbnail_url=thumbnail_url,
+                tags=tags,
+                order=int(order) if order else 0,
+                is_active=is_active,
+                is_featured=is_featured,
+                created_by=request.user,
+            )
+            messages.success(request, f'Video lesson "{title}" created successfully.')
+            return redirect('manage_video_lessons')
+        except Subject.DoesNotExist:
+            messages.error(request, 'Invalid subject selected.')
+        except (Topic.DoesNotExist, Subtopic.DoesNotExist, Concept.DoesNotExist) as e:
+            messages.error(request, f'Invalid hierarchy selection: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Error creating video lesson: {str(e)}')
+    
+    return render(request, 'core/content/video_lesson_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+        'concepts': concepts,
+    })
+
+
+@require_content_manager
+def edit_video_lesson(request, video_id):
+    """Edit an existing video lesson"""
+    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    
+    video = get_object_or_404(VideoLesson, id=video_id)
+    subjects = Subject.objects.all().order_by('name')
+    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    if request.method == 'POST':
+        subject_id = request.POST.get('subject')
+        topic_id = request.POST.get('topic') or None
+        subtopic_id = request.POST.get('subtopic') or None
+        concept_id = request.POST.get('concept') or None
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        youtube_url = request.POST.get('youtube_url', '').strip()
+        duration_minutes = request.POST.get('duration_minutes', 0)
+        thumbnail_url = request.POST.get('thumbnail_url', '').strip()
+        tags = request.POST.get('tags', '').strip()
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        is_featured = request.POST.get('is_featured') == 'on'
+        
+        if not subject_id or not title or not youtube_url:
+            messages.error(request, 'Subject, title, and YouTube URL are required.')
+            return render(request, 'core/content/video_lesson_form.html', {
+                'subjects': subjects,
+                'topics': topics,
+                'subtopics': subtopics,
+                'concepts': concepts,
+                'video': video,
+                'is_edit': True,
+            })
+        
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            topic = Topic.objects.get(id=topic_id) if topic_id else None
+            subtopic = Subtopic.objects.get(id=subtopic_id) if subtopic_id else None
+            concept = Concept.objects.get(id=concept_id) if concept_id else None
+            
+            video.subject = subject
+            video.topic = topic
+            video.subtopic = subtopic
+            video.concept = concept
+            video.title = title
+            video.description = description
+            video.youtube_url = youtube_url
+            video.duration_minutes = int(duration_minutes) if duration_minutes else 0
+            video.thumbnail_url = thumbnail_url
+            video.tags = tags
+            video.order = int(order) if order else 0
+            video.is_active = is_active
+            video.is_featured = is_featured
+            video.save()
+            messages.success(request, f'Video lesson "{title}" updated successfully.')
+            return redirect('manage_video_lessons')
+        except Subject.DoesNotExist:
+            messages.error(request, 'Invalid subject selected.')
+        except (Topic.DoesNotExist, Subtopic.DoesNotExist, Concept.DoesNotExist) as e:
+            messages.error(request, f'Invalid hierarchy selection: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Error updating video lesson: {str(e)}')
+    
+    return render(request, 'core/content/video_lesson_form.html', {
+        'subjects': subjects,
+        'topics': topics,
+        'subtopics': subtopics,
+        'concepts': concepts,
+        'video': video,
+        'is_edit': True,
+    })
+
+
+@require_content_manager
+def delete_video_lesson(request, video_id):
+    """Delete a video lesson"""
+    from .models import VideoLesson
+    
+    video = get_object_or_404(VideoLesson, id=video_id)
+    
+    if request.method == 'POST':
+        title = video.title
+        video.delete()
+        messages.success(request, f'Video lesson "{title}" deleted successfully.')
+    
+    return redirect('manage_video_lessons')

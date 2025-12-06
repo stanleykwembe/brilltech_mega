@@ -29,4 +29,8 @@ urlpatterns = [
     path('subscription/payfast-return/', student_views.student_payfast_return, name='student_payfast_return'),
     path('subscription/payfast-cancel/', student_views.student_payfast_cancel, name='student_payfast_cancel'),
     path('subscription/cancel/', student_views.student_subscription_cancel, name='student_subscription_cancel'),
+    
+    path('videos/', student_views.student_video_library, name='student_video_library'),
+    path('videos/<int:video_id>/', student_views.student_video_player, name='student_video_player'),
+    path('videos/ajax/filters/', student_views.student_video_ajax_filters, name='student_video_ajax_filters'),
 ]

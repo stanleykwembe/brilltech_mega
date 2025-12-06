@@ -1,0 +1,256 @@
+{% extends 'core/content/base.html' %}
+{% load static %}
+
+{% block title %}Manage Video Lessons - Content Portal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="heading-primary">Video Lessons</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">Manage YouTube video lessons for students</p>
+        </div>
+        <a href="{% url 'add_video_lesson' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+            <i class="fas fa-plus mr-2"></i>
+            Add Video Lesson
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="stat-card mb-6" x-data="{ 
+    subject: '{{ request.GET.subject|default:'' }}',
+    topic: '{{ request.GET.topic|default:'' }}',
+    subtopic: '{{ request.GET.subtopic|default:'' }}',
+    topics: {{ topics_json|safe }},
+    subtopics: {{ subtopics_json|safe }},
+    concepts: {{ concepts_json|safe }},
+    get filteredTopics() {
+        if (!this.subject) return this.topics;
+        return this.topics.filter(t => t.subject_id == this.subject);
+    },
+    get filteredSubtopics() {
+        if (!this.topic) return [];
+        return this.subtopics.filter(s => s.topic_id == this.topic);
+    },
+    get filteredConcepts() {
+        if (!this.subtopic) return [];
+        return this.concepts.filter(c => c.subtopic_id == this.subtopic);
+    }
+}">
+    <form method="GET" class="space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <select name="subject" x-model="subject" @change="topic = ''; subtopic = ''" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                <select name="topic" x-model="topic" @change="subtopic = ''" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    <template x-for="t in filteredTopics" :key="t.id">
+                        <option :value="t.id" x-text="t.name"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subtopic</label>
+                <select name="subtopic" x-model="subtopic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    <template x-for="s in filteredSubtopics" :key="s.id">
+                        <option :value="s.id" x-text="s.name"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Concept</label>
+                <select name="concept" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    <template x-for="c in filteredConcepts" :key="c.id">
+                        <option :value="c.id" :selected="c.id == '{{ request.GET.concept|default:'' }}'" x-text="c.name"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Featured</label>
+                <select name="featured" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+                    <option value="">All</option>
+                    <option value="yes" {% if request.GET.featured == 'yes' %}selected{% endif %}>Featured</option>
+                    <option value="no" {% if request.GET.featured == 'no' %}selected{% endif %}>Not Featured</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 text-sm">
+            </div>
+            
+            <div class="flex items-end gap-2">
+                <button type="submit" class="inline-flex items-center px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition font-medium text-sm">
+                    <i class="fas fa-filter mr-1"></i>
+                    Filter
+                </button>
+                <a href="{% url 'manage_video_lessons' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition font-medium text-sm">
+                    <i class="fas fa-redo"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Video Lessons Grid -->
+{% if video_lessons %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for video in video_lessons %}
+    <div class="stat-card hover:shadow-xl transition overflow-hidden">
+        <!-- Thumbnail -->
+        <div class="relative -mx-6 -mt-6 mb-4">
+            {% if video.youtube_id %}
+            <img src="https://img.youtube.com/vi/{{ video.youtube_id }}/mqdefault.jpg" alt="{{ video.title }}" class="w-full h-40 object-cover">
+            {% else %}
+            <div class="w-full h-40 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                <i class="fas fa-video text-gray-400 text-4xl"></i>
+            </div>
+            {% endif %}
+            
+            <!-- Duration Badge -->
+            {% if video.duration_minutes %}
+            <div class="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+                {{ video.duration_minutes }} min
+            </div>
+            {% endif %}
+            
+            <!-- Featured Badge -->
+            {% if video.is_featured %}
+            <div class="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                <i class="fas fa-star mr-1"></i>Featured
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Content -->
+        <div class="space-y-3">
+            <h3 class="font-semibold text-gray-900 line-clamp-2">{{ video.title }}</h3>
+            
+            <!-- Hierarchy Path -->
+            <div class="text-xs text-gray-500 flex flex-wrap items-center gap-1">
+                <span class="font-medium text-teal-700">{{ video.subject.name }}</span>
+                {% if video.topic %}
+                <i class="fas fa-chevron-right text-gray-400"></i>
+                <span>{{ video.topic.name }}</span>
+                {% endif %}
+                {% if video.subtopic %}
+                <i class="fas fa-chevron-right text-gray-400"></i>
+                <span>{{ video.subtopic.name }}</span>
+                {% endif %}
+                {% if video.concept %}
+                <i class="fas fa-chevron-right text-gray-400"></i>
+                <span>{{ video.concept.name }}</span>
+                {% endif %}
+            </div>
+            
+            <!-- Status -->
+            <div class="flex items-center gap-2">
+                {% if video.is_active %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                {% else %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                {% endif %}
+                <span class="text-xs text-gray-500">
+                    <i class="fas fa-eye mr-1"></i>{{ video.view_count }} views
+                </span>
+            </div>
+            
+            <!-- Tags -->
+            {% if video.tags %}
+            <div class="flex flex-wrap gap-1">
+                {% for tag in video.tags_list %}
+                <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Actions -->
+        <div class="pt-4 mt-4 border-t border-gray-200 flex items-center justify-between">
+            <a href="{{ video.youtube_url }}" target="_blank" class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+                <i class="fab fa-youtube mr-1"></i>Watch
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'edit_video_lesson' video.id %}" class="text-orange-600 hover:text-orange-900">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button onclick="confirmDelete({{ video.id }}, '{{ video.title|escapejs }}')" class="text-red-600 hover:text-red-900">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="stat-card text-center py-12">
+    <i class="fas fa-video text-gray-300 text-6xl mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">No video lessons found</h3>
+    <p class="text-gray-500 mb-6">Add your first video lesson to get started.</p>
+    <a href="{% url 'add_video_lesson' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
+        <i class="fas fa-plus mr-2"></i>
+        Add Video Lesson
+    </a>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="text-center">
+            <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Video Lesson</h3>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete "<span id="videoName"></span>"? This action cannot be undone.</p>
+        </div>
+        <div class="flex justify-center gap-4">
+            <button onclick="closeDeleteModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition font-medium">
+                Cancel
+            </button>
+            <form id="deleteForm" method="POST" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition font-medium">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(id, name) {
+        document.getElementById('videoName').textContent = name;
+        document.getElementById('deleteForm').action = "{% url 'delete_video_lesson' 0 %}".replace('0', id);
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.getElementById('deleteModal').classList.add('flex');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.getElementById('deleteModal').classList.remove('flex');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Lessons - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="h-full" style="background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); background-attachment: fixed;">
+    <div class="min-h-full">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <a href="{% url 'student_dashboard' %}" class="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </a>
+                        <h1 class="text-2xl font-bold text-gray-900">Video Lessons</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'student_dashboard' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-home mr-1"></i> Dashboard
+                        </a>
+                        <a href="{% url 'student_logout' %}" class="text-sm text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-6">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-play-circle text-emerald-600 mr-2"></i>
+                    Video Lessons
+                </h2>
+                <p class="text-gray-600">Watch educational videos organized by subject and topic</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6" x-data="videoFilters()">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select x-model="selectedSubject" @change="onSubjectChange()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                            <option value="">All Subjects</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ subject.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                        <select x-model="selectedTopic" @change="onTopicChange()" :disabled="!selectedSubject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">All Topics</option>
+                            <template x-for="topic in topics" :key="topic.id">
+                                <option :value="topic.id" x-text="topic.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subtopic</label>
+                        <select x-model="selectedSubtopic" @change="onSubtopicChange()" :disabled="!selectedTopic" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">All Subtopics</option>
+                            <template x-for="subtopic in subtopics" :key="subtopic.id">
+                                <option :value="subtopic.id" x-text="subtopic.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Concept</label>
+                        <select x-model="selectedConcept" :disabled="!selectedSubtopic" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">All Concepts</option>
+                            <template x-for="concept in concepts" :key="concept.id">
+                                <option :value="concept.id" x-text="concept.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-end">
+                        <button @click="applyFilters()" class="w-full px-4 py-2 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                            <i class="fas fa-filter mr-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input type="text" x-model="searchQuery" @keydown.enter="applyFilters()" placeholder="Search videos..." class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <button @click="clearFilters()" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200">
+                            <i class="fas fa-times mr-2"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {% if featured_videos and not selected_subject and not search_query %}
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-star text-yellow-500 mr-2"></i>
+                    Featured Videos
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for video in featured_videos %}
+                        <a href="{% url 'student_video_player' video.id %}" class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden group">
+                            <div class="relative aspect-video bg-gray-200">
+                                {% if video.thumbnail_url %}
+                                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-blue-500">
+                                        <i class="fas fa-play-circle text-white text-5xl opacity-80"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="absolute bottom-2 right-2 px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded">
+                                    <i class="fas fa-clock mr-1"></i> {{ video.duration_minutes }} min
+                                </div>
+                                <div class="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs rounded font-semibold">
+                                    <i class="fas fa-star mr-1"></i> Featured
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">{{ video.title }}</h4>
+                                <div class="text-sm text-gray-500 mb-2">
+                                    <span class="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">
+                                        {{ video.subject.name }}
+                                    </span>
+                                    {% if video.topic %}
+                                        <span class="text-gray-400 mx-1">→</span>
+                                        <span class="text-gray-600">{{ video.topic.name }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span><i class="fas fa-eye mr-1"></i> {{ video.view_count }} views</span>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if videos %}
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        {% if selected_subject or search_query %}
+                            Search Results
+                        {% else %}
+                            All Videos
+                        {% endif %}
+                    </h3>
+                    <span class="text-sm text-gray-500">{{ videos|length }} video{{ videos|length|pluralize }}</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {% for video in videos %}
+                        <a href="{% url 'student_video_player' video.id %}" class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden group">
+                            <div class="relative aspect-video bg-gray-200">
+                                {% if video.thumbnail_url %}
+                                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-blue-500">
+                                        <i class="fas fa-play-circle text-white text-4xl opacity-80"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="absolute bottom-2 right-2 px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded">
+                                    <i class="fas fa-clock mr-1"></i> {{ video.duration_minutes }} min
+                                </div>
+                                {% if video.is_featured %}
+                                <div class="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs rounded font-semibold">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">{{ video.title }}</h4>
+                                <div class="text-xs text-gray-500 mb-2 space-y-1">
+                                    <div class="flex items-center flex-wrap gap-1">
+                                        <span class="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                                            {{ video.subject.name }}
+                                        </span>
+                                        {% if video.topic %}
+                                            <span class="text-gray-400">→</span>
+                                            <span class="text-gray-600 truncate">{{ video.topic.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if video.subtopic %}
+                                    <div class="flex items-center flex-wrap gap-1">
+                                        <span class="text-gray-400 ml-2">↳</span>
+                                        <span class="text-gray-600 truncate">{{ video.subtopic.name }}</span>
+                                        {% if video.concept %}
+                                            <span class="text-gray-400">→</span>
+                                            <span class="text-gray-500 truncate">{{ video.concept.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span><i class="fas fa-eye mr-1"></i> {{ video.view_count }}</span>
+                                    <span><i class="fas fa-calendar mr-1"></i> {{ video.created_at|date:"M d" }}</span>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-video-slash text-gray-400 text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">No Videos Found</h3>
+                    <p class="text-gray-600 mb-4">
+                        {% if search_query or selected_subject %}
+                            No videos match your current filters. Try adjusting your search criteria.
+                        {% else %}
+                            There are no video lessons available at the moment.
+                        {% endif %}
+                    </p>
+                    {% if search_query or selected_subject %}
+                        <a href="{% url 'student_video_library' %}" class="inline-block px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200">
+                            <i class="fas fa-times mr-2"></i> Clear Filters
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        function videoFilters() {
+            return {
+                selectedSubject: '{{ selected_subject|default:"" }}',
+                selectedTopic: '{{ selected_topic|default:"" }}',
+                selectedSubtopic: '{{ selected_subtopic|default:"" }}',
+                selectedConcept: '{{ selected_concept|default:"" }}',
+                searchQuery: '{{ search_query|default:"" }}',
+                topics: {{ topics|safe|default:"[]" }},
+                subtopics: {{ subtopics|safe|default:"[]" }},
+                concepts: {{ concepts|safe|default:"[]" }},
+                
+                async fetchOptions(type, parentId) {
+                    try {
+                        const response = await fetch(`{% url 'student_video_ajax_filters' %}?type=${type}&parent_id=${parentId}`);
+                        const data = await response.json();
+                        return data.items || [];
+                    } catch (error) {
+                        console.error('Error fetching options:', error);
+                        return [];
+                    }
+                },
+                
+                async onSubjectChange() {
+                    this.selectedTopic = '';
+                    this.selectedSubtopic = '';
+                    this.selectedConcept = '';
+                    this.subtopics = [];
+                    this.concepts = [];
+                    
+                    if (this.selectedSubject) {
+                        this.topics = await this.fetchOptions('topics', this.selectedSubject);
+                    } else {
+                        this.topics = [];
+                    }
+                },
+                
+                async onTopicChange() {
+                    this.selectedSubtopic = '';
+                    this.selectedConcept = '';
+                    this.concepts = [];
+                    
+                    if (this.selectedTopic) {
+                        this.subtopics = await this.fetchOptions('subtopics', this.selectedTopic);
+                    } else {
+                        this.subtopics = [];
+                    }
+                },
+                
+                async onSubtopicChange() {
+                    this.selectedConcept = '';
+                    
+                    if (this.selectedSubtopic) {
+                        this.concepts = await this.fetchOptions('concepts', this.selectedSubtopic);
+                    } else {
+                        this.concepts = [];
+                    }
+                },
+                
+                applyFilters() {
+                    const params = new URLSearchParams();
+                    if (this.selectedSubject) params.set('subject', this.selectedSubject);
+                    if (this.selectedTopic) params.set('topic', this.selectedTopic);
+                    if (this.selectedSubtopic) params.set('subtopic', this.selectedSubtopic);
+                    if (this.selectedConcept) params.set('concept', this.selectedConcept);
+                    if (this.searchQuery.trim()) params.set('search', this.searchQuery.trim());
+                    
+                    const queryString = params.toString();
+                    window.location.href = '{% url "student_video_library" %}' + (queryString ? '?' + queryString : '');
+                },
+                
+                clearFilters() {
+                    window.location.href = '{% url "student_video_library" %}';
+                },
+                
+                init() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    {% if topics %}
+                    this.topics = [
+                        {% for topic in topics %}
+                        { id: '{{ topic.id }}', name: '{{ topic.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ];
+                    {% endif %}
+                    
+                    {% if subtopics %}
+                    this.subtopics = [
+                        {% for subtopic in subtopics %}
+                        { id: '{{ subtopic.id }}', name: '{{ subtopic.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ];
+                    {% endif %}
+                    
+                    {% if concepts %}
+                    this.concepts = [
+                        {% for concept in concepts %}
+                        { id: '{{ concept.id }}', name: '{{ concept.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ];
+                    {% endif %}
+                }
+            }
+        }
+    </script>
+</body>
+</html>
