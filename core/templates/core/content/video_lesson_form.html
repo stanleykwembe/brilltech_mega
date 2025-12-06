@@ -20,36 +20,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Form -->
     <div class="lg:col-span-2">
-        <div class="stat-card" x-data="{
-            subject: '{{ video_lesson.subject_id|default:'' }}',
-            topic: '{{ video_lesson.topic_id|default:'' }}',
-            subtopic: '{{ video_lesson.subtopic_id|default:'' }}',
-            concept: '{{ video_lesson.concept_id|default:'' }}',
-            youtubeUrl: '{{ video_lesson.youtube_url|default:'' }}',
-            topics: {{ topics_json|safe }},
-            subtopics: {{ subtopics_json|safe }},
-            concepts: {{ concepts_json|safe }},
-            get filteredTopics() {
-                if (!this.subject) return [];
-                return this.topics.filter(t => t.subject_id == this.subject);
-            },
-            get filteredSubtopics() {
-                if (!this.topic) return [];
-                return this.subtopics.filter(s => s.topic_id == this.topic);
-            },
-            get filteredConcepts() {
-                if (!this.subtopic) return [];
-                return this.concepts.filter(c => c.subtopic_id == this.subtopic);
-            },
-            get youtubeId() {
-                if (!this.youtubeUrl) return null;
-                const match = this.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
-                return match ? match[1] : null;
-            },
-            get thumbnailUrl() {
-                return this.youtubeId ? 'https://img.youtube.com/vi/' + this.youtubeId + '/mqdefault.jpg' : null;
-            }
-        }">
+        <div class="stat-card" x-data="videoLessonForm()">
             <form method="POST">
                 {% csrf_token %}
                 
@@ -234,13 +205,37 @@
 </div>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        const urlInput = document.querySelector('input[name="youtube_url"]');
-        if (urlInput) {
-            urlInput.addEventListener('input', (e) => {
-                Alpine.store('youtubeUrl', e.target.value);
-            });
-        }
-    });
+    function videoLessonForm() {
+        return {
+            subject: '{{ video_lesson.subject_id|default:"" }}',
+            topic: '{{ video_lesson.topic_id|default:"" }}',
+            subtopic: '{{ video_lesson.subtopic_id|default:"" }}',
+            concept: '{{ video_lesson.concept_id|default:"" }}',
+            youtubeUrl: '{{ video_lesson.youtube_url|default:"" }}',
+            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
+            subtopics: {% if subtopics_json %}{{ subtopics_json|safe }}{% else %}[]{% endif %},
+            concepts: {% if concepts_json %}{{ concepts_json|safe }}{% else %}[]{% endif %},
+            get filteredTopics() {
+                if (!this.subject) return [];
+                return this.topics.filter(t => t.subject_id == this.subject);
+            },
+            get filteredSubtopics() {
+                if (!this.topic) return [];
+                return this.subtopics.filter(s => s.topic_id == this.topic);
+            },
+            get filteredConcepts() {
+                if (!this.subtopic) return [];
+                return this.concepts.filter(c => c.subtopic_id == this.subtopic);
+            },
+            get youtubeId() {
+                if (!this.youtubeUrl) return null;
+                const match = this.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
+                return match ? match[1] : null;
+            },
+            get thumbnailUrl() {
+                return this.youtubeId ? 'https://img.youtube.com/vi/' + this.youtubeId + '/mqdefault.jpg' : null;
+            }
+        };
+    }
 </script>
 {% endblock %}
