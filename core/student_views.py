@@ -554,15 +554,25 @@ def student_quizzes_list(request):
     
     # Apply filters
     subject_filter = request.GET.get('subject')
+    topic_filter = request.GET.get('topic')
     difficulty_filter = request.GET.get('difficulty')
     length_filter = request.GET.get('length')
     
     if subject_filter:
         quizzes = quizzes.filter(subject_id=subject_filter)
+    if topic_filter:
+        quizzes = quizzes.filter(topic__icontains=topic_filter)
     if difficulty_filter:
         quizzes = quizzes.filter(difficulty=difficulty_filter)
     if length_filter:
         quizzes = quizzes.filter(length=length_filter)
+    
+    # Get unique topics for the filter dropdown
+    all_topics = StudentQuiz.objects.filter(
+        subject_id__in=subject_ids,
+        exam_board_id__in=exam_board_ids,
+        grade=student_profile.grade
+    ).values_list('topic', flat=True).distinct().order_by('topic')
     
     # Get attempt counts for each quiz
     quiz_attempts = {}
@@ -578,7 +588,9 @@ def student_quizzes_list(request):
         'quizzes': quizzes,
         'quiz_attempts': quiz_attempts,
         'student_subjects': student_subjects,
+        'all_topics': all_topics,
         'selected_subject': subject_filter,
+        'selected_topic': topic_filter,
         'selected_difficulty': difficulty_filter,
         'selected_length': length_filter,
     }
@@ -929,14 +941,16 @@ def student_notes(request):
     if subject_filter:
         notes = notes.filter(subject_id=subject_filter)
     if topic_filter:
-        notes = notes.filter(topic__icontains=topic_filter)
+        notes = notes.filter(topic__name__icontains=topic_filter)
     
-    # Get unique topics for filter
-    topics = Note.objects.filter(
+    # Get unique topics for filter (topic is a ForeignKey, get names)
+    topic_ids = Note.objects.filter(
         subject_id__in=subject_ids,
         exam_board_id__in=exam_board_ids,
-        grade=student_profile.grade
-    ).values_list('topic', flat=True).distinct()
+        grade=student_profile.grade,
+        topic__isnull=False
+    ).values_list('topic_id', flat=True).distinct()
+    topics = Topic.objects.filter(id__in=topic_ids).values_list('name', flat=True).order_by('name')
     
     context = {
         'student_profile': student_profile,

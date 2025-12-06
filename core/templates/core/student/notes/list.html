@@ -40,10 +40,14 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div class="flex flex-wrap gap-4 items-center">
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Subject</label>
-                        <select id="subjectFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-filter mr-2 text-emerald-500"></i>
+                    Filter Notes
+                </h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                        <select name="subject" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none">
                             <option value="">All Subjects</option>
                             {% for student_subject in student_subjects %}
                                 <option value="{{ student_subject.subject.id }}" {% if selected_subject == student_subject.subject.id|stringformat:"s" %}selected{% endif %}>
@@ -53,17 +57,27 @@
                         </select>
                     </div>
                     
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Topic</label>
-                        <input type="text" id="topicFilter" value="{{ selected_topic }}" placeholder="Search topics..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Topic</label>
+                        <select name="topic" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none">
+                            <option value="">All Topics</option>
+                            {% for topic in topics %}
+                                <option value="{{ topic }}" {% if selected_topic == topic %}selected{% endif %}>
+                                    {{ topic }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
-                    <div class="flex items-end">
-                        <button onclick="applyFilters()" class="px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
-                            <i class="fas fa-filter mr-2"></i> Apply Filters
+                    <div class="flex items-end gap-2">
+                        <button type="submit" class="flex-1 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
+                            <i class="fas fa-search mr-1"></i> Filter
                         </button>
+                        <a href="{% url 'student_notes' %}" class="px-4 py-2 bg-gray-100 text-gray-600 font-semibold rounded-lg hover:bg-gray-200 transition" title="Clear Filters">
+                            <i class="fas fa-times"></i>
+                        </a>
                     </div>
-                </div>
+                </form>
             </div>
 
             {% if notes %}
@@ -121,29 +135,5 @@
         </main>
     </div>
 
-    <script>
-        function applyFilters() {
-            const subject = document.getElementById('subjectFilter').value;
-            const topic = document.getElementById('topicFilter').value;
-            
-            let url = '{% url "student_notes" %}';
-            const params = [];
-            
-            if (subject) params.push('subject=' + subject);
-            if (topic) params.push('topic=' + encodeURIComponent(topic));
-            
-            if (params.length > 0) {
-                url += '?' + params.join('&');
-            }
-            
-            window.location.href = url;
-        }
-        
-        document.getElementById('topicFilter').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyFilters();
-            }
-        });
-    </script>
 </body>
 </html>
