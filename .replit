@@ -6,7 +6,7 @@ hidden = [".pythonlibs"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
+packages = ["cargo", "freetype", "glibcLocales", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "pkg-config", "rustc", "tcl", "tk", "zlib"]
 
 [unitTest]
 language = "python3"
@@ -40,16 +40,16 @@ localPort = 37047
 externalPort = 3000
 
 [[ports]]
+localPort = 37285
+externalPort = 8008
+
+[[ports]]
 localPort = 37621
 externalPort = 3002
 
 [[ports]]
 localPort = 37631
 externalPort = 6000
-
-[[ports]]
-localPort = 38445
-externalPort = 8008
 
 [[ports]]
 localPort = 41413
