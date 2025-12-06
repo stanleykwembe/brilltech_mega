@@ -13,7 +13,7 @@ from functools import wraps
 import secrets
 import os
 from datetime import timedelta
-from django.db.models import Q
+from django.db.models import Q, Sum
 from .models import (
     StudentProfile, Grade, ExamBoard, Subject, 
     StudentExamBoard, StudentSubject, StudentQuiz,
@@ -433,6 +433,8 @@ def student_onboarding(request):
 @student_login_required
 def student_dashboard(request):
     """Enhanced student dashboard with stats and activity"""
+    from .models import StudentTopicProgress
+    
     student_profile = request.user.student_profile
     
     # Get student's exam boards and subjects
@@ -455,11 +457,15 @@ def student_dashboard(request):
         total_percentage = sum(a.percentage for a in completed_attempts if a.percentage)
         avg_score = total_percentage / completed_attempts.count()
     
-    # Count notes viewed
-    notes_viewed_count = StudentProgress.objects.filter(
-        student=student_profile,
-        notes_viewed=True
-    ).count()
+    # Count notes viewed from StudentTopicProgress
+    notes_viewed_count = StudentTopicProgress.objects.filter(
+        student=student_profile
+    ).aggregate(total=Sum('notes_read_count'))['total'] or 0
+    
+    # Count videos watched from StudentTopicProgress
+    videos_watched_count = StudentTopicProgress.objects.filter(
+        student=student_profile
+    ).aggregate(total=Sum('videos_watched_count'))['total'] or 0
     
     # Count active subjects
     active_subjects = student_subjects.count()
@@ -470,16 +476,43 @@ def student_dashboard(request):
         completed_at__isnull=False
     ).select_related('quiz', 'quiz__subject').order_by('-completed_at')[:5]
     
-    # Get progress by subject for chart
+    # Get progress by subject for chart and subject cards
     subject_progress = []
+    subjects_with_progress = []
     for student_subject in student_subjects:
-        progress_records = StudentProgress.objects.filter(
+        topic_progress = StudentTopicProgress.objects.filter(
             student=student_profile,
             subject=student_subject.subject
         )
         
-        if progress_records.exists():
-            avg_subject_score = sum(p.average_score for p in progress_records) / progress_records.count()
+        # Calculate subject completion percentage
+        total_completion = 0
+        if topic_progress.exists():
+            total_completion = sum(tp.get_completion_percentage() for tp in topic_progress) / topic_progress.count()
+        
+        # Calculate average quiz score for subject
+        subject_attempts = StudentQuizAttempt.objects.filter(
+            student=student_profile,
+            quiz__subject=student_subject.subject,
+            completed_at__isnull=False
+        )
+        avg_subject_score = 0
+        if subject_attempts.exists():
+            avg_subject_score = sum(a.percentage for a in subject_attempts if a.percentage) / subject_attempts.count()
+        
+        subject_data = {
+            'student_subject': student_subject,
+            'subject': student_subject.subject,
+            'exam_board': student_subject.exam_board,
+            'completion_percentage': round(total_completion),
+            'avg_score': round(avg_subject_score, 1),
+            'topics_count': Topic.objects.filter(
+                subject=student_subject.subject
+            ).count()
+        }
+        subjects_with_progress.append(subject_data)
+        
+        if avg_subject_score > 0:
             subject_progress.append({
                 'subject': student_subject.subject.name,
                 'score': round(float(avg_subject_score), 1)
@@ -489,9 +522,11 @@ def student_dashboard(request):
         'student_profile': student_profile,
         'student_boards': student_boards,
         'student_subjects': student_subjects,
+        'subjects_with_progress': subjects_with_progress,
         'total_quizzes': total_quizzes,
         'avg_score': round(avg_score, 1),
         'notes_viewed_count': notes_viewed_count,
+        'videos_watched_count': videos_watched_count,
         'active_subjects': active_subjects,
         'recent_attempts': recent_attempts,
         'subject_progress': subject_progress,
@@ -1704,8 +1739,8 @@ def student_subject_pathway(request, subject_id):
 
 @student_login_required
 def student_study_pathway(request, subject_id):
-    """Study pathway - List of topics for a subject"""
-    from .models import StudentSubject, Topic, Note, VideoLesson, Flashcard, StudentQuiz, StudentTopicProgress
+    """Study pathway - New layout with sidebar topics and tabbed content"""
+    from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz, StudentTopicProgress
     
     student_profile = StudentProfile.objects.get(user=request.user)
     
@@ -1717,16 +1752,16 @@ def student_study_pathway(request, subject_id):
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
-    # Get all topics for this subject
+    # Get all topics for this subject with their subtopics
     topics = Topic.objects.filter(
         subject=subject,
-        exam_board=exam_board,
         is_active=True
     ).order_by('order', 'name')
     
-    # Annotate with content counts and progress
+    # Build topics with subtopics and content counts
     topics_with_data = []
     for topic in topics:
+        subtopics = Subtopic.objects.filter(topic=topic, is_active=True).order_by('order', 'name')
         progress = StudentTopicProgress.objects.filter(
             student=student_profile,
             subject=subject,
@@ -1735,6 +1770,7 @@ def student_study_pathway(request, subject_id):
         
         topics_with_data.append({
             'topic': topic,
+            'subtopics': list(subtopics),
             'notes_count': Note.objects.filter(subject=subject, topic=topic).count(),
             'videos_count': VideoLesson.objects.filter(subject=subject, topic=topic, is_active=True).count(),
             'flashcards_count': Flashcard.objects.filter(subject=subject, topic=topic).count(),
@@ -1749,7 +1785,76 @@ def student_study_pathway(request, subject_id):
         'topics_with_data': topics_with_data,
     }
     
-    return render(request, 'core/student/pathway/study_topics.html', context)
+    return render(request, 'core/student/pathway/study_layout.html', context)
+
+
+@student_login_required
+def student_topic_content_ajax(request, subject_id, topic_id):
+    """AJAX endpoint to load topic content for the study layout"""
+    from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz
+    import json
+    
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    
+    student_subject = get_object_or_404(
+        StudentSubject, 
+        student=student_profile, 
+        subject_id=subject_id
+    )
+    subject = student_subject.subject
+    topic = get_object_or_404(Topic, id=topic_id, subject=subject, is_active=True)
+    
+    subtopic_id = request.GET.get('subtopic')
+    subtopic = None
+    if subtopic_id:
+        subtopic = Subtopic.objects.filter(id=subtopic_id, topic=topic).first()
+    
+    # Get notes
+    notes_qs = Note.objects.filter(subject=subject, topic=topic)
+    notes = [{
+        'id': n.id,
+        'title': n.title,
+        'description': n.full_version_text[:100] if n.full_version_text else '',
+        'has_full': bool(n.full_version),
+        'has_summary': bool(n.summary_version),
+    } for n in notes_qs[:10]]
+    
+    # Get videos
+    videos_qs = VideoLesson.objects.filter(subject=subject, topic=topic, is_active=True)
+    if subtopic:
+        videos_qs = videos_qs.filter(subtopic=subtopic)
+    videos = [{
+        'id': v.id,
+        'title': v.title,
+        'duration': str(v.duration) if hasattr(v, 'duration') and v.duration else '',
+    } for v in videos_qs[:10]]
+    
+    # Get flashcards
+    flashcards_qs = Flashcard.objects.filter(subject=subject, topic=topic)
+    flashcards = [{
+        'id': f.id,
+        'front': f.front_text[:100] if f.front_text else '',
+        'back': f.back_text[:100] if f.back_text else '',
+    } for f in flashcards_qs[:20]]
+    
+    # Get quizzes
+    quizzes_qs = StudentQuiz.objects.filter(subject=subject, topic=topic.name)
+    quizzes = [{
+        'id': q.id,
+        'title': q.title,
+        'difficulty': q.difficulty,
+        'questions_count': q.questions.count(),
+    } for q in quizzes_qs[:10]]
+    
+    return JsonResponse({
+        'notes': notes,
+        'videos': videos,
+        'flashcards': flashcards,
+        'quizzes': quizzes,
+    })
 
 
 @student_login_required

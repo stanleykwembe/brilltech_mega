@@ -38,6 +38,7 @@ urlpatterns = [
     path('subject/<int:subject_id>/', student_views.student_subject_pathway, name='student_subject_pathway'),
     path('subject/<int:subject_id>/study/', student_views.student_study_pathway, name='student_study_pathway'),
     path('subject/<int:subject_id>/study/<int:topic_id>/', student_views.student_topic_detail, name='student_topic_detail'),
+    path('subject/<int:subject_id>/content/<int:topic_id>/', student_views.student_topic_content_ajax, name='student_topic_content_ajax'),
     path('subject/<int:subject_id>/info/', student_views.student_info_pathway, name='student_info_pathway'),
     path('subject/<int:subject_id>/revise/', student_views.student_revise_pathway, name='student_revise_pathway'),
     path('progress/', student_views.student_progress_dashboard, name='student_progress_dashboard'),

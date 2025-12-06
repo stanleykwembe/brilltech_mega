@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject.name }} - Study | EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .sidebar-item:hover { background: rgba(16, 185, 129, 0.1); }
+        .sidebar-item.active { background: rgba(16, 185, 129, 0.15); border-left: 3px solid #10b981; }
+        .tab-active { border-bottom: 3px solid #10b981; color: #10b981; font-weight: 600; }
+        .content-area { min-height: calc(100vh - 180px); }
+        @media (max-width: 768px) {
+            .sidebar-overlay { background: rgba(0,0,0,0.5); }
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50" x-data="studyApp()">
+    <div class="min-h-full flex flex-col">
+        <!-- Top Header -->
+        <header class="bg-white card-shadow sticky top-0 z-50">
+            <div class="px-4 lg:px-6">
+                <div class="flex items-center justify-between h-14">
+                    <div class="flex items-center gap-3">
+                        <!-- Mobile menu button -->
+                        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-bars text-lg"></i>
+                        </button>
+                        <a href="{% url 'student_dashboard' %}" class="flex items-center gap-2 text-gray-600 hover:text-emerald-600">
+                            <i class="fas fa-arrow-left"></i>
+                            <span class="hidden sm:inline">Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900 hidden sm:block">EduTech</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Subject Bar -->
+        <div class="bg-white border-b px-4 lg:px-6 py-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-gray-900">{{ subject.name }}</h1>
+                    <p class="text-xs sm:text-sm text-gray-500">{{ exam_board.abbreviation }} • <span x-text="currentTopicName || 'Select a topic'"></span></p>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">{{ topics_with_data|length }} Topics</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-1 relative">
+            <!-- Mobile Sidebar Overlay -->
+            <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 sidebar-overlay z-40 lg:hidden" x-transition:enter="transition-opacity ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+
+            <!-- Left Sidebar - Topics Tree -->
+            <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-72 bg-white border-r transform transition-transform duration-300 ease-in-out overflow-y-auto pt-0 lg:pt-0" style="top: 112px; height: calc(100vh - 112px);">
+                <div class="p-4">
+                    <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Topics</h2>
+                    <div class="space-y-1">
+                        {% for item in topics_with_data %}
+                            <div x-data="{ expanded: false }" class="mb-1">
+                                <button @click="expanded = !expanded; selectTopic({{ item.topic.id }}, '{{ item.topic.name|escapejs }}')" 
+                                        :class="{ 'active': selectedTopicId === {{ item.topic.id }} }"
+                                        class="w-full flex items-center justify-between p-3 rounded-lg sidebar-item transition-colors text-left">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" 
+                                             :class="selectedTopicId === {{ item.topic.id }} ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600'">
+                                            {{ forloop.counter }}
+                                        </div>
+                                        <span class="font-medium text-gray-800 text-sm">{{ item.topic.name }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        {% if item.subtopics %}
+                                            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }"></i>
+                                        {% endif %}
+                                    </div>
+                                </button>
+                                {% if item.subtopics %}
+                                    <div x-show="expanded" x-collapse class="ml-4 mt-1 border-l-2 border-gray-200 pl-3 space-y-1">
+                                        {% for subtopic in item.subtopics %}
+                                            <button @click="selectSubtopic({{ subtopic.id }}, '{{ subtopic.name|escapejs }}', {{ item.topic.id }})" 
+                                                    :class="{ 'text-emerald-600 font-medium': selectedSubtopicId === {{ subtopic.id }} }"
+                                                    class="w-full text-left p-2 text-sm text-gray-600 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors">
+                                                <i class="fas fa-circle text-[6px] mr-2" :class="selectedSubtopicId === {{ subtopic.id }} ? 'text-emerald-500' : 'text-gray-300'"></i>
+                                                {{ subtopic.name }}
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-gray-500 text-sm p-4">No topics available yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 flex flex-col min-w-0">
+                <!-- Tabs -->
+                <div class="bg-white border-b sticky top-0 z-30">
+                    <div class="flex overflow-x-auto scrollbar-hide">
+                        <button @click="activeTab = 'notes'" :class="activeTab === 'notes' ? 'tab-active' : 'text-gray-600'" class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-3 border-transparent hover:text-emerald-600 transition-colors">
+                            <i class="fas fa-sticky-note mr-2"></i>Notes
+                        </button>
+                        <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'tab-active' : 'text-gray-600'" class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-3 border-transparent hover:text-emerald-600 transition-colors">
+                            <i class="fas fa-play-circle mr-2"></i>Video
+                        </button>
+                        <button @click="activeTab = 'quiz'" :class="activeTab === 'quiz' ? 'tab-active' : 'text-gray-600'" class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-3 border-transparent hover:text-emerald-600 transition-colors">
+                            <i class="fas fa-brain mr-2"></i>Quiz
+                        </button>
+                        <button @click="activeTab = 'test'" :class="activeTab === 'test' ? 'tab-active' : 'text-gray-600'" class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-3 border-transparent hover:text-emerald-600 transition-colors">
+                            <i class="fas fa-file-alt mr-2"></i>Test
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="flex-1 p-4 sm:p-6 content-area">
+                    <!-- No Topic Selected -->
+                    <template x-if="!selectedTopicId">
+                        <div class="flex flex-col items-center justify-center h-full text-center py-12">
+                            <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                <i class="fas fa-hand-pointer text-gray-400 text-3xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Select a Topic</h3>
+                            <p class="text-gray-600 max-w-md">Choose a topic from the sidebar to start learning. Click on a topic to see its content.</p>
+                        </div>
+                    </template>
+
+                    <!-- Topic Selected - Show Content -->
+                    <template x-if="selectedTopicId">
+                        <div>
+                            <!-- Notes Tab -->
+                            <div x-show="activeTab === 'notes'">
+                                <div class="bg-white rounded-2xl card-shadow p-6" id="notes-content">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold text-gray-900">
+                                            <i class="fas fa-sticky-note text-amber-500 mr-2"></i>
+                                            Study Notes
+                                        </h3>
+                                    </div>
+                                    <div id="notes-list" class="space-y-4">
+                                        <div class="text-center py-8 text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                            <p>Loading notes...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Video Tab -->
+                            <div x-show="activeTab === 'video'">
+                                <div class="bg-white rounded-2xl card-shadow p-6" id="video-content">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold text-gray-900">
+                                            <i class="fas fa-play-circle text-red-500 mr-2"></i>
+                                            Video Lessons
+                                        </h3>
+                                    </div>
+                                    <div id="videos-list" class="space-y-4">
+                                        <div class="text-center py-8 text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                            <p>Loading videos...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quiz Tab -->
+                            <div x-show="activeTab === 'quiz'">
+                                <div class="bg-white rounded-2xl card-shadow p-6" id="quiz-content">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold text-gray-900">
+                                            <i class="fas fa-brain text-blue-500 mr-2"></i>
+                                            Practice Quizzes
+                                        </h3>
+                                    </div>
+                                    <div id="quizzes-list" class="space-y-4">
+                                        <div class="text-center py-8 text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                            <p>Loading quizzes...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Test Tab -->
+                            <div x-show="activeTab === 'test'">
+                                <div class="bg-white rounded-2xl card-shadow p-6" id="test-content">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold text-gray-900">
+                                            <i class="fas fa-file-alt text-purple-500 mr-2"></i>
+                                            Flashcards & Practice
+                                        </h3>
+                                    </div>
+                                    <div id="flashcards-list" class="space-y-4">
+                                        <div class="text-center py-8 text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                            <p>Loading flashcards...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function studyApp() {
+            return {
+                sidebarOpen: false,
+                activeTab: 'notes',
+                selectedTopicId: null,
+                selectedSubtopicId: null,
+                currentTopicName: '',
+                contentLoaded: false,
+                
+                init() {
+                    this.$watch('activeTab', () => {
+                        if (this.selectedTopicId && this.contentLoaded) {
+                            // Content already loaded, just switch tabs
+                        }
+                    });
+                },
+                
+                selectTopic(topicId, topicName) {
+                    this.selectedTopicId = topicId;
+                    this.currentTopicName = topicName;
+                    this.selectedSubtopicId = null;
+                    this.sidebarOpen = false;
+                    this.loadContent(topicId);
+                },
+                
+                selectSubtopic(subtopicId, subtopicName, topicId) {
+                    this.selectedSubtopicId = subtopicId;
+                    this.selectedTopicId = topicId;
+                    this.currentTopicName = subtopicName;
+                    this.sidebarOpen = false;
+                    this.loadContent(topicId, subtopicId);
+                },
+                
+                loadContent(topicId, subtopicId = null) {
+                    this.contentLoaded = false;
+                    const subjectId = {{ subject.id }};
+                    let url = `/student/subject/${subjectId}/content/${topicId}/`;
+                    if (subtopicId) {
+                        url += `?subtopic=${subtopicId}`;
+                    }
+                    
+                    // Show loading state
+                    ['notes-list', 'videos-list', 'quizzes-list', 'flashcards-list'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Loading...</p></div>';
+                    });
+                    
+                    fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.renderNotes(data.notes || []);
+                        this.renderVideos(data.videos || []);
+                        this.renderQuizzes(data.quizzes || []);
+                        this.renderFlashcards(data.flashcards || []);
+                        this.contentLoaded = true;
+                    })
+                    .catch(err => {
+                        console.error('Error loading content:', err);
+                        ['notes-list', 'videos-list', 'quizzes-list', 'flashcards-list'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p>Error loading content</p></div>';
+                        });
+                    });
+                },
+                
+                renderNotes(notes) {
+                    const container = document.getElementById('notes-list');
+                    if (notes.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-sticky-note text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600">No notes available for this topic yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    container.innerHTML = notes.map(note => `
+                        <a href="/student/note/${note.id}/" class="block p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl hover:shadow-lg transition-all">
+                            <h4 class="font-bold text-gray-900 mb-1">${note.title}</h4>
+                            <p class="text-sm text-gray-600">${note.description || 'Study notes'}</p>
+                            <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                ${note.has_full ? '<span><i class="fas fa-file-pdf mr-1"></i>Full Notes</span>' : ''}
+                                ${note.has_summary ? '<span><i class="fas fa-compress-alt mr-1"></i>Summary</span>' : ''}
+                            </div>
+                        </a>
+                    `).join('');
+                },
+                
+                renderVideos(videos) {
+                    const container = document.getElementById('videos-list');
+                    if (videos.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-video text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600">No videos available for this topic yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    container.innerHTML = videos.map(video => `
+                        <a href="/student/videos/${video.id}/" class="block p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl hover:shadow-lg transition-all">
+                            <div class="flex items-start gap-4">
+                                <div class="w-24 h-16 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-play text-white text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-900 mb-1">${video.title}</h4>
+                                    <p class="text-sm text-gray-600">${video.duration || ''}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `).join('');
+                },
+                
+                renderQuizzes(quizzes) {
+                    const container = document.getElementById('quizzes-list');
+                    if (quizzes.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-brain text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600">No quizzes available for this topic yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    container.innerHTML = quizzes.map(quiz => `
+                        <a href="/student/quiz/${quiz.id}/start/" class="block p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-1">${quiz.title}</h4>
+                                    <p class="text-sm text-gray-600">${quiz.questions_count} questions • ${quiz.difficulty}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold ${
+                                    quiz.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                                    quiz.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-red-100 text-red-700'
+                                }">
+                                    ${quiz.difficulty}
+                                </span>
+                            </div>
+                        </a>
+                    `).join('');
+                },
+                
+                renderFlashcards(flashcards) {
+                    const container = document.getElementById('flashcards-list');
+                    if (flashcards.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-layer-group text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600">No flashcards available for this topic yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    container.innerHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            ${flashcards.slice(0, 6).map(card => `
+                                <div class="p-4 bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-xl">
+                                    <p class="font-medium text-gray-900 mb-2">${card.front}</p>
+                                    <p class="text-sm text-gray-600 border-t pt-2">${card.back}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${flashcards.length > 6 ? `
+                            <div class="text-center mt-4">
+                                <a href="/student/flashcards/study/{{ subject.id }}/" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                                    <i class="fas fa-layer-group"></i>
+                                    Study All ${flashcards.length} Flashcards
+                                </a>
+                            </div>
+                        ` : ''}
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
