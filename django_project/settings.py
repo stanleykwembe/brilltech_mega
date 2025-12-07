@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'compressor',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -91,6 +92,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -232,6 +234,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+
+# WhiteNoise configuration for serving static files with compression
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Django Compressor settings
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+]
+
+COMPRESS_ENABLED = True
+COMPRESS_OFFLINE = True
+COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
+COMPRESS_JS_FILTERS = ['compressor.filters.jsmin.JSMinFilter']
 
 # Media files (uploaded content)
 MEDIA_URL = '/media/'
@@ -330,3 +349,46 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATION SETTINGS
+# =============================================================================
+
+# Caching Configuration
+# Uses local memory cache for development, can switch to Redis for production
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+
+# Cache timeouts (in seconds)
+CACHE_MIDDLEWARE_SECONDS = 300  # 5 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'edutech'
+
+# Session configuration for performance
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = 'default'
+
+# Database query optimization
+# Enable connection pooling for PostgreSQL
+if DATABASE_URL or POSTGRES_DB:
+    DATABASES['default']['CONN_MAX_AGE'] = 600  # Keep connections open for 10 minutes
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+
+# Security headers (also improves perceived performance)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# GZip compression for responses
+GIT_COMPRESSION_MIDDLEWARE = True

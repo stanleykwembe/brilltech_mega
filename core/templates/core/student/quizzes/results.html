@@ -144,7 +144,7 @@
                                 <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ result.question.question_text }}</h4>
                                 
                                 {% if result.question.question_image %}
-                                <img src="{{ result.question.question_image.url }}" alt="Question image" class="max-w-sm rounded-lg shadow-md mb-4">
+                                <img loading="lazy" src="{{ result.question.question_image.url }}" alt="Question image" class="max-w-sm rounded-lg shadow-md mb-4">
                                 {% endif %}
                             </div>
                             <div class="ml-4 text-sm font-semibold text-gray-600">

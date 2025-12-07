@@ -173,7 +173,7 @@
                         <div class="text-center px-4">
                             <p class="text-xl md:text-2xl font-medium text-gray-800 leading-relaxed" x-text="currentCard.front_text"></p>
                             <template x-if="currentCard.image_front">
-                                <img :src="currentCard.image_front" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Question image">
+                                <img loading="lazy" :src="currentCard.image_front" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Question image">
                             </template>
                         </div>
                         <div class="absolute bottom-4 text-gray-400 text-sm">
@@ -190,7 +190,7 @@
                         <div class="text-center px-4">
                             <p class="text-xl md:text-2xl font-medium leading-relaxed" x-text="currentCard.back_text"></p>
                             <template x-if="currentCard.image_back">
-                                <img :src="currentCard.image_back" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Answer image">
+                                <img loading="lazy" :src="currentCard.image_back" class="mt-4 max-w-xs mx-auto rounded-xl shadow-lg" alt="Answer image">
                             </template>
                         </div>
                     </div>

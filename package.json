@@ -1,0 +1,13 @@
+{
+  "name": "edutech-platform",
+  "version": "1.0.0",
+  "description": "EduTech Freemium Multi-Portal Platform",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./static/css/tailwind.css -o ./static/css/styles.min.css --minify",
+    "watch:css": "npx tailwindcss -i ./static/css/tailwind.css -o ./static/css/styles.min.css --watch",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.18"
+  }
+}

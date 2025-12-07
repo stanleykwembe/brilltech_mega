@@ -190,7 +190,7 @@
                                     <div class="w-32 flex-shrink-0">
                                         <div class="relative aspect-video bg-gray-200 rounded-lg overflow-hidden">
                                             {% if related.thumbnail_url %}
-                                                <img src="{{ related.thumbnail_url }}" alt="{{ related.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                                <img loading="lazy" src="{{ related.thumbnail_url }}" alt="{{ related.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                             {% else %}
                                                 <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-blue-500">
                                                     <i class="fas fa-play text-white text-lg opacity-80"></i>

@@ -6,12 +6,31 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (December 2025)
 
+- **Performance Optimization**: Added WhiteNoise for static file compression, Tailwind CSS build system, caching configuration, lazy loading for images
 - **CRM System**: Added full CRM system to BrillTech Admin Portal with Tasks, Leads, Sales Pipeline, Mailing Lists, and Email Campaigns
 - **Social Login**: Added Google and Facebook social login via django-allauth for both Teacher and Student portals
 - **Admin Panel Reorganization**: Separated subscription management into Teacher Plans (`/panel/features/teachers/plans/`) and Student Plans (`/panel/features/student/plans/`)
 - **Admin Signup**: Added admin signup page at `/brilltech/signup/` for creating new administrator accounts
 - **URL Restructure**: Custom BrillTech Admin Portal at `/brilltech/admin/`, Django admin moved to `/django-admin/`
 - **Student Pricing Model**: Implemented single-row configuration for all student subscription tiers (per-subject, multi-subject bundle, all-access, tutor add-on)
+
+## Performance Optimization
+
+### Static Files
+- **WhiteNoise**: Serves compressed static files with proper caching headers
+- **Django Compressor**: Minifies CSS and JavaScript files
+- **Build command**: `npm run build:css` to generate optimized Tailwind CSS
+
+### Caching
+- **Development**: Local memory cache (no configuration needed)
+- **Production**: Set `REDIS_URL` environment variable for Redis caching
+
+### Images
+- All images use `loading="lazy"` for deferred loading
+
+### Database
+- PostgreSQL connections use connection pooling (10-minute keep-alive)
+- Enable via `DATABASE_URL` or `POSTGRES_*` environment variables
 
 ## User Preferences
 

@@ -127,7 +127,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {% for member in team %}
             <div class="glass-card dark:glass-dark rounded-2xl p-6 text-center card-hover group">
-                <img src="{{ member.image }}" alt="{{ member.name }}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-pink-500/30 group-hover:border-pink-500 transition-colors">
+                <img loading="lazy" src="{{ member.image }}" alt="{{ member.name }}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-pink-500/30 group-hover:border-pink-500 transition-colors">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">{{ member.name }}</h3>
                 <p class="text-pink-600 dark:text-pink-400 font-medium text-sm mb-3">{{ member.role }}</p>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">{{ member.bio }}</p>

@@ -23,6 +23,8 @@ drf-yasg = "^1.21.11"
 django-allauth = "^65.13.1"
 pyjwt = "^2.10.1"
 cryptography = "^46.0.3"
+whitenoise = "^6.11.0"
+django-compressor = "^4.6.0"
 [tool.poetry.dev-dependencies]
 
 [tool.pyright]

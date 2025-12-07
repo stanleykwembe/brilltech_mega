@@ -121,7 +121,7 @@
                 
                 {% if question.question_image %}
                 <div class="mb-4">
-                    <img src="{{ question.question_image.url }}" alt="Question image" class="max-w-md rounded-lg shadow-sm">
+                    <img loading="lazy" src="{{ question.question_image.url }}" alt="Question image" class="max-w-md rounded-lg shadow-sm">
                 </div>
                 {% endif %}
                 

@@ -75,14 +75,14 @@
             <div x-show="!flipped" class="text-center">
                 <p class="text-sm font-medium text-gray-900 mb-3">{{ flashcard.front_text }}</p>
                 {% if flashcard.image_front %}
-                <img src="{{ flashcard.image_front.url }}" alt="Front" class="max-w-full max-h-32 mx-auto rounded">
+                <img loading="lazy" src="{{ flashcard.image_front.url }}" alt="Front" class="max-w-full max-h-32 mx-auto rounded">
                 {% endif %}
             </div>
             
             <div x-show="flipped" x-cloak class="text-center">
                 <p class="text-sm font-medium text-gray-900 mb-3">{{ flashcard.back_text }}</p>
                 {% if flashcard.image_back %}
-                <img src="{{ flashcard.image_back.url }}" alt="Back" class="max-w-full max-h-32 mx-auto rounded">
+                <img loading="lazy" src="{{ flashcard.image_back.url }}" alt="Back" class="max-w-full max-h-32 mx-auto rounded">
                 {% endif %}
             </div>
         </div>

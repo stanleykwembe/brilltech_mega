@@ -4,21 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EduTech Platform{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% load static %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.min.css' %}">
+    <!-- Tailwind CDN fallback for development - remove in production after running: npm run build:css -->
+    {% if debug %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    {% load static %}
     <link rel="stylesheet" href="{% static 'core/css/modern-dashboard.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
         [x-cloak] { display: none !important; }
         
-        /* Smooth scrolling */
         html {
             scroll-behavior: smooth;
         }
         
-        /* Better text rendering */
         * {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;

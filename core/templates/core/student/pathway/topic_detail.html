@@ -86,7 +86,7 @@
                             {% for video in videos %}
                                 <a href="{% url 'student_video_player' video.id %}" class="bg-gray-50 rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
                                     <div class="aspect-video bg-gray-200 relative">
-                                        <img src="{{ video.get_thumbnail }}" alt="{{ video.title }}" class="w-full h-full object-cover">
+                                        <img loading="lazy" src="{{ video.get_thumbnail }}" alt="{{ video.title }}" class="w-full h-full object-cover">
                                         <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <i class="fas fa-play-circle text-white text-5xl"></i>
                                         </div>

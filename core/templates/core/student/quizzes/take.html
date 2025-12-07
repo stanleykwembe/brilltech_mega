@@ -53,7 +53,7 @@
                                 <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ question.question_text }}</h3>
                                 
                                 {% if question.question_image %}
-                                <img src="{{ question.question_image.url }}" alt="Question image" class="mt-4 max-w-full rounded-lg shadow-md">
+                                <img loading="lazy" src="{{ question.question_image.url }}" alt="Question image" class="mt-4 max-w-full rounded-lg shadow-md">
                                 {% endif %}
                             </div>
                             

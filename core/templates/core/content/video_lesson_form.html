@@ -164,7 +164,7 @@
             <template x-if="youtubeId">
                 <div class="space-y-4">
                     <div class="relative rounded-lg overflow-hidden bg-gray-100">
-                        <img :src="'https://img.youtube.com/vi/' + youtubeId + '/mqdefault.jpg'" alt="Video thumbnail" class="w-full">
+                        <img loading="lazy" :src="'https://img.youtube.com/vi/' + youtubeId + '/mqdefault.jpg'" alt="Video thumbnail" class="w-full">
                         <div class="absolute inset-0 flex items-center justify-center">
                             <a :href="'https://www.youtube.com/watch?v=' + youtubeId" target="_blank" class="bg-red-600 text-white rounded-full p-4 hover:bg-red-700 transition shadow-lg">
                                 <i class="fab fa-youtube text-2xl"></i>

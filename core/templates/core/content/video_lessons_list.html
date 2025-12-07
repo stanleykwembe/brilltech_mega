@@ -124,7 +124,7 @@
         <!-- Thumbnail -->
         <div class="relative -mx-6 -mt-6 mb-4">
             {% if video.youtube_id %}
-            <img src="https://img.youtube.com/vi/{{ video.youtube_id }}/mqdefault.jpg" alt="{{ video.title }}" class="w-full h-40 object-cover">
+            <img loading="lazy" src="https://img.youtube.com/vi/{{ video.youtube_id }}/mqdefault.jpg" alt="{{ video.title }}" class="w-full h-40 object-cover">
             {% else %}
             <div class="w-full h-40 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                 <i class="fas fa-video text-gray-400 text-4xl"></i>
