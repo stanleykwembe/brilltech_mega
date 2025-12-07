@@ -26,23 +26,40 @@ SECRET_KEY = 'django-insecure-4ju2n@$f9d0c=h)_g0lbb%k9&@rf(xa$d$g$&5ri$uf)*gev^4
 DEBUG = True
 
 # Allowed hosts configuration
+# Works both on Replit and external hosting
 replit_domains = os.environ.get("REPLIT_DOMAINS", "").split(',') if os.environ.get("REPLIT_DOMAINS") else []
 custom_domain = os.environ.get("CUSTOM_DOMAIN", "")  # e.g., "yourdomain.com"
+allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "")  # Comma-separated list for external hosting
 
-ALLOWED_HOSTS = replit_domains + ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+# Add Replit domains (if running on Replit)
+if replit_domains:
+    ALLOWED_HOSTS.extend(replit_domains)
+
+# Add custom domain
 if custom_domain:
     ALLOWED_HOSTS.append(custom_domain)
     ALLOWED_HOSTS.append(f"www.{custom_domain}")
 
-# Fix CSRF for Replit domains and custom domain
+# Add any additional hosts from ALLOWED_HOSTS env var (for external hosting)
+if allowed_hosts_env:
+    ALLOWED_HOSTS.extend([h.strip() for h in allowed_hosts_env.split(',')])
+
+# CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = [
-    "https://" + domain for domain in replit_domains
-] + [
-    "https://" + domain + ":5000" for domain in replit_domains
-] + [
     "http://127.0.0.1:5000",
-    "http://localhost:5000"
+    "http://localhost:5000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
 ]
+
+# Add Replit domains to CSRF
+for domain in replit_domains:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{domain}")
+    CSRF_TRUSTED_ORIGINS.append(f"https://{domain}:5000")
+
+# Add custom domain to CSRF
 if custom_domain:
     CSRF_TRUSTED_ORIGINS.append(f"https://{custom_domain}")
     CSRF_TRUSTED_ORIGINS.append(f"https://www.{custom_domain}")
