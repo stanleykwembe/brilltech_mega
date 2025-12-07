@@ -107,13 +107,67 @@ WSGI_APPLICATION = 'django_project.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+#
+# DATABASE CONFIGURATION:
+# -----------------------
+# By default, the app uses SQLite (no configuration needed).
+# To switch to PostgreSQL, set these environment variables:
+#   - DATABASE_URL: Full PostgreSQL connection string (recommended)
+#     OR set individual variables:
+#   - POSTGRES_DB: Database name
+#   - POSTGRES_USER: Database username
+#   - POSTGRES_PASSWORD: Database password
+#   - POSTGRES_HOST: Database host (default: localhost)
+#   - POSTGRES_PORT: Database port (default: 5432)
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Check for PostgreSQL configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
+POSTGRES_DB = os.environ.get('POSTGRES_DB')
+
+if DATABASE_URL:
+    # Use DATABASE_URL if provided (e.g., from Heroku, Railway, Render, etc.)
+    import re
+    # Parse DATABASE_URL: postgres://user:password@host:port/dbname
+    match = re.match(r'postgres(?:ql)?://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+    if match:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'USER': match.group(1),
+                'PASSWORD': match.group(2),
+                'HOST': match.group(3),
+                'PORT': match.group(4),
+                'NAME': match.group(5),
+            }
+        }
+    else:
+        # Fallback to SQLite if URL parsing fails
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+elif POSTGRES_DB:
+    # Use individual PostgreSQL environment variables
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': POSTGRES_DB,
+            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    # Default: Use SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

@@ -140,6 +140,38 @@ Managed at `/panel/features/student/plans/`
 - **Pillow**: Image processing.
 - **psycopg2-binary**: PostgreSQL adapter.
 
+## Database Configuration
+
+The application supports both SQLite (default) and PostgreSQL:
+
+### SQLite (Default - No Configuration Needed)
+- Database file: `db.sqlite3` in project root
+- Perfect for development and small deployments
+- No environment variables required
+
+### Switching to PostgreSQL
+When you need to scale, set ONE of these options:
+
+**Option 1: DATABASE_URL (Recommended)**
+```
+DATABASE_URL=postgresql://username:password@host:5432/dbname
+```
+
+**Option 2: Individual Variables**
+```
+POSTGRES_DB=edutech
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+```
+
+After setting credentials:
+1. Run migrations: `python manage.py migrate`
+2. Create superuser: `python manage.py createsuperuser`
+
+**PostgreSQL Schema Script:** See `setup_postgres.sql` for database structure reference.
+
 ## Environment Variables
 
 Required secrets (set in Replit Secrets):
