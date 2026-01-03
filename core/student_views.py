@@ -1861,7 +1861,7 @@ def student_study_pathway(request, subject_id):
 def student_topic_content_ajax(request, subject_id, topic_id):
     """AJAX endpoint to load topic content for the study layout"""
     from django.shortcuts import get_object_or_404
-    from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz
+    from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz, InteractiveQuestion
     import json
     
     if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
@@ -1919,11 +1919,28 @@ def student_topic_content_ajax(request, subject_id, topic_id):
         'questions_count': q.questions.count(),
     } for q in quizzes_qs[:10]]
     
+    # Get test questions (structured/essay type for self-assessment)
+    test_questions_qs = InteractiveQuestion.objects.filter(
+        subject=subject,
+        topic=topic,
+        question_type__in=['structured', 'essay', 'fill_blank']
+    ).order_by('difficulty', '-created_at')
+    test_questions = [{
+        'id': q.id,
+        'question_text': q.question_text,
+        'question_type': q.question_type,
+        'difficulty': q.difficulty,
+        'max_marks': q.max_marks,
+        'model_answer': q.model_answer or q.correct_answer,
+        'marking_guide': q.marking_guide,
+    } for q in test_questions_qs[:20]]
+    
     return JsonResponse({
         'notes': notes,
         'videos': videos,
         'flashcards': flashcards,
         'quizzes': quizzes,
+        'test_questions': test_questions,
     })
 
 
@@ -2386,3 +2403,102 @@ def student_support_view(request, enquiry_id):
     }
     
     return render(request, 'core/student/support/view.html', context)
+
+
+@student_login_required
+def student_check_answer_api(request):
+    """API endpoint to check student answer using AI (GPT-3.5-turbo)"""
+    import json
+    from django.views.decorators.http import require_POST
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        student_answer = data.get('student_answer', '').strip()
+        model_answer = data.get('model_answer', '').strip()
+        question_text = data.get('question_text', '').strip()
+        max_marks = data.get('max_marks', 1)
+        
+        if not student_answer:
+            return JsonResponse({'success': False, 'error': 'No answer provided'})
+        
+        if not model_answer:
+            return JsonResponse({'success': False, 'error': 'No model answer available for comparison'})
+        
+        # Use OpenAI to compare answers
+        try:
+            from openai import OpenAI
+            client = OpenAI()
+            
+            prompt = f"""You are an educational assessment assistant. Compare the student's answer to the model answer and provide a fair assessment.
+
+Question: {question_text}
+
+Model Answer: {model_answer}
+
+Student Answer: {student_answer}
+
+Maximum Marks: {max_marks}
+
+Instructions:
+1. Compare the student's answer to the model answer semantically (meaning, not exact wording)
+2. Give partial credit for partially correct answers
+3. Be encouraging but honest
+4. Provide a percentage score (0-100) and brief feedback
+
+Respond in this exact JSON format:
+{{"score": <number 0-100>, "feedback": "<brief constructive feedback, 2-3 sentences>"}}"""
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful educational assistant that compares student answers to model answers. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.3
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            
+            # Parse the JSON response
+            try:
+                # Handle potential markdown code blocks
+                if result_text.startswith('```'):
+                    result_text = result_text.split('```')[1]
+                    if result_text.startswith('json'):
+                        result_text = result_text[4:]
+                result = json.loads(result_text)
+                score = int(result.get('score', 0))
+                feedback = result.get('feedback', 'Could not parse feedback.')
+            except:
+                # Fallback if JSON parsing fails
+                score = 50
+                feedback = "Your answer shows understanding. Compare with the model answer to improve."
+            
+            return JsonResponse({
+                'success': True,
+                'score': score,
+                'feedback': feedback
+            })
+            
+        except ImportError:
+            return JsonResponse({
+                'success': False,
+                'error': 'AI service not available. Please reveal the answer and self-mark instead.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'AI service error. Please try again or use self-marking.'
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)

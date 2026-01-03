@@ -49,4 +49,7 @@ urlpatterns = [
     path('support/', student_views.student_support, name='student_support'),
     path('support/new/', student_views.student_support_new, name='student_support_new'),
     path('support/<int:enquiry_id>/', student_views.student_support_view, name='student_support_view'),
+    
+    # API Endpoints
+    path('api/check-answer/', student_views.student_check_answer_api, name='student_check_answer_api'),
 ]

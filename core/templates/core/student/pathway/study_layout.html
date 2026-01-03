@@ -20,6 +20,7 @@
     </style>
 </head>
 <body class="h-full bg-gray-50" x-data="studyApp()">
+    {% csrf_token %}
     <div class="min-h-full flex flex-col">
         <!-- Top Header -->
         <header class="bg-white card-shadow sticky top-0 z-50">
@@ -217,13 +218,17 @@
                                     <div class="flex items-center justify-between mb-4">
                                         <h3 class="text-lg font-bold text-gray-900">
                                             <i class="fas fa-file-alt text-purple-500 mr-2"></i>
-                                            Flashcards & Practice
+                                            Self-Assessment Test
                                         </h3>
+                                        <button onclick="revealAllAnswers()" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium">
+                                            <i class="fas fa-eye mr-1"></i> Reveal All Answers
+                                        </button>
                                     </div>
-                                    <div id="flashcards-list" class="space-y-4">
+                                    <p class="text-gray-600 text-sm mb-6">Answer the questions below, then reveal answers to check your work. You can also use AI to compare your answer.</p>
+                                    <div id="test-questions-list" class="space-y-6">
                                         <div class="text-center py-8 text-gray-500">
                                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                            <p>Loading flashcards...</p>
+                                            <p>Loading test questions...</p>
                                         </div>
                                     </div>
                                 </div>
@@ -279,7 +284,7 @@
                     }
                     
                     // Show loading state
-                    ['notes-list', 'videos-list', 'quizzes-list', 'flashcards-list'].forEach(id => {
+                    ['notes-list', 'videos-list', 'quizzes-list', 'test-questions-list'].forEach(id => {
                         const el = document.getElementById(id);
                         if (el) el.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Loading...</p></div>';
                     });
@@ -292,12 +297,12 @@
                         this.renderNotes(data.notes || []);
                         this.renderVideos(data.videos || []);
                         this.renderQuizzes(data.quizzes || []);
-                        this.renderFlashcards(data.flashcards || []);
+                        this.renderTestQuestions(data.test_questions || []);
                         this.contentLoaded = true;
                     })
                     .catch(err => {
                         console.error('Error loading content:', err);
-                        ['notes-list', 'videos-list', 'quizzes-list', 'flashcards-list'].forEach(id => {
+                        ['notes-list', 'videos-list', 'quizzes-list', 'test-questions-list'].forEach(id => {
                             const el = document.getElementById(id);
                             if (el) el.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p>Error loading content</p></div>';
                         });
@@ -391,6 +396,7 @@
                 
                 renderFlashcards(flashcards) {
                     const container = document.getElementById('flashcards-list');
+                    if (!container) return;
                     if (flashcards.length === 0) {
                         container.innerHTML = `
                             <div class="text-center py-8">
@@ -420,8 +426,177 @@
                             </div>
                         ` : ''}
                     `;
+                },
+                
+                renderTestQuestions(questions) {
+                    const container = document.getElementById('test-questions-list');
+                    if (!container) return;
+                    if (questions.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-file-alt text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600">No test questions available for this topic yet.</p>
+                                <p class="text-sm text-gray-500 mt-2">Check back later or try a different topic.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    window.testQuestionsData = questions;
+                    
+                    container.innerHTML = questions.map((q, idx) => `
+                        <div class="p-5 bg-gradient-to-br from-gray-50 to-slate-50 border-2 border-gray-200 rounded-xl question-card" data-question-id="${q.id}">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">${idx + 1}</span>
+                                    <span class="px-2 py-1 rounded text-xs font-medium ${
+                                        q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                                        q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-red-100 text-red-700'
+                                    }">${q.difficulty}</span>
+                                    <span class="text-xs text-gray-500">${q.max_marks} mark${q.max_marks > 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <p class="text-gray-900 font-medium">${q.question_text}</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Your Answer:</label>
+                                <textarea id="answer-${q.id}" rows="4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors resize-none" placeholder="Type your answer here..."></textarea>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button onclick="revealAnswer(${q.id})" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium">
+                                    <i class="fas fa-eye mr-1"></i> Reveal Answer
+                                </button>
+                                <button onclick="checkAnswerWithAI(${q.id})" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                    <i class="fas fa-robot mr-1"></i> Check with AI
+                                </button>
+                            </div>
+                            
+                            <div id="model-answer-${q.id}" class="hidden mt-4 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-xl">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-check-circle text-emerald-600"></i>
+                                    <span class="font-bold text-emerald-800">Model Answer:</span>
+                                </div>
+                                <p class="text-gray-800">${q.model_answer || 'No model answer provided'}</p>
+                                ${q.marking_guide ? `
+                                    <div class="mt-3 pt-3 border-t border-emerald-200">
+                                        <span class="text-sm font-medium text-emerald-700">Marking Guide:</span>
+                                        <p class="text-sm text-gray-700 mt-1">${q.marking_guide}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div id="ai-feedback-${q.id}" class="hidden mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-robot text-blue-600"></i>
+                                    <span class="font-bold text-blue-800">AI Feedback:</span>
+                                </div>
+                                <div id="ai-feedback-content-${q.id}" class="text-gray-800"></div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <span class="text-sm text-gray-600 mr-3">Self-Mark:</span>
+                                <button onclick="selfMark(${q.id}, 'correct')" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium mr-2">
+                                    <i class="fas fa-check mr-1"></i> Correct
+                                </button>
+                                <button onclick="selfMark(${q.id}, 'partial')" class="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-sm font-medium mr-2">
+                                    <i class="fas fa-minus mr-1"></i> Partial
+                                </button>
+                                <button onclick="selfMark(${q.id}, 'incorrect')" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">
+                                    <i class="fas fa-times mr-1"></i> Incorrect
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
                 }
             }
+        }
+        
+        function revealAnswer(questionId) {
+            const answerEl = document.getElementById(`model-answer-${questionId}`);
+            if (answerEl) {
+                answerEl.classList.toggle('hidden');
+            }
+        }
+        
+        function revealAllAnswers() {
+            document.querySelectorAll('[id^="model-answer-"]').forEach(el => {
+                el.classList.remove('hidden');
+            });
+        }
+        
+        function selfMark(questionId, result) {
+            const card = document.querySelector(`[data-question-id="${questionId}"]`);
+            if (!card) return;
+            
+            card.classList.remove('border-green-400', 'border-amber-400', 'border-red-400');
+            if (result === 'correct') {
+                card.classList.add('border-green-400');
+            } else if (result === 'partial') {
+                card.classList.add('border-amber-400');
+            } else {
+                card.classList.add('border-red-400');
+            }
+        }
+        
+        function checkAnswerWithAI(questionId) {
+            const studentAnswer = document.getElementById(`answer-${questionId}`).value.trim();
+            if (!studentAnswer) {
+                alert('Please write your answer first before checking with AI.');
+                return;
+            }
+            
+            const question = window.testQuestionsData.find(q => q.id === questionId);
+            if (!question) return;
+            
+            const feedbackEl = document.getElementById(`ai-feedback-${questionId}`);
+            const feedbackContent = document.getElementById(`ai-feedback-content-${questionId}`);
+            
+            feedbackEl.classList.remove('hidden');
+            feedbackContent.innerHTML = '<div class="flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> AI is analyzing your answer...</div>';
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch('/student/api/check-answer/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    question_id: questionId,
+                    student_answer: studentAnswer,
+                    model_answer: question.model_answer,
+                    question_text: question.question_text,
+                    max_marks: question.max_marks
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    feedbackContent.innerHTML = `
+                        <div class="mb-2">
+                            <span class="font-bold text-lg ${
+                                data.score >= 80 ? 'text-green-600' :
+                                data.score >= 50 ? 'text-amber-600' :
+                                'text-red-600'
+                            }">Score: ${data.score}%</span>
+                        </div>
+                        <p>${data.feedback}</p>
+                    `;
+                } else {
+                    feedbackContent.innerHTML = `<p class="text-red-600">Error: ${data.error || 'Could not check answer'}</p>`;
+                }
+            })
+            .catch(err => {
+                feedbackContent.innerHTML = `<p class="text-red-600">Error connecting to AI service. Please try again.</p>`;
+            });
         }
     </script>
 </body>
