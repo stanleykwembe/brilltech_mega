@@ -34,6 +34,13 @@
                         <h1 class="text-2xl font-bold text-gray-900">Video Lesson</h1>
                     </div>
                     <div class="flex items-center space-x-4">
+                        {% with exam_board=video.subject.exam_board %}
+                        {% if video.subject and exam_board %}
+                        <a href="{% url 'student_study_page' exam_board_id=exam_board.id subject_id=video.subject.id %}" class="text-sm px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors">
+                            <i class="fas fa-book-reader mr-1"></i> Study Mode
+                        </a>
+                        {% endif %}
+                        {% endwith %}
                         <a href="{% url 'student_video_library' %}" class="text-sm text-gray-600 hover:text-emerald-600">
                             <i class="fas fa-arrow-left mr-1"></i> Back to Library
                         </a>

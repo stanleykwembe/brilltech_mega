@@ -63,10 +63,15 @@
             <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 sidebar-overlay z-40 lg:hidden" x-transition:enter="transition-opacity ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
 
             <!-- Left Sidebar - Topics Tree -->
-            <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-72 bg-white border-r transform transition-transform duration-300 ease-in-out overflow-y-auto pt-0 lg:pt-0" style="top: 112px; height: calc(100vh - 112px);">
+            <aside :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0', sidebarCollapsed ? 'lg:w-16' : 'lg:w-72']" class="fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-72 bg-white border-r transform transition-all duration-300 ease-in-out overflow-y-auto pt-0 lg:pt-0" style="top: 112px; height: calc(100vh - 112px);">
                 <div class="p-4">
-                    <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Topics</h2>
-                    <div class="space-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 x-show="!sidebarCollapsed" class="text-sm font-bold text-gray-900 uppercase tracking-wide">Topics</h2>
+                        <button @click="sidebarCollapsed = !sidebarCollapsed" class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-emerald-600 transition-colors" title="Toggle Sidebar">
+                            <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-1" x-show="!sidebarCollapsed">
                         {% for item in topics_with_data %}
                             <div x-data="{ expanded: false }" class="mb-1">
                                 <button @click="expanded = !expanded; selectTopic({{ item.topic.id }}, '{{ item.topic.name|escapejs }}')" 
@@ -100,6 +105,17 @@
                             </div>
                         {% empty %}
                             <p class="text-gray-500 text-sm p-4">No topics available yet.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="space-y-2" x-show="sidebarCollapsed">
+                        {% for item in topics_with_data %}
+                            <button @click="selectTopic({{ item.topic.id }}, '{{ item.topic.name|escapejs }}'); sidebarCollapsed = false" 
+                                    :class="{ 'bg-emerald-500 text-white': selectedTopicId === {{ item.topic.id }}, 'bg-gray-100 text-gray-600 hover:bg-emerald-100': selectedTopicId !== {{ item.topic.id }} }"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors mx-auto" 
+                                    title="{{ item.topic.name }}">
+                                {{ forloop.counter }}
+                            </button>
                         {% endfor %}
                     </div>
                 </div>
@@ -223,6 +239,7 @@
         function studyApp() {
             return {
                 sidebarOpen: false,
+                sidebarCollapsed: false,
                 activeTab: 'notes',
                 selectedTopicId: null,
                 selectedSubtopicId: null,

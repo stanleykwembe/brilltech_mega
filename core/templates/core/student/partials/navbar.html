@@ -14,6 +14,9 @@
                 <a href="{% url 'student_dashboard' %}" class="px-3 py-2 rounded-lg text-sm font-medium {% if active_page == 'dashboard' %}text-emerald-600 bg-emerald-50{% else %}text-gray-600 hover:text-emerald-600 hover:bg-emerald-50{% endif %} transition-colors" title="Dashboard">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
+                <a href="{% url 'student_video_library' %}" class="px-3 py-2 rounded-lg text-sm font-medium {% if active_page == 'videos' %}text-red-600 bg-red-50{% else %}text-gray-600 hover:text-red-600 hover:bg-red-50{% endif %} transition-colors" title="Videos">
+                    <i class="fas fa-play-circle mr-1"></i> Videos
+                </a>
                 <a href="{% url 'student_notes' %}" class="px-3 py-2 rounded-lg text-sm font-medium {% if active_page == 'notes' %}text-emerald-600 bg-emerald-50{% else %}text-gray-600 hover:text-emerald-600 hover:bg-emerald-50{% endif %} transition-colors" title="Notes">
                     <i class="fas fa-sticky-note mr-1"></i> Notes
                 </a>
@@ -47,6 +50,9 @@
         <nav class="md:hidden flex items-center gap-1 pb-3 overflow-x-auto scrollbar-hide">
             <a href="{% url 'student_dashboard' %}" class="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium {% if active_page == 'dashboard' %}text-emerald-600 bg-emerald-50{% else %}text-gray-600 hover:bg-gray-100{% endif %}" title="Dashboard">
                 <i class="fas fa-home"></i>
+            </a>
+            <a href="{% url 'student_video_library' %}" class="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium {% if active_page == 'videos' %}text-red-600 bg-red-50{% else %}text-gray-600 hover:bg-gray-100{% endif %}" title="Videos">
+                <i class="fas fa-play-circle mr-1"></i> Videos
             </a>
             <a href="{% url 'student_notes' %}" class="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium {% if active_page == 'notes' %}text-emerald-600 bg-emerald-50{% else %}text-gray-600 hover:bg-gray-100{% endif %}" title="Notes">
                 <i class="fas fa-sticky-note mr-1"></i> Notes
