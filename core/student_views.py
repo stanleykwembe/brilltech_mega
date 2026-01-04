@@ -842,6 +842,40 @@ def student_quiz_submit(request):
     progress.average_score = total_percentage / all_attempts.count() if all_attempts.count() > 0 else 0
     progress.save()
     
+    # Also update StudentTopicProgress (for pathway progress tracking)
+    try:
+        topic_obj = Topic.objects.filter(
+            subject=attempt.quiz.subject,
+            name__iexact=attempt.quiz.topic
+        ).first()
+        
+        if topic_obj:
+            topic_progress, created = StudentTopicProgress.objects.get_or_create(
+                student=student_profile,
+                subject=attempt.quiz.subject,
+                topic=topic_obj
+            )
+            
+            # Determine difficulty and update appropriate counter
+            difficulty = getattr(attempt.quiz, 'difficulty', 'medium')
+            if difficulty == 'easy':
+                topic_progress.quizzes_easy_completed += 1
+                if percentage >= 70:
+                    topic_progress.quizzes_easy_passed += 1
+            elif difficulty == 'hard':
+                topic_progress.quizzes_hard_completed += 1
+                if percentage >= 70:
+                    topic_progress.quizzes_hard_passed += 1
+            else:
+                topic_progress.quizzes_medium_completed += 1
+                if percentage >= 70:
+                    topic_progress.quizzes_medium_passed += 1
+            
+            topic_progress.average_quiz_score = progress.average_score
+            topic_progress.save()
+    except Exception as e:
+        pass  # Don't fail the quiz submission if topic progress update fails
+    
     # Clean up session
     if f'quiz_attempt_{attempt.id}_questions' in request.session:
         del request.session[f'quiz_attempt_{attempt.id}_questions']
@@ -2502,3 +2536,197 @@ Respond in this exact JSON format:
         return JsonResponse({'success': False, 'error': 'Invalid request data'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': 'An error occurred'}, status=500)
+
+
+@student_login_required
+def student_topic_progress_api(request, subject_id):
+    """API endpoint to get student progress for all topics in a subject"""
+    import json
+    from django.utils import timezone
+    
+    student_profile = request.user.student_profile
+    
+    try:
+        subject = Subject.objects.get(id=subject_id)
+    except Subject.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Subject not found'}, status=404)
+    
+    # Get all topics for this subject
+    topics = Topic.objects.filter(subject=subject, is_active=True).order_by('order', 'name')
+    
+    # Get progress for each topic
+    progress_data = {}
+    completed_count = 0
+    
+    for topic in topics:
+        try:
+            progress = StudentTopicProgress.objects.get(
+                student=student_profile,
+                subject=subject,
+                topic=topic
+            )
+            completion = progress.get_completion_percentage()
+            is_completed = completion >= 75
+            if is_completed:
+                completed_count += 1
+            
+            progress_data[topic.id] = {
+                'notes_completed': progress.notes_completed,
+                'videos_watched': progress.videos_watched_count,
+                'videos_total': progress.videos_total,
+                'quizzes_completed': progress.quizzes_easy_completed + progress.quizzes_medium_completed + progress.quizzes_hard_completed,
+                'average_score': float(progress.average_quiz_score),
+                'completion_percentage': completion,
+                'is_completed': is_completed,
+                'last_activity': progress.last_activity.isoformat() if progress.last_activity else None
+            }
+        except StudentTopicProgress.DoesNotExist:
+            progress_data[topic.id] = {
+                'notes_completed': False,
+                'videos_watched': 0,
+                'videos_total': 0,
+                'quizzes_completed': 0,
+                'average_score': 0,
+                'completion_percentage': 0,
+                'is_completed': False,
+                'last_activity': None
+            }
+    
+    total_topics = len(topics)
+    subject_completion = int((completed_count / total_topics) * 100) if total_topics > 0 else 0
+    
+    return JsonResponse({
+        'success': True,
+        'subject_id': subject_id,
+        'subject_name': subject.name,
+        'total_topics': total_topics,
+        'completed_topics': completed_count,
+        'subject_completion': subject_completion,
+        'topics': progress_data
+    })
+
+
+@student_login_required
+def student_mark_topic_complete_api(request):
+    """API endpoint to mark a topic as complete"""
+    import json
+    from django.utils import timezone
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    
+    student_profile = request.user.student_profile
+    
+    try:
+        data = json.loads(request.body)
+        topic_id = data.get('topic_id')
+        action = data.get('action', 'complete')  # 'complete' or 'uncomplete'
+        
+        topic = Topic.objects.get(id=topic_id)
+        subject = topic.subject
+        
+        # Get or create progress
+        progress, created = StudentTopicProgress.objects.get_or_create(
+            student=student_profile,
+            subject=subject,
+            topic=topic,
+            defaults={
+                'notes_completed': True if action == 'complete' else False
+            }
+        )
+        
+        if action == 'complete':
+            progress.notes_completed = True
+            progress.last_activity = timezone.now()
+        else:
+            progress.notes_completed = False
+        
+        progress.save()
+        
+        # Recalculate subject completion
+        all_topics = Topic.objects.filter(subject=subject, is_active=True)
+        completed_count = 0
+        for t in all_topics:
+            try:
+                p = StudentTopicProgress.objects.get(student=student_profile, subject=subject, topic=t)
+                if p.get_completion_percentage() >= 75:
+                    completed_count += 1
+            except StudentTopicProgress.DoesNotExist:
+                pass
+        
+        total_topics = all_topics.count()
+        subject_completion = int((completed_count / total_topics) * 100) if total_topics > 0 else 0
+        
+        return JsonResponse({
+            'success': True,
+            'topic_id': topic_id,
+            'is_completed': progress.get_completion_percentage() >= 75,
+            'completion_percentage': progress.get_completion_percentage(),
+            'subject_completion': subject_completion,
+            'completed_topics': completed_count,
+            'total_topics': total_topics
+        })
+        
+    except Topic.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Topic not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@student_login_required  
+def student_track_content_view_api(request):
+    """API endpoint to track when student views content (notes, videos)"""
+    import json
+    from django.utils import timezone
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    
+    student_profile = request.user.student_profile
+    
+    try:
+        data = json.loads(request.body)
+        topic_id = data.get('topic_id')
+        content_type = data.get('content_type')  # 'notes', 'video', 'flashcard'
+        
+        topic = Topic.objects.get(id=topic_id)
+        subject = topic.subject
+        
+        # Get or create progress
+        progress, created = StudentTopicProgress.objects.get_or_create(
+            student=student_profile,
+            subject=subject,
+            topic=topic
+        )
+        
+        if content_type == 'notes':
+            progress.notes_read_count += 1
+            if progress.notes_read_count >= 1:
+                progress.notes_completed = True
+        elif content_type == 'video':
+            progress.videos_watched_count += 1
+            # Get total videos for this topic
+            from .models import VideoLesson
+            total_videos = VideoLesson.objects.filter(topic=topic, is_active=True).count()
+            progress.videos_total = total_videos
+        elif content_type == 'flashcard':
+            progress.flashcards_reviewed_count += 1
+        
+        progress.last_activity = timezone.now()
+        progress.save()
+        
+        return JsonResponse({
+            'success': True,
+            'topic_id': topic_id,
+            'content_type': content_type,
+            'completion_percentage': progress.get_completion_percentage()
+        })
+        
+    except Topic.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Topic not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

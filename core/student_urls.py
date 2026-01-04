@@ -52,4 +52,7 @@ urlpatterns = [
     
     # API Endpoints
     path('api/check-answer/', student_views.student_check_answer_api, name='student_check_answer_api'),
+    path('api/subject/<int:subject_id>/progress/', student_views.student_topic_progress_api, name='student_topic_progress_api'),
+    path('api/topic/complete/', student_views.student_mark_topic_complete_api, name='student_mark_topic_complete_api'),
+    path('api/topic/track-view/', student_views.student_track_content_view_api, name='student_track_content_view_api'),
 ]

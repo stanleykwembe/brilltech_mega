@@ -46,15 +46,23 @@
             </div>
         </header>
 
-        <!-- Subject Bar -->
+        <!-- Subject Bar with Progress -->
         <div class="bg-white border-b px-4 lg:px-6 py-3">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <h1 class="text-lg sm:text-xl font-bold text-gray-900">{{ subject.name }}</h1>
                     <p class="text-xs sm:text-sm text-gray-500">{{ exam_board.abbreviation }} • <span x-text="currentTopicName || 'Select a topic'"></span></p>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-gray-500">
-                    <span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">{{ topics_with_data|length }} Topics</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="subject-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500" :style="`width: ${subjectProgress}%`"></div>
+                        </div>
+                        <span class="text-xs font-medium text-gray-600" x-text="`${subjectProgress}%`"></span>
+                    </div>
+                    <span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs">
+                        <span x-text="completedTopics"></span>/<span x-text="totalTopics"></span> Topics
+                    </span>
                 </div>
             </div>
         </div>
@@ -79,13 +87,17 @@
                                         :class="{ 'active': selectedTopicId === {{ item.topic.id }} }"
                                         class="w-full flex items-center justify-between p-3 rounded-lg sidebar-item transition-colors text-left">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" 
-                                             :class="selectedTopicId === {{ item.topic.id }} ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600'">
-                                            {{ forloop.counter }}
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold relative" 
+                                             :class="topicProgress[{{ item.topic.id }}]?.is_completed ? 'bg-emerald-500 text-white' : (selectedTopicId === {{ item.topic.id }} ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600')">
+                                            <span x-show="!topicProgress[{{ item.topic.id }}]?.is_completed">{{ forloop.counter }}</span>
+                                            <i x-show="topicProgress[{{ item.topic.id }}]?.is_completed" class="fas fa-check"></i>
                                         </div>
                                         <span class="font-medium text-gray-800 text-sm">{{ item.topic.name }}</span>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        <span x-show="topicProgress[{{ item.topic.id }}]?.completion_percentage > 0 && !topicProgress[{{ item.topic.id }}]?.is_completed" 
+                                              class="text-xs text-emerald-600 font-medium" 
+                                              x-text="`${topicProgress[{{ item.topic.id }}]?.completion_percentage || 0}%`"></span>
                                         {% if item.subtopics %}
                                             <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }"></i>
                                         {% endif %}
@@ -158,6 +170,41 @@
                     <!-- Topic Selected - Show Content -->
                     <template x-if="selectedTopicId">
                         <div>
+                            <!-- Topic Progress Banner -->
+                            <div class="mb-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                                             :class="topicProgress[selectedTopicId]?.is_completed ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-emerald-300 text-emerald-600'">
+                                            <i class="fas" :class="topicProgress[selectedTopicId]?.is_completed ? 'fa-check' : 'fa-book-open'"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900" x-text="currentTopicName"></p>
+                                            <p class="text-sm text-gray-600">
+                                                <span x-show="topicProgress[selectedTopicId]?.is_completed" class="text-emerald-600 font-medium">
+                                                    <i class="fas fa-check-circle mr-1"></i>Completed
+                                                </span>
+                                                <span x-show="!topicProgress[selectedTopicId]?.is_completed">
+                                                    Progress: <span x-text="`${topicProgress[selectedTopicId]?.completion_percentage || 0}%`"></span>
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button x-show="!topicProgress[selectedTopicId]?.is_completed"
+                                                @click="markTopicComplete(selectedTopicId, 'complete')"
+                                                class="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors">
+                                            <i class="fas fa-check mr-2"></i>Mark Complete
+                                        </button>
+                                        <button x-show="topicProgress[selectedTopicId]?.is_completed"
+                                                @click="markTopicComplete(selectedTopicId, 'uncomplete')"
+                                                class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                                            <i class="fas fa-undo mr-2"></i>Mark Incomplete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Notes Tab -->
                             <div x-show="activeTab === 'notes'">
                                 <div class="bg-white rounded-2xl card-shadow p-6" id="notes-content">
@@ -250,13 +297,57 @@
                 selectedSubtopicId: null,
                 currentTopicName: '',
                 contentLoaded: false,
+                topicProgress: {},
+                subjectProgress: 0,
+                completedTopics: 0,
+                totalTopics: {{ topics_with_data|length }},
                 
                 init() {
+                    this.fetchProgress();
                     this.$watch('activeTab', () => {
                         if (this.selectedTopicId && this.contentLoaded) {
                             // Content already loaded, just switch tabs
                         }
                     });
+                },
+                
+                fetchProgress() {
+                    fetch('/student/api/subject/{{ subject.id }}/progress/')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.topicProgress = data.topics;
+                                this.subjectProgress = data.subject_completion;
+                                this.completedTopics = data.completed_topics;
+                                this.totalTopics = data.total_topics;
+                            }
+                        })
+                        .catch(err => console.log('Progress fetch error:', err));
+                },
+                
+                markTopicComplete(topicId, action = 'complete') {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('/student/api/topic/complete/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ topic_id: topicId, action: action })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.topicProgress[topicId] = {
+                                ...this.topicProgress[topicId],
+                                is_completed: data.is_completed,
+                                completion_percentage: data.completion_percentage
+                            };
+                            this.subjectProgress = data.subject_completion;
+                            this.completedTopics = data.completed_topics;
+                        }
+                    })
+                    .catch(err => console.log('Mark complete error:', err));
                 },
                 
                 selectTopic(topicId, topicName) {
