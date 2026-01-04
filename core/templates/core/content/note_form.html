@@ -1,14 +1,14 @@
 {% extends 'core/content/base.html' %}
 {% load static %}
 
-{% block title %}Create Note - Content Portal{% endblock %}
+{% block title %}{% if note %}Edit{% else %}Create{% endif %} Note - Content Portal{% endblock %}
 
 {% block content %}
 <div class="mb-8">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="heading-primary">Create Study Note</h1>
-            <p class="mt-2 text-base text-gray-600 font-medium">Upload or write study notes for students</p>
+            <h1 class="heading-primary">{% if note %}Edit{% else %}Create{% endif %} Study Note</h1>
+            <p class="mt-2 text-base text-gray-600 font-medium">Create rich notes with formatting, images, and math equations</p>
         </div>
         <a href="{% url 'manage_notes' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
             <i class="fas fa-arrow-left mr-2"></i>
@@ -17,18 +17,38 @@
     </div>
 </div>
 
-<div class="stat-card max-w-4xl">
-    <form method="POST" enctype="multipart/form-data">
+<!-- Editor Tips -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <h3 class="text-sm font-semibold text-blue-800 mb-2">
+        <i class="fas fa-lightbulb mr-2"></i>Rich Text Editor Features
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-blue-700">
+        <div>
+            <strong>Formatting:</strong> Bold, italic, headings, bullet lists, numbered lists
+        </div>
+        <div>
+            <strong>Media:</strong> Insert images via URL or upload
+        </div>
+        <div>
+            <strong>Math:</strong> Use LaTeX syntax like <code class="bg-blue-100 px-1 rounded">$$x^2 + y^2 = z^2$$</code>
+        </div>
+    </div>
+</div>
+
+<div class="stat-card max-w-5xl" x-data="noteFormData()">
+    <form method="POST" enctype="multipart/form-data" @submit="prepareSubmit()">
         {% csrf_token %}
         
         <!-- Basic Information -->
         <div class="mb-8">
-            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Basic Information</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
+                <i class="fas fa-info-circle mr-2 text-orange-500"></i>Basic Information
+            </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
-                    <input type="text" name="title" required placeholder="e.g., Algebra Basics" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <input type="text" name="title" required value="{{ note.title|default:'' }}" placeholder="e.g., Algebra Basics - Complete Guide" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                 </div>
                 
                 <div>
@@ -36,7 +56,7 @@
                     <select name="subject" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                         <option value="">Select Subject</option>
                         {% for subject in subjects %}
-                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -46,7 +66,7 @@
                     <select name="exam_board" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                         <option value="">Select Board</option>
                         {% for board in exam_boards %}
-                        <option value="{{ board.id }}">{{ board.name_full }}</option>
+                        <option value="{{ board.id }}" {% if note.exam_board_id == board.id %}selected{% endif %}>{{ board.name_full }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -56,54 +76,98 @@
                     <select name="grade" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                         <option value="">Select Grade</option>
                         {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        <option value="{{ grade.id }}" {% if note.grade_id == grade.id %}selected{% endif %}>Grade {{ grade.number }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Topic *</label>
-                    <input type="text" name="topic" required placeholder="e.g., Quadratic Equations" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <input type="text" name="topic" required value="{{ note.topic_text|default:'' }}" placeholder="e.g., Quadratic Equations" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                 </div>
             </div>
         </div>
         
-        <!-- Full Version -->
+        <!-- Full Version Content -->
         <div class="mb-8">
-            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Full Version</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
+                <i class="fas fa-file-alt mr-2 text-orange-500"></i>Full Version (Detailed Notes)
+            </h2>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Upload File (Optional)</label>
-                    <input type="file" name="full_version" accept=".pdf,.doc,.docx" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX</p>
+                <!-- Tab Selection -->
+                <div class="flex gap-2 border-b">
+                    <button type="button" @click="fullVersionTab = 'editor'" 
+                            :class="fullVersionTab === 'editor' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition">
+                        <i class="fas fa-edit mr-2"></i>Rich Text Editor
+                    </button>
+                    <button type="button" @click="fullVersionTab = 'upload'" 
+                            :class="fullVersionTab === 'upload' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition">
+                        <i class="fas fa-upload mr-2"></i>Upload File
+                    </button>
                 </div>
                 
-                <div class="text-center text-gray-500 text-sm font-medium">OR</div>
+                <!-- Editor Tab -->
+                <div x-show="fullVersionTab === 'editor'" x-cloak>
+                    <div id="full-version-editor" class="min-h-[400px] border border-gray-300 rounded-md"></div>
+                    <input type="hidden" name="full_version_text" id="full_version_text_input">
+                    <p class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Use the toolbar for formatting. For math equations, type LaTeX between $$ symbols (e.g., $$E = mc^2$$)
+                    </p>
+                </div>
                 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Write Content</label>
-                    <textarea name="full_version_text" rows="10" placeholder="Write your detailed notes here..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
+                <!-- Upload Tab -->
+                <div x-show="fullVersionTab === 'upload'" x-cloak>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <input type="file" name="full_version" accept=".pdf,.doc,.docx" class="w-full">
+                        <p class="mt-2 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- Summary Version -->
+        <!-- Summary Version Content -->
         <div class="mb-8">
-            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Summary Version</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
+                <i class="fas fa-compress-alt mr-2 text-orange-500"></i>Summary Version (Quick Review)
+            </h2>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Upload File (Optional)</label>
-                    <input type="file" name="summary_version" accept=".pdf,.doc,.docx" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX</p>
+                <!-- Tab Selection -->
+                <div class="flex gap-2 border-b">
+                    <button type="button" @click="summaryVersionTab = 'editor'" 
+                            :class="summaryVersionTab === 'editor' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition">
+                        <i class="fas fa-edit mr-2"></i>Rich Text Editor
+                    </button>
+                    <button type="button" @click="summaryVersionTab = 'upload'" 
+                            :class="summaryVersionTab === 'upload' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition">
+                        <i class="fas fa-upload mr-2"></i>Upload File
+                    </button>
                 </div>
                 
-                <div class="text-center text-gray-500 text-sm font-medium">OR</div>
+                <!-- Editor Tab -->
+                <div x-show="summaryVersionTab === 'editor'" x-cloak>
+                    <div id="summary-version-editor" class="min-h-[250px] border border-gray-300 rounded-md"></div>
+                    <input type="hidden" name="summary_version_text" id="summary_version_text_input">
+                    <p class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Create a concise summary with key points and formulas
+                    </p>
+                </div>
                 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Write Summary</label>
-                    <textarea name="summary_version_text" rows="6" placeholder="Write a concise summary here..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
+                <!-- Upload Tab -->
+                <div x-show="summaryVersionTab === 'upload'" x-cloak>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <input type="file" name="summary_version" accept=".pdf,.doc,.docx" class="w-full">
+                        <p class="mt-2 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,9 +179,135 @@
             </a>
             <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md shadow-md hover:shadow-lg transition font-semibold">
                 <i class="fas fa-save mr-2"></i>
-                Create Note
+                {% if note %}Update{% else %}Create{% endif %} Note
             </button>
         </div>
     </form>
 </div>
+
+<!-- CKEditor 5 CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+
+<!-- MathJax for LaTeX rendering -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script>
+    let fullVersionEditor = null;
+    let summaryVersionEditor = null;
+    
+    function noteFormData() {
+        return {
+            fullVersionTab: 'editor',
+            summaryVersionTab: 'editor',
+            
+            init() {
+                // Initialize CKEditor for full version
+                this.initEditors();
+            },
+            
+            async initEditors() {
+                // Wait for CKEditor to load
+                if (typeof ClassicEditor === 'undefined') {
+                    setTimeout(() => this.initEditors(), 100);
+                    return;
+                }
+                
+                const editorConfig = {
+                    toolbar: {
+                        items: [
+                            'heading', '|',
+                            'bold', 'italic', 'underline', 'strikethrough', '|',
+                            'bulletedList', 'numberedList', '|',
+                            'outdent', 'indent', '|',
+                            'blockQuote', 'insertTable', '|',
+                            'imageUpload', 'link', '|',
+                            'undo', 'redo'
+                        ]
+                    },
+                    image: {
+                        toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side']
+                    },
+                    table: {
+                        contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+                    },
+                    placeholder: 'Start writing your notes here... Use $$ for math equations (e.g., $$x^2 + y^2$$)'
+                };
+                
+                try {
+                    // Initialize full version editor
+                    fullVersionEditor = await ClassicEditor.create(
+                        document.querySelector('#full-version-editor'),
+                        editorConfig
+                    );
+                    
+                    // Set existing content if editing
+                    const existingFullContent = `{{ note.full_version_text|escapejs|default:'' }}`;
+                    if (existingFullContent) {
+                        fullVersionEditor.setData(existingFullContent);
+                    }
+                    
+                    // Initialize summary version editor
+                    summaryVersionEditor = await ClassicEditor.create(
+                        document.querySelector('#summary-version-editor'),
+                        {...editorConfig, placeholder: 'Write a concise summary with key points...'}
+                    );
+                    
+                    // Set existing content if editing
+                    const existingSummaryContent = `{{ note.summary_version_text|escapejs|default:'' }}`;
+                    if (existingSummaryContent) {
+                        summaryVersionEditor.setData(existingSummaryContent);
+                    }
+                    
+                } catch (error) {
+                    console.error('CKEditor initialization error:', error);
+                }
+            },
+            
+            prepareSubmit() {
+                // Copy editor content to hidden inputs before form submission
+                if (fullVersionEditor) {
+                    document.getElementById('full_version_text_input').value = fullVersionEditor.getData();
+                }
+                if (summaryVersionEditor) {
+                    document.getElementById('summary_version_text_input').value = summaryVersionEditor.getData();
+                }
+                return true;
+            }
+        };
+    }
+    
+    // Initialize Alpine component on load
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('noteFormData', noteFormData);
+    });
+</script>
+
+<style>
+    /* CKEditor styling */
+    .ck-editor__editable {
+        min-height: 300px !important;
+    }
+    
+    #full-version-editor .ck-editor__editable {
+        min-height: 400px !important;
+    }
+    
+    #summary-version-editor .ck-editor__editable {
+        min-height: 250px !important;
+    }
+    
+    .ck-editor__editable:focus {
+        border-color: #f97316 !important;
+        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+    }
+    
+    /* Math equation styling in editor */
+    .ck-content .math-tex {
+        background-color: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+</style>
 {% endblock %}
