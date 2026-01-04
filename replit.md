@@ -6,6 +6,8 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (January 2026)
 
+- **Student Subscriber Management**: Added comprehensive student subscription tracking to main admin panel at `/panel/subscribers/` with search, status filtering (active, free, expired, cancelled), revenue stats, and recent subscribers widget on dashboard.
+- **PayFast Integration Complete**: Student payment flow now creates/updates StudentSubscription records with proper validation, sends detailed confirmation emails to students and parents.
 - **Grade-Aware Topics**: Topics can now be assigned to specific grades. Students only see topics relevant to their selected grade (or topics that apply to all grades). Content managers select a grade when adding topics at `/content/topics/add/`.
 - **Topic Progress Tracking**: Students can mark topics as complete, with progress bars showing subject completion percentage and checkmarks on completed topics in the sidebar.
 - **AI Answer Checking**: Quiz essay/structured questions use AI to check answers and provide feedback via styled modal dialogs.
@@ -62,6 +64,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Admin Portals
 - `/panel/` - Custom admin dashboard (for platform management)
+- `/panel/subscribers/` - Student subscription management with stats and filtering
 - `/panel/features/` - Feature management (exam boards, subjects, grades)
 - `/panel/features/teachers/plans/` - Teacher subscription plans management
 - `/panel/features/student/plans/` - Student pricing configuration
