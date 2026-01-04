@@ -4082,7 +4082,7 @@ def create_note(request):
             subject_id=subject_id,
             exam_board_id=exam_board_id,
             grade_id=grade_id,
-            topic=topic,
+            topic_text=topic,
             full_version=full_version_file,
             summary_version=summary_version_file,
             full_version_text=full_version_text,
@@ -4127,7 +4127,7 @@ def manage_notes(request):
     if search_query:
         notes = notes.filter(
             Q(title__icontains=search_query) |
-            Q(topic__icontains=search_query)
+            Q(topic_text__icontains=search_query)
         )
     
     notes = notes.order_by('-created_at')
@@ -4159,6 +4159,57 @@ def delete_note(request, note_id):
         messages.success(request, 'Note deleted successfully!')
     
     return redirect('manage_notes')
+
+
+@require_content_manager
+def upload_content_image(request):
+    """Handle image uploads from CKEditor for notes and other rich content"""
+    import os
+    import uuid
+    from django.core.files.storage import default_storage
+    from django.core.files.base import ContentFile
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    if 'upload' not in request.FILES:
+        return JsonResponse({'error': 'No image uploaded'}, status=400)
+    
+    uploaded_file = request.FILES['upload']
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if uploaded_file.content_type not in allowed_types:
+        return JsonResponse({
+            'error': {
+                'message': 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'
+            }
+        }, status=400)
+    
+    # Validate file size (max 5MB)
+    if uploaded_file.size > 5 * 1024 * 1024:
+        return JsonResponse({
+            'error': {
+                'message': 'File too large. Maximum size is 5MB.'
+            }
+        }, status=400)
+    
+    # Generate unique filename
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+        ext = '.png'
+    
+    filename = f"notes/images/{uuid.uuid4().hex}{ext}"
+    
+    # Save the file
+    saved_path = default_storage.save(filename, ContentFile(uploaded_file.read()))
+    file_url = default_storage.url(saved_path)
+    
+    # Return CKEditor-compatible response
+    return JsonResponse({
+        'uploaded': True,
+        'url': file_url
+    })
 
 
 @require_content_manager

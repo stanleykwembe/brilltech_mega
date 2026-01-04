@@ -86,7 +86,7 @@
                         <span class="text-xs text-gray-500">Grade {{ note.grade.number }}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ note.topic }}
+                        {{ note.get_topic_name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         {% if note.full_version or note.full_version_text %}

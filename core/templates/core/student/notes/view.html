@@ -6,12 +6,153 @@
     <title>{{ note.title }} - EduTech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax initial typesetting complete');
+                    });
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    
     <style>
         .tab-content {
             display: none;
         }
         .tab-content.active {
             display: block;
+        }
+        
+        /* Rich text content styling */
+        .note-content {
+            font-size: 1rem;
+            line-height: 1.75;
+            color: #374151;
+        }
+        
+        .note-content h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+        
+        .note-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: #1f2937;
+        }
+        
+        .note-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .note-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .note-content ul, .note-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .note-content ul {
+            list-style-type: disc;
+        }
+        
+        .note-content ol {
+            list-style-type: decimal;
+        }
+        
+        .note-content li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .note-content blockquote {
+            border-left: 4px solid #10b981;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            font-style: italic;
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+        
+        .note-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        .note-content th, .note-content td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        .note-content th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+        
+        .note-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .note-content a {
+            color: #10b981;
+            text-decoration: underline;
+        }
+        
+        .note-content a:hover {
+            color: #059669;
+        }
+        
+        .note-content code {
+            background-color: #f3f4f6;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        .note-content pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        .note-content pre code {
+            background-color: transparent;
+            color: inherit;
+        }
+        
+        /* MathJax styling */
+        .MathJax {
+            font-size: 1.1em !important;
         }
     </style>
 </head>
@@ -48,7 +189,7 @@
                                 {{ note.subject.name }}
                             </span>
                             <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
-                                <i class="fas fa-tag mr-1"></i> {{ note.topic }}
+                                <i class="fas fa-tag mr-1"></i> {{ note.get_topic_name }}
                             </span>
                             <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">
                                 Grade {{ note.grade.number }}
@@ -88,8 +229,8 @@
                             </div>
                         {% endif %}
                         {% if note.full_version_text %}
-                            <div class="bg-gray-50 rounded-lg p-6">
-                                {{ note.full_version_text|linebreaks }}
+                            <div class="bg-gray-50 rounded-lg p-6 note-content">
+                                {{ note.full_version_text|safe }}
                             </div>
                         {% else %}
                             <p class="text-gray-600">Full version content not available in text format. Please download the PDF above.</p>
@@ -107,8 +248,8 @@
                             </div>
                         {% endif %}
                         {% if note.summary_version_text %}
-                            <div class="bg-blue-50 rounded-lg p-6">
-                                {{ note.summary_version_text|linebreaks }}
+                            <div class="bg-blue-50 rounded-lg p-6 note-content">
+                                {{ note.summary_version_text|safe }}
                             </div>
                         {% else %}
                             <p class="text-gray-600">Summary version not available in text format. Please download the PDF above.</p>
@@ -130,9 +271,9 @@
                                     </a>
                                 </div>
                             {% endif %}
-                            <div class="bg-gray-50 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                            <div class="bg-gray-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
                                 {% if note.full_version_text %}
-                                    {{ note.full_version_text|linebreaks }}
+                                    {{ note.full_version_text|safe }}
                                 {% else %}
                                     <p class="text-gray-600 text-sm">Content available in PDF format only.</p>
                                 {% endif %}
@@ -151,9 +292,9 @@
                                     </a>
                                 </div>
                             {% endif %}
-                            <div class="bg-blue-50 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                            <div class="bg-blue-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
                                 {% if note.summary_version_text %}
-                                    {{ note.summary_version_text|linebreaks }}
+                                    {{ note.summary_version_text|safe }}
                                 {% else %}
                                     <p class="text-gray-600 text-sm">Summary available in PDF format only.</p>
                                 {% endif %}
@@ -188,6 +329,11 @@
                 document.getElementById('content-split').classList.add('active');
                 document.getElementById('tab-split').classList.remove('border-transparent', 'text-gray-500');
                 document.getElementById('tab-split').classList.add('border-emerald-500', 'text-emerald-600');
+            }
+            
+            // Re-render MathJax after tab switch
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
             }
         }
     </script>

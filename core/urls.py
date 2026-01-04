@@ -91,6 +91,7 @@ urlpatterns = [
     path('content/note/create/', views.create_note, name='create_note'),
     path('content/notes/', views.manage_notes, name='manage_notes'),
     path('content/note/<int:note_id>/delete/', views.delete_note, name='delete_note'),
+    path('content/upload-image/', views.upload_content_image, name='upload_content_image'),
     path('content/flashcard/create/', views.create_flashcard, name='create_flashcard'),
     path('content/flashcards/', views.manage_flashcards, name='manage_flashcards'),
     path('content/flashcard/<int:flashcard_id>/delete/', views.delete_flashcard, name='delete_flashcard'),

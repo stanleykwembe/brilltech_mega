@@ -196,6 +196,45 @@
     let fullVersionEditor = null;
     let summaryVersionEditor = null;
     
+    // Custom upload adapter for CKEditor
+    class CustomUploadAdapter {
+        constructor(loader) {
+            this.loader = loader;
+        }
+        
+        upload() {
+            return this.loader.file.then(file => new Promise((resolve, reject) => {
+                const data = new FormData();
+                data.append('upload', file);
+                
+                fetch('{% url "upload_content_image" %}', {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.uploaded) {
+                        resolve({ default: result.url });
+                    } else {
+                        reject(result.error?.message || 'Upload failed');
+                    }
+                })
+                .catch(error => reject(error));
+            }));
+        }
+        
+        abort() {}
+    }
+    
+    function CustomUploadAdapterPlugin(editor) {
+        editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
+            return new CustomUploadAdapter(loader);
+        };
+    }
+    
     function noteFormData() {
         return {
             fullVersionTab: 'editor',
@@ -214,6 +253,7 @@
                 }
                 
                 const editorConfig = {
+                    extraPlugins: [CustomUploadAdapterPlugin],
                     toolbar: {
                         items: [
                             'heading', '|',
