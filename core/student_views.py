@@ -19,7 +19,7 @@ from .models import (
     StudentExamBoard, StudentSubject, StudentQuiz,
     InteractiveQuestion, StudentQuizAttempt, StudentQuizQuota,
     StudentProgress, Note, Flashcard, ExamPaper,
-    VideoLesson, Topic, Subtopic, Concept
+    VideoLesson, Topic, Subtopic, Concept, StudentTopicProgress
 )
 
 
