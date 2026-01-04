@@ -18,26 +18,7 @@
 </div>
 
 <!-- Filters -->
-<div class="stat-card mb-6" x-data="{ 
-    subject: '{{ request.GET.subject|default:'' }}',
-    topic: '{{ request.GET.topic|default:'' }}',
-    subtopic: '{{ request.GET.subtopic|default:'' }}',
-    topics: {{ topics_json|safe }},
-    subtopics: {{ subtopics_json|safe }},
-    concepts: {{ concepts_json|safe }},
-    get filteredTopics() {
-        if (!this.subject) return this.topics;
-        return this.topics.filter(t => t.subject_id == this.subject);
-    },
-    get filteredSubtopics() {
-        if (!this.topic) return [];
-        return this.subtopics.filter(s => s.topic_id == this.topic);
-    },
-    get filteredConcepts() {
-        if (!this.subtopic) return [];
-        return this.concepts.filter(c => c.subtopic_id == this.subtopic);
-    }
-}">
+<div class="stat-card mb-6" x-data="videoLessonsFilter()">
     <form method="GET" class="space-y-4">
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div>
@@ -170,7 +151,7 @@
             <!-- Grade Badge -->
             {% if video.topic and video.topic.grade %}
             <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                <i class="fas fa-graduation-cap mr-1"></i>{{ video.topic.grade.name }}
+                <i class="fas fa-graduation-cap mr-1"></i>{{ video.topic.grade }}
             </span>
             {% elif video.topic %}
             <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
@@ -252,6 +233,29 @@
 </div>
 
 <script>
+    function videoLessonsFilter() {
+        return {
+            subject: '{{ request.GET.subject|default:"" }}',
+            topic: '{{ request.GET.topic|default:"" }}',
+            subtopic: '{{ request.GET.subtopic|default:"" }}',
+            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
+            subtopics: {% if subtopics_json %}{{ subtopics_json|safe }}{% else %}[]{% endif %},
+            concepts: {% if concepts_json %}{{ concepts_json|safe }}{% else %}[]{% endif %},
+            get filteredTopics() {
+                if (!this.subject) return this.topics;
+                return this.topics.filter(t => t.subject_id == this.subject);
+            },
+            get filteredSubtopics() {
+                if (!this.topic) return [];
+                return this.subtopics.filter(s => s.topic_id == this.topic);
+            },
+            get filteredConcepts() {
+                if (!this.subtopic) return [];
+                return this.concepts.filter(c => c.subtopic_id == this.subtopic);
+            }
+        };
+    }
+
     function confirmDelete(id, name) {
         document.getElementById('videoName').textContent = name;
         document.getElementById('deleteForm').action = "{% url 'delete_video_lesson' 0 %}".replace('0', id);

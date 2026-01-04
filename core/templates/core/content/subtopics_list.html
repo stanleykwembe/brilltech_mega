@@ -18,14 +18,7 @@
 </div>
 
 <!-- Filters -->
-<div class="stat-card mb-6" x-data="{ 
-    subject: '{{ request.GET.subject|default:'' }}',
-    topics: {{ topics_json|safe }},
-    get filteredTopics() {
-        if (!this.subject) return this.topics;
-        return this.topics.filter(t => t.subject_id == this.subject);
-    }
-}">
+<div class="stat-card mb-6" x-data="subtopicsFilter()">
     <form method="GET" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
@@ -103,7 +96,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         {% if subtopic.topic.grade %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ subtopic.topic.grade.name }}</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ subtopic.topic.grade }}</span>
                         {% else %}
                         <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">All Grades</span>
                         {% endif %}
@@ -170,6 +163,17 @@
 </div>
 
 <script>
+    function subtopicsFilter() {
+        return {
+            subject: '{{ request.GET.subject|default:"" }}',
+            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
+            get filteredTopics() {
+                if (!this.subject) return this.topics;
+                return this.topics.filter(t => t.subject_id == this.subject);
+            }
+        };
+    }
+
     function confirmDelete(id, name) {
         document.getElementById('subtopicName').textContent = name;
         document.getElementById('deleteForm').action = "{% url 'delete_subtopic' 0 %}".replace('0', id);
