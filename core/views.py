@@ -5380,7 +5380,7 @@ def brilltech_admin_logout(request):
 @brilltech_admin_required
 def brilltech_admin_dashboard(request):
     """BrillTech admin dashboard with stats"""
-    from .models import ContactSubmission, CRMTask, CRMLead
+    from .models import ContactSubmission, CRMTask, CRMLead, StudentSubscription, StudentProfile
     
     total_submissions = ContactSubmission.objects.count()
     new_submissions = ContactSubmission.objects.filter(status='new').count()
@@ -5392,6 +5392,15 @@ def brilltech_admin_dashboard(request):
     total_leads = CRMLead.objects.count()
     pending_tasks = CRMTask.objects.filter(status__in=['pending', 'in_progress']).count()
     
+    # Student subscription stats
+    active_subscriptions = StudentSubscription.objects.filter(status='active').count()
+    total_subscriptions = StudentSubscription.objects.count()
+    recent_subscriptions = StudentSubscription.objects.filter(status='active').select_related('student__user').order_by('-started_at')[:5]
+    
+    # Calculate total revenue from subscriptions
+    from django.db.models import Sum
+    total_revenue = StudentSubscription.objects.filter(status='active').aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    
     return render(request, 'core/brilltech/admin/dashboard.html', {
         'total_submissions': total_submissions,
         'new_submissions': new_submissions,
@@ -5400,6 +5409,34 @@ def brilltech_admin_dashboard(request):
         'recent_submissions': recent_submissions,
         'total_leads': total_leads,
         'pending_tasks': pending_tasks,
+        'active_subscriptions': active_subscriptions,
+        'total_subscriptions': total_subscriptions,
+        'recent_subscriptions': recent_subscriptions,
+        'total_revenue': total_revenue,
+    })
+
+
+@brilltech_admin_required
+def brilltech_admin_subscribers(request):
+    """View all student subscribers with filtering"""
+    from .models import StudentSubscription
+    
+    status_filter = request.GET.get('status', '')
+    subscriptions = StudentSubscription.objects.select_related('student__user').order_by('-created_at')
+    
+    if status_filter:
+        subscriptions = subscriptions.filter(status=status_filter)
+    
+    # Stats
+    from django.db.models import Sum
+    total_active = subscriptions.filter(status='active').count()
+    total_revenue = subscriptions.filter(status='active').aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    
+    return render(request, 'core/brilltech/admin/subscribers.html', {
+        'subscriptions': subscriptions,
+        'status_filter': status_filter,
+        'total_active': total_active,
+        'total_revenue': total_revenue,
     })
 
 

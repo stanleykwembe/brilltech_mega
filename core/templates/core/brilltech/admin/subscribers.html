@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Subscribers - BrillTech Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #EC4899, #A855F7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0F0A1F 0%, #1E1B4B 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 sidebar-gradient min-h-screen fixed left-0 top-0 p-6">
+            <a href="{% url 'brilltech_landing' %}" class="flex items-center space-x-3 mb-10">
+                <img loading="lazy" src="{% static 'core/img/brilltech-logo.jpg' %}" alt="BrillTech" class="w-10 h-10 rounded-xl object-cover">
+                <span class="text-lg font-bold text-white">Brill<span class="gradient-text">Tech</span></span>
+            </a>
+            
+            <nav class="space-y-2">
+                <a href="{% url 'brilltech_admin_dashboard' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'brilltech_admin_submissions' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span>Submissions</span>
+                </a>
+                <a href="{% url 'brilltech_admin_subscribers' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-green-500/20 text-green-400">
+                    <i class="fas fa-users w-5"></i>
+                    <span>Subscribers</span>
+                </a>
+                <a href="{% url 'brilltech_admin_change_password' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                    <i class="fas fa-key w-5"></i>
+                    <span>Change Password</span>
+                </a>
+            </nav>
+            
+            <div class="absolute bottom-6 left-6 right-6">
+                <a href="{% url 'brilltech_admin_logout' %}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Student Subscribers</h1>
+                    <p class="text-gray-600">Manage all student subscriptions and payments</p>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">Active Subscribers</p>
+                            <p class="text-3xl font-bold text-green-600">{{ total_active }}</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-user-check text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">Total Revenue</p>
+                            <p class="text-3xl font-bold text-purple-600">R{{ total_revenue|floatformat:2 }}</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-chart-line text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">Total Subscriptions</p>
+                            <p class="text-3xl font-bold text-blue-600">{{ subscriptions|length }}</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-credit-card text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm font-medium text-gray-700">Filter:</span>
+                    <a href="{% url 'brilltech_admin_subscribers' %}" class="px-4 py-2 rounded-lg text-sm font-medium {% if not status_filter %}bg-green-100 text-green-700{% else %}text-gray-600 hover:bg-gray-100{% endif %} transition-colors">
+                        All
+                    </a>
+                    <a href="?status=active" class="px-4 py-2 rounded-lg text-sm font-medium {% if status_filter == 'active' %}bg-green-100 text-green-700{% else %}text-gray-600 hover:bg-gray-100{% endif %} transition-colors">
+                        Active
+                    </a>
+                    <a href="?status=free" class="px-4 py-2 rounded-lg text-sm font-medium {% if status_filter == 'free' %}bg-green-100 text-green-700{% else %}text-gray-600 hover:bg-gray-100{% endif %} transition-colors">
+                        Free
+                    </a>
+                    <a href="?status=expired" class="px-4 py-2 rounded-lg text-sm font-medium {% if status_filter == 'expired' %}bg-green-100 text-green-700{% else %}text-gray-600 hover:bg-gray-100{% endif %} transition-colors">
+                        Expired
+                    </a>
+                    <a href="?status=cancelled" class="px-4 py-2 rounded-lg text-sm font-medium {% if status_filter == 'cancelled' %}bg-green-100 text-green-700{% else %}text-gray-600 hover:bg-gray-100{% endif %} transition-colors">
+                        Cancelled
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Subscribers List -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {% if subscriptions %}
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Plan</th>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount Paid</th>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Started</th>
+                            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expires</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for sub in subscriptions %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold">
+                                        {{ sub.student.user.username|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">{{ sub.student.user.username }}</p>
+                                        <p class="text-sm text-gray-500">{{ sub.student.user.email }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                    {{ sub.get_plan_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if sub.status == 'active' %}
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
+                                {% elif sub.status == 'free' %}
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Free</span>
+                                {% elif sub.status == 'expired' %}
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Expired</span>
+                                {% elif sub.status == 'cancelled' %}
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="font-semibold text-gray-900">R{{ sub.amount_paid|floatformat:2 }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if sub.started_at %}
+                                <span class="text-sm text-gray-600">{{ sub.started_at|date:"M d, Y" }}</span>
+                                {% else %}
+                                <span class="text-sm text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if sub.expires_at %}
+                                <span class="text-sm text-gray-600">{{ sub.expires_at|date:"M d, Y" }}</span>
+                                {% else %}
+                                <span class="text-sm text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-gray-900 font-semibold mb-2">No Subscribers Found</h3>
+                    <p class="text-gray-500">{% if status_filter %}No {{ status_filter }} subscriptions found.{% else %}Student subscriptions will appear here.{% endif %}</p>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

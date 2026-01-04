@@ -1462,33 +1462,74 @@ def student_payfast_notify(request):
     # Clear quiz quotas (Pro has unlimited)
     StudentQuizQuota.objects.filter(student=student_profile).delete()
     
-    # Send confirmation email
+    # Create or update StudentSubscription record for tracking
+    from .models import StudentSubscription
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    payment_id = post_data.get('pf_payment_id', '')
+    amount_paid = post_data.get('amount_gross', '100.00')
+    
+    subscription, created = StudentSubscription.objects.get_or_create(
+        student=student_profile,
+        defaults={
+            'plan': 'per_subject',
+            'status': 'active',
+            'amount_paid': float(amount_paid),
+            'started_at': timezone.now(),
+            'expires_at': timezone.now() + timedelta(days=30),
+        }
+    )
+    
+    if not created:
+        subscription.status = 'active'
+        subscription.amount_paid = float(amount_paid)
+        subscription.started_at = timezone.now()
+        subscription.expires_at = timezone.now() + timedelta(days=30)
+        subscription.save()
+    
+    logger.info(f'StudentSubscription {"created" if created else "updated"} for {user.username}, payment_id: {payment_id}')
+    
+    # Format dates for email
+    start_date = subscription.started_at.strftime('%B %d, %Y')
+    expiry_date = subscription.expires_at.strftime('%B %d, %Y')
+    
+    # Send confirmation email with subscription details
     try:
         send_mail(
-            subject='Welcome to EduTech Pro! 🎉',
-            message=f'''Hi {user.username},
+            subject='Welcome to EduTech Pro! - Your Subscription Details',
+            message=f'''Hi {user.first_name or user.username},
 
 Congratulations! Your payment was successful and you are now an EduTech Pro member!
 
-Here's what you now have access to:
+=== SUBSCRIPTION DETAILS ===
+Plan: EduTech Pro
+Amount Paid: R{amount_paid}
+Payment Reference: {payment_id}
+Start Date: {start_date}
+Valid Until: {expiry_date}
+Auto-Renewal: Monthly
 
-✅ Unlimited quizzes on all topics
-✅ Select up to 5 exam boards (previously 2)
-✅ Access to all study materials
-✅ Early access to new features
-✅ Priority support
+=== YOUR PRO BENEFITS ===
+- Unlimited quizzes on all topics
+- Select up to 5 exam boards (previously 2)
+- Access to all study materials
+- Early access to new features
+- Priority support
 
-You can now:
-- Take unlimited quizzes on any topic
-- Add more exam boards to your profile (up to 5 total)
-- Access all Pro-exclusive content
+=== NEXT STEPS ===
+1. Visit your dashboard to explore Pro features
+2. Add more exam boards in your settings (up to 5 total)
+3. Take unlimited quizzes on any topic
 
 Thank you for upgrading! We're excited to support your learning journey.
 
 Best regards,
 EduTech Team
 
-P.S. Your subscription will automatically renew monthly at R100. You can cancel anytime from your subscription page.''',
+---
+Manage your subscription: Log in and go to Settings > Subscription
+Questions? Reply to this email or contact support@edutech.com''',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=True,
@@ -1497,21 +1538,26 @@ P.S. Your subscription will automatically renew monthly at R100. You can cancel 
         # Also notify parent if provided
         if student_profile.parent_email:
             send_mail(
-                subject='Your Child Upgraded to EduTech Pro',
+                subject='Your Child Upgraded to EduTech Pro - Subscription Details',
                 message=f'''Hello,
 
-Your child ({user.username}) has upgraded to EduTech Pro subscription.
+Your child ({user.first_name or user.username}) has upgraded to EduTech Pro subscription.
 
-Subscription: EduTech Pro
-Price: R100/month (auto-renewal)
+=== SUBSCRIPTION DETAILS ===
+Plan: EduTech Pro
+Amount Paid: R{amount_paid}
+Payment Reference: {payment_id}
+Start Date: {start_date}
+Valid Until: {expiry_date}
+Auto-Renewal: Monthly
 
-They now have access to:
-- Unlimited quizzes
-- 5 exam boards
+=== BENEFITS INCLUDED ===
+- Unlimited quizzes on all topics
+- Up to 5 exam boards
 - All study materials
 - Priority support
 
-If you have any questions about this subscription, please contact us.
+If you have any questions about this subscription or need to cancel, please contact us at support@edutech.com.
 
 Best regards,
 EduTech Team''',

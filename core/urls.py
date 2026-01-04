@@ -133,6 +133,7 @@ urlpatterns = [
     path('brilltech/admin/logout/', views.brilltech_admin_logout, name='brilltech_admin_logout'),
     path('brilltech/admin/submissions/', views.brilltech_admin_submissions, name='brilltech_admin_submissions'),
     path('brilltech/admin/submissions/<int:submission_id>/', views.brilltech_admin_submission_detail, name='brilltech_admin_submission_detail'),
+    path('brilltech/admin/subscribers/', views.brilltech_admin_subscribers, name='brilltech_admin_subscribers'),
     path('brilltech/admin/change-password/', views.brilltech_admin_change_password, name='brilltech_admin_change_password'),
     
     # BrillTech CRM - Tasks
