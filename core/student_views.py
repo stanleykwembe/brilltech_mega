@@ -1329,7 +1329,7 @@ def student_subscription(request):
     from .models import StudentSubscription
     active_subscription = StudentSubscription.objects.filter(
         student=student_profile, 
-        is_active=True
+        status='active'
     ).first()
     
     context = {
