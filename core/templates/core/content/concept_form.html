@@ -17,25 +17,7 @@
     </div>
 </div>
 
-<div class="stat-card max-w-2xl" x-data="{
-    subject: '{{ concept.subtopic.topic.subject_id|default:'' }}',
-    topic: '{{ concept.subtopic.topic_id|default:'' }}',
-    subtopic: '{{ concept.subtopic_id|default:'' }}',
-    topics: {{ topics_json|safe|default:'[]' }},
-    subtopics: {{ subtopics_json|safe|default:'[]' }},
-    get filteredTopics() {
-        if (!this.subject) return [];
-        return this.topics.filter(t => t.subject_id == this.subject);
-    },
-    get filteredSubtopics() {
-        if (!this.topic) return [];
-        return this.subtopics.filter(s => s.topic_id == this.topic);
-    },
-    get selectedTopicGrade() {
-        const t = this.topics.find(t => t.id == this.topic);
-        return t ? t.grade_name : '';
-    }
-}">
+<div class="stat-card max-w-2xl" x-data="conceptFormData()">
     <form method="POST">
         {% csrf_token %}
         
@@ -125,4 +107,28 @@
         </div>
     </form>
 </div>
+
+<script>
+    function conceptFormData() {
+        return {
+            subject: '{{ concept.subtopic.topic.subject_id|default:"" }}',
+            topic: '{{ concept.subtopic.topic_id|default:"" }}',
+            subtopic: '{{ concept.subtopic_id|default:"" }}',
+            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
+            subtopics: {% if subtopics_json %}{{ subtopics_json|safe }}{% else %}[]{% endif %},
+            get filteredTopics() {
+                if (!this.subject) return [];
+                return this.topics.filter(t => t.subject_id == this.subject);
+            },
+            get filteredSubtopics() {
+                if (!this.topic) return [];
+                return this.subtopics.filter(s => s.topic_id == this.topic);
+            },
+            get selectedTopicGrade() {
+                const t = this.topics.find(t => t.id == this.topic);
+                return t ? t.grade_name : '';
+            }
+        };
+    }
+</script>
 {% endblock %}

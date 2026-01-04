@@ -17,19 +17,7 @@
     </div>
 </div>
 
-<div class="stat-card max-w-2xl" x-data="{
-    subject: '{{ subtopic.topic.subject_id|default:'' }}',
-    topics: {{ topics_json|safe|default:'[]' }},
-    selectedTopic: '{{ subtopic.topic_id|default:'' }}',
-    get filteredTopics() {
-        if (!this.subject) return [];
-        return this.topics.filter(t => t.subject_id == this.subject);
-    },
-    get selectedTopicGrade() {
-        const topic = this.topics.find(t => t.id == this.selectedTopic);
-        return topic ? topic.grade_name : '';
-    }
-}">
+<div class="stat-card max-w-2xl" x-data="subtopicFormData()">
     <form method="POST">
         {% csrf_token %}
         
@@ -99,4 +87,22 @@
         </div>
     </form>
 </div>
+
+<script>
+    function subtopicFormData() {
+        return {
+            subject: '{{ subtopic.topic.subject_id|default:"" }}',
+            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
+            selectedTopic: '{{ subtopic.topic_id|default:"" }}',
+            get filteredTopics() {
+                if (!this.subject) return [];
+                return this.topics.filter(t => t.subject_id == this.subject);
+            },
+            get selectedTopicGrade() {
+                const topic = this.topics.find(t => t.id == this.selectedTopic);
+                return topic ? topic.grade_name : '';
+            }
+        };
+    }
+</script>
 {% endblock %}

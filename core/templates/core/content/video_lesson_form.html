@@ -148,14 +148,7 @@
     
     <!-- Preview Panel -->
     <div class="lg:col-span-1">
-        <div class="stat-card sticky top-6" x-data="{
-            youtubeUrl: '{{ video_lesson.youtube_url|default:'' }}',
-            get youtubeId() {
-                if (!this.youtubeUrl) return null;
-                const match = this.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
-                return match ? match[1] : null;
-            }
-        }" x-init="$watch('$root.youtubeUrl', value => youtubeUrl = value)">
+        <div class="stat-card sticky top-6" x-data="videoPreviewData()" x-init="$watch('$root.youtubeUrl', value => youtubeUrl = value)">
             <h3 class="text-sm font-semibold text-gray-700 mb-4">
                 <i class="fas fa-eye mr-2 text-orange-500"></i>
                 Video Preview
@@ -205,6 +198,17 @@
 </div>
 
 <script>
+    function videoPreviewData() {
+        return {
+            youtubeUrl: '{{ video_lesson.youtube_url|default:"" }}',
+            get youtubeId() {
+                if (!this.youtubeUrl) return null;
+                const match = this.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
+                return match ? match[1] : null;
+            }
+        };
+    }
+
     function videoLessonForm() {
         return {
             subject: '{{ video_lesson.subject_id|default:"" }}',
