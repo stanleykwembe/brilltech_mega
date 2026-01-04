@@ -6,6 +6,7 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (January 2026)
 
+- **Dynamic Plan Pricing**: Fixed student upgrade page to correctly display and charge different prices based on plan selection (per_subject R100, multi_subject R200, all_access R300, tutor_addon R500). Each plan button now links to `/student/subscription/upgrade/<plan_type>/` and PayFast webhook stores the actual plan type.
 - **Student Subscriber Management**: Added comprehensive student subscription tracking to main admin panel at `/panel/subscribers/` with search, status filtering (active, free, expired, cancelled), revenue stats, and recent subscribers widget on dashboard.
 - **PayFast Integration Complete**: Student payment flow now creates/updates StudentSubscription records with proper validation, sends detailed confirmation emails to students and parents.
 - **Grade-Aware Topics**: Topics can now be assigned to specific grades. Students only see topics relevant to their selected grade (or topics that apply to all grades). Content managers select a grade when adding topics at `/content/topics/add/`.
