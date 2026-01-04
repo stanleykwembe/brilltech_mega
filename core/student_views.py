@@ -1855,11 +1855,21 @@ def student_study_pathway(request, subject_id):
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
-    # Get all topics for this subject with their subtopics
-    topics = Topic.objects.filter(
-        subject=subject,
-        is_active=True
-    ).order_by('order', 'name')
+    # Get all topics for this subject, filtered by student's grade
+    # Topics can be grade-specific or apply to all grades (grade=None)
+    student_grade = student_profile.grade
+    if student_grade:
+        topics = Topic.objects.filter(
+            subject=subject,
+            is_active=True
+        ).filter(
+            Q(grade=student_grade) | Q(grade__isnull=True)
+        ).order_by('order', 'name')
+    else:
+        topics = Topic.objects.filter(
+            subject=subject,
+            is_active=True
+        ).order_by('order', 'name')
     
     # Build topics with subtopics and content counts
     topics_with_data = []
@@ -2551,8 +2561,17 @@ def student_topic_progress_api(request, subject_id):
     except Subject.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Subject not found'}, status=404)
     
-    # Get all topics for this subject
-    topics = Topic.objects.filter(subject=subject, is_active=True).order_by('order', 'name')
+    # Get all topics for this subject, filtered by student's grade
+    student_grade = student_profile.grade
+    if student_grade:
+        topics = Topic.objects.filter(
+            subject=subject, 
+            is_active=True
+        ).filter(
+            Q(grade=student_grade) | Q(grade__isnull=True)
+        ).order_by('order', 'name')
+    else:
+        topics = Topic.objects.filter(subject=subject, is_active=True).order_by('order', 'name')
     
     # Get progress for each topic
     progress_data = {}
@@ -2643,8 +2662,18 @@ def student_mark_topic_complete_api(request):
         
         progress.save()
         
-        # Recalculate subject completion
-        all_topics = Topic.objects.filter(subject=subject, is_active=True)
+        # Recalculate subject completion (filtered by student's grade)
+        student_grade = student_profile.grade
+        if student_grade:
+            all_topics = Topic.objects.filter(
+                subject=subject, 
+                is_active=True
+            ).filter(
+                Q(grade=student_grade) | Q(grade__isnull=True)
+            )
+        else:
+            all_topics = Topic.objects.filter(subject=subject, is_active=True)
+        
         completed_count = 0
         for t in all_topics:
             try:

@@ -5480,12 +5480,14 @@ def manage_topics(request):
 @require_content_manager
 def add_topic(request):
     """Add a new topic"""
-    from .models import Topic, Subject
+    from .models import Topic, Subject, Grade
     
     subjects = Subject.objects.all().order_by('name')
+    grades = Grade.objects.all().order_by('number')
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
+        grade_id = request.POST.get('grade')
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         order = request.POST.get('order', 0)
@@ -5495,13 +5497,16 @@ def add_topic(request):
             messages.error(request, 'Subject and name are required.')
             return render(request, 'core/content/topic_form.html', {
                 'subjects': subjects,
+                'grades': grades,
                 'form_data': request.POST,
             })
         
         try:
             subject = Subject.objects.get(id=subject_id)
+            grade = Grade.objects.get(id=grade_id) if grade_id else None
             Topic.objects.create(
                 subject=subject,
+                grade=grade,
                 name=name,
                 description=description,
                 order=int(order) if order else 0,
@@ -5511,26 +5516,31 @@ def add_topic(request):
             return redirect('manage_topics')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
+        except Grade.DoesNotExist:
+            messages.error(request, 'Invalid grade selected.')
         except IntegrityError:
-            messages.error(request, 'A topic with this name already exists for this subject.')
+            messages.error(request, 'A topic with this name already exists for this subject and grade.')
         except Exception as e:
             messages.error(request, f'Error creating topic: {str(e)}')
     
     return render(request, 'core/content/topic_form.html', {
         'subjects': subjects,
+        'grades': grades,
     })
 
 
 @require_content_manager
 def edit_topic(request, topic_id):
     """Edit an existing topic"""
-    from .models import Topic, Subject
+    from .models import Topic, Subject, Grade
     
     topic = get_object_or_404(Topic, id=topic_id)
     subjects = Subject.objects.all().order_by('name')
+    grades = Grade.objects.all().order_by('number')
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
+        grade_id = request.POST.get('grade')
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         order = request.POST.get('order', 0)
@@ -5540,13 +5550,16 @@ def edit_topic(request, topic_id):
             messages.error(request, 'Subject and name are required.')
             return render(request, 'core/content/topic_form.html', {
                 'subjects': subjects,
+                'grades': grades,
                 'topic': topic,
                 'is_edit': True,
             })
         
         try:
             subject = Subject.objects.get(id=subject_id)
+            grade = Grade.objects.get(id=grade_id) if grade_id else None
             topic.subject = subject
+            topic.grade = grade
             topic.name = name
             topic.description = description
             topic.order = int(order) if order else 0
@@ -5556,13 +5569,16 @@ def edit_topic(request, topic_id):
             return redirect('manage_topics')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
+        except Grade.DoesNotExist:
+            messages.error(request, 'Invalid grade selected.')
         except IntegrityError:
-            messages.error(request, 'A topic with this name already exists for this subject.')
+            messages.error(request, 'A topic with this name already exists for this subject and grade.')
         except Exception as e:
             messages.error(request, f'Error updating topic: {str(e)}')
     
     return render(request, 'core/content/topic_form.html', {
         'subjects': subjects,
+        'grades': grades,
         'topic': topic,
         'is_edit': True,
     })
