@@ -25,6 +25,7 @@ urlpatterns = [
     
     path('subscription/', student_views.student_subscription, name='student_subscription'),
     path('subscription/upgrade/', student_views.student_upgrade_to_pro, name='student_upgrade_to_pro'),
+    path('subscription/upgrade/<str:plan_type>/', student_views.student_upgrade_to_pro, name='student_upgrade_to_pro_with_plan'),
     path('subscription/payfast-notify/', student_views.student_payfast_notify, name='student_payfast_notify'),
     path('subscription/payfast-return/', student_views.student_payfast_return, name='student_payfast_return'),
     path('subscription/payfast-cancel/', student_views.student_payfast_cancel, name='student_payfast_cancel'),

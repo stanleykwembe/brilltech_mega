@@ -87,7 +87,7 @@
                             <span>All notes & flashcards</span>
                         </div>
                     </div>
-                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                    <a href="{% url 'student_upgrade_to_pro_with_plan' 'per_subject' %}" class="block text-center py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                         Select Plan
                     </a>
                 </div>
@@ -121,7 +121,7 @@
                             <span>All study materials</span>
                         </div>
                     </div>
-                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition">
+                    <a href="{% url 'student_upgrade_to_pro_with_plan' 'multi_subject' %}" class="block text-center py-3 rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition">
                         Select Plan
                     </a>
                 </div>
@@ -155,7 +155,7 @@
                             <span>Priority support</span>
                         </div>
                     </div>
-                    <a href="{% url 'student_upgrade_to_pro' %}" class="block text-center py-3 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-500 hover:to-orange-500 transition">
+                    <a href="{% url 'student_upgrade_to_pro_with_plan' 'all_access' %}" class="block text-center py-3 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-500 hover:to-orange-500 transition">
                         Select Plan
                     </a>
                 </div>

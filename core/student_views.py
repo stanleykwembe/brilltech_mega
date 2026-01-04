@@ -1345,9 +1345,10 @@ def student_subscription(request):
 
 
 @student_login_required
-def student_upgrade_to_pro(request):
+def student_upgrade_to_pro(request, plan_type=None):
     """Initiate PayFast payment for Pro subscription"""
     from .payfast_service import PayFastService
+    from .models import StudentSubscriptionPricing
     import logging
     
     logger = logging.getLogger(__name__)
@@ -1357,6 +1358,40 @@ def student_upgrade_to_pro(request):
     if student_profile.subscription == 'pro':
         messages.info(request, 'You are already a Pro member!')
         return redirect('student_subscription')
+    
+    # Get pricing configuration
+    pricing_config = StudentSubscriptionPricing.get_current()
+    
+    # Determine price and plan details based on plan_type
+    valid_plans = {
+        'per_subject': {
+            'price': float(pricing_config.per_subject_price),
+            'name': 'EduTech Per-Subject Plan',
+            'description': f'Monthly subscription for up to {pricing_config.per_subject_max} subjects',
+        },
+        'multi_subject': {
+            'price': float(pricing_config.multi_subject_price),
+            'name': 'EduTech Multi-Subject Bundle',
+            'description': f'Monthly subscription for {pricing_config.multi_subject_min}-{pricing_config.multi_subject_max} subjects',
+        },
+        'all_access': {
+            'price': float(pricing_config.all_access_price),
+            'name': 'EduTech All Access Plan',
+            'description': 'Monthly subscription with unlimited access to all subjects',
+        },
+        'tutor_addon': {
+            'price': float(pricing_config.tutor_addon_price),
+            'name': 'EduTech Tutor Support Add-on',
+            'description': 'Monthly tutor email support add-on',
+        },
+    }
+    
+    # Default to per_subject if no plan specified or invalid plan
+    if plan_type not in valid_plans:
+        plan_type = 'per_subject'
+    
+    plan = valid_plans[plan_type]
+    amount = f"{plan['price']:.2f}"
     
     # Generate PayFast payment form data for student subscription
     payment_data = {
@@ -1370,15 +1405,15 @@ def student_upgrade_to_pro(request):
         'name_last': request.user.last_name or '',
         'email_address': request.user.email,
         
-        'amount': '100.00',
-        'item_name': 'EduTech Pro Subscription',
-        'item_description': 'Monthly Pro subscription with unlimited quizzes and 5 exam boards',
+        'amount': amount,
+        'item_name': plan['name'],
+        'item_description': plan['description'],
         
         'custom_str1': str(request.user.id),
-        'custom_str2': 'pro_subscription',
+        'custom_str2': plan_type,
         
         'subscription_type': '1',
-        'recurring_amount': '100.00',
+        'recurring_amount': amount,
         'frequency': '3',
         'cycles': '0',
     }
@@ -1389,12 +1424,15 @@ def student_upgrade_to_pro(request):
     # Generate signature
     clean_data['signature'] = PayFastService.generate_signature(clean_data)
     
-    logger.info(f'Generated PayFast payment for user {request.user.username}')
+    logger.info(f'Generated PayFast payment for user {request.user.username}, plan: {plan_type}, amount: R{amount}')
     
     context = {
         'student_profile': student_profile,
         'payment_data': clean_data,
         'payfast_url': PayFastService.get_payfast_url(),
+        'plan_type': plan_type,
+        'plan_name': plan['name'],
+        'plan_price': plan['price'],
     }
     
     return render(request, 'core/student/upgrade.html', context)
@@ -1469,11 +1507,17 @@ def student_payfast_notify(request):
     
     payment_id = post_data.get('pf_payment_id', '')
     amount_paid = post_data.get('amount_gross', '100.00')
+    plan_type = post_data.get('custom_str2', 'per_subject')
+    
+    # Validate plan type
+    valid_plan_types = ['per_subject', 'multi_subject', 'all_access', 'tutor_addon']
+    if plan_type not in valid_plan_types:
+        plan_type = 'per_subject'
     
     subscription, created = StudentSubscription.objects.get_or_create(
         student=student_profile,
         defaults={
-            'plan': 'per_subject',
+            'plan': plan_type,
             'status': 'active',
             'amount_paid': float(amount_paid),
             'started_at': timezone.now(),
@@ -1482,6 +1526,7 @@ def student_payfast_notify(request):
     )
     
     if not created:
+        subscription.plan = plan_type
         subscription.status = 'active'
         subscription.amount_paid = float(amount_paid)
         subscription.started_at = timezone.now()
