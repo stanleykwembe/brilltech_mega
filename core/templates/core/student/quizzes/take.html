@@ -6,8 +6,15 @@
     <title>{{ quiz.title }} - Taking Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+    </style>
 </head>
 <body class="h-full bg-gray-100">
+    {% csrf_token %}
     <div class="min-h-full">
         <header class="bg-white shadow-sm border-b-4 border-emerald-500 sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -43,7 +50,7 @@
                 <input type="hidden" name="attempt_id" value="{{ attempt.id }}">
                 
                 {% for question in questions %}
-                <div class="question-card bg-white rounded-2xl shadow-xl p-8 mb-6" data-question-index="{{ forloop.counter }}" style="{% if forloop.counter != 1 %}display: none;{% endif %}">
+                <div class="question-card bg-white rounded-2xl shadow-xl p-8 mb-6" data-question-index="{{ forloop.counter }}" data-question-id="{{ question.id }}" data-question-type="{{ question.question_type }}" data-model-answer="{{ question.model_answer|default:'' }}" data-max-marks="{{ question.max_marks|default:question.points }}" style="{% if forloop.counter != 1 %}display: none;{% endif %}">
                     <div class="mb-6">
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
@@ -95,7 +102,24 @@
                         </div>
                         
                         {% elif question.question_type == 'fill_blank' %}
-                        <input type="text" name="question_{{ question.id }}" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none text-lg" placeholder="Type your answer here..." required>
+                        <div>
+                            <input type="text" name="question_{{ question.id }}" id="answer-{{ question.id }}" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none text-lg" placeholder="Type your answer here..." required>
+                            {% if question.model_answer %}
+                            <div class="mt-4 flex gap-2">
+                                <button type="button" onclick="checkAnswerWithAI({{ question.id }})" class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition">
+                                    <i class="fas fa-robot mr-2"></i> Check with AI
+                                </button>
+                                <button type="button" onclick="revealAnswer({{ question.id }})" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition">
+                                    <i class="fas fa-eye mr-2"></i> Reveal Answer
+                                </button>
+                            </div>
+                            <div id="ai-feedback-{{ question.id }}" class="hidden mt-4 p-4 rounded-lg border-2"></div>
+                            <div id="model-answer-{{ question.id }}" class="hidden mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                                <div class="text-sm font-semibold text-blue-800 mb-2"><i class="fas fa-lightbulb mr-2"></i>Model Answer:</div>
+                                <div class="text-blue-900">{{ question.model_answer }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
                         
                         {% elif question.question_type == 'matching' %}
                         <div class="space-y-3">
@@ -114,13 +138,28 @@
                             {% endfor %}
                         </div>
                         
-                        {% elif question.question_type == 'essay' %}
+                        {% elif question.question_type == 'essay' or question.question_type == 'structured' %}
                         <div>
-                            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-300 rounded-lg p-3 mb-4">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                This question requires manual grading by your instructor.
-                            </p>
-                            <textarea name="question_{{ question.id }}" rows="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="Type your answer here..." required></textarea>
+                            <div class="text-sm text-purple-700 bg-purple-50 border border-purple-300 rounded-lg p-3 mb-4">
+                                <i class="fas fa-robot mr-2"></i>
+                                You can check your answer with AI before submitting for instant feedback.
+                            </div>
+                            <textarea name="question_{{ question.id }}" id="answer-{{ question.id }}" rows="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="Type your answer here..." required></textarea>
+                            {% if question.model_answer %}
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button type="button" onclick="checkAnswerWithAI({{ question.id }})" class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition">
+                                    <i class="fas fa-robot mr-2"></i> Check with AI
+                                </button>
+                                <button type="button" onclick="revealAnswer({{ question.id }})" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition">
+                                    <i class="fas fa-eye mr-2"></i> Reveal Answer
+                                </button>
+                            </div>
+                            <div id="ai-feedback-{{ question.id }}" class="hidden mt-4 p-4 rounded-lg border-2"></div>
+                            <div id="model-answer-{{ question.id }}" class="hidden mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                                <div class="text-sm font-semibold text-blue-800 mb-2"><i class="fas fa-lightbulb mr-2"></i>Model Answer:</div>
+                                <div class="text-blue-900 whitespace-pre-wrap">{{ question.model_answer }}</div>
+                            </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
@@ -135,7 +174,7 @@
                         </button>
                         
                         {% if forloop.last %}
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-lg hover:shadow-lg transition">
+                        <button type="button" onclick="showSubmitModal()" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-lg hover:shadow-lg transition">
                             <i class="fas fa-check mr-2"></i> Submit Quiz
                         </button>
                         {% else %}
@@ -150,9 +189,80 @@
         </main>
     </div>
 
+    <div id="modal-backdrop" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+        </div>
+    </div>
+
     <script>
     let currentQuestion = 1;
     const totalQuestions = {{ total_questions }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    const questionData = {};
+    document.querySelectorAll('.question-card').forEach(card => {
+        const id = card.dataset.questionId;
+        questionData[id] = {
+            type: card.dataset.questionType,
+            modelAnswer: card.dataset.modelAnswer,
+            maxMarks: card.dataset.maxMarks
+        };
+    });
+    
+    function showModal(title, message, buttons) {
+        const backdrop = document.getElementById('modal-backdrop');
+        const content = document.getElementById('modal-content');
+        
+        let buttonsHtml = buttons.map(btn => {
+            const colorClass = btn.type === 'danger' ? 'bg-red-600 hover:bg-red-700 text-white' :
+                              btn.type === 'primary' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' :
+                              'bg-gray-200 hover:bg-gray-300 text-gray-700';
+            return `<button onclick="${btn.action}" class="px-6 py-2 ${colorClass} font-semibold rounded-lg transition">${btn.label}</button>`;
+        }).join('');
+        
+        content.innerHTML = `
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">${title}</h3>
+                <p class="text-gray-600 mb-6">${message}</p>
+                <div class="flex justify-end gap-3">
+                    ${buttonsHtml}
+                </div>
+            </div>
+        `;
+        
+        backdrop.classList.remove('hidden');
+    }
+    
+    function hideModal() {
+        document.getElementById('modal-backdrop').classList.add('hidden');
+    }
+    
+    function showSubmitModal() {
+        showModal(
+            'Submit Quiz?',
+            'Are you sure you want to submit your quiz? You cannot change your answers after submission.',
+            [
+                { label: 'Cancel', action: 'hideModal()', type: 'secondary' },
+                { label: 'Submit Quiz', action: 'submitQuiz()', type: 'primary' }
+            ]
+        );
+    }
+    
+    function submitQuiz() {
+        hideModal();
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        document.getElementById('quizForm').submit();
+    }
+    
+    function showTimeUpModal() {
+        showModal(
+            'Time is Up!',
+            'Your time has run out. Your quiz will be submitted automatically.',
+            [
+                { label: 'OK', action: 'submitQuiz()', type: 'primary' }
+            ]
+        );
+    }
     
     {% if attempt.is_timed %}
     let timeLeft = {{ attempt.time_limit_minutes }} * 60;
@@ -164,8 +274,7 @@
         timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         
         if (timeLeft <= 0) {
-            alert('Time is up! Submitting your quiz...');
-            document.getElementById('quizForm').submit();
+            showTimeUpModal();
             return;
         }
         
@@ -206,6 +315,92 @@
         }
     }
     
+    function revealAnswer(questionId) {
+        const answerEl = document.getElementById(`model-answer-${questionId}`);
+        if (answerEl) {
+            answerEl.classList.toggle('hidden');
+        }
+    }
+    
+    function checkAnswerWithAI(questionId) {
+        const answerInput = document.getElementById(`answer-${questionId}`);
+        const feedbackEl = document.getElementById(`ai-feedback-${questionId}`);
+        const qData = questionData[questionId];
+        
+        if (!answerInput || !feedbackEl) return;
+        
+        const studentAnswer = answerInput.value.trim();
+        if (!studentAnswer) {
+            feedbackEl.innerHTML = '<div class="text-amber-700"><i class="fas fa-exclamation-triangle mr-2"></i>Please write your answer first.</div>';
+            feedbackEl.className = 'mt-4 p-4 rounded-lg border-2 bg-amber-50 border-amber-300';
+            feedbackEl.classList.remove('hidden');
+            return;
+        }
+        
+        feedbackEl.innerHTML = '<div class="flex items-center gap-2 text-purple-700"><i class="fas fa-spinner fa-spin"></i> AI is analyzing your answer...</div>';
+        feedbackEl.className = 'mt-4 p-4 rounded-lg border-2 bg-purple-50 border-purple-200';
+        feedbackEl.classList.remove('hidden');
+        
+        fetch('/student/api/check-answer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                question_id: questionId,
+                student_answer: studentAnswer,
+                model_answer: qData.modelAnswer,
+                max_marks: qData.maxMarks
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const score = data.score;
+                let bgClass, borderClass, textClass, icon;
+                
+                if (score >= 80) {
+                    bgClass = 'bg-green-50';
+                    borderClass = 'border-green-300';
+                    textClass = 'text-green-800';
+                    icon = 'fa-check-circle text-green-600';
+                } else if (score >= 50) {
+                    bgClass = 'bg-blue-50';
+                    borderClass = 'border-blue-300';
+                    textClass = 'text-blue-800';
+                    icon = 'fa-thumbs-up text-blue-600';
+                } else {
+                    bgClass = 'bg-amber-50';
+                    borderClass = 'border-amber-300';
+                    textClass = 'text-amber-800';
+                    icon = 'fa-lightbulb text-amber-600';
+                }
+                
+                feedbackEl.className = `mt-4 p-4 rounded-lg border-2 ${bgClass} ${borderClass}`;
+                feedbackEl.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <i class="fas ${icon} text-2xl mt-1"></i>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-lg font-bold ${textClass}">Score: ${score}%</span>
+                            </div>
+                            <p class="${textClass}">${data.feedback}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                feedbackEl.className = 'mt-4 p-4 rounded-lg border-2 bg-red-50 border-red-300';
+                feedbackEl.innerHTML = `<div class="text-red-700"><i class="fas fa-exclamation-circle mr-2"></i>${data.error || 'Failed to check answer. Please try again.'}</div>`;
+            }
+        })
+        .catch(error => {
+            feedbackEl.className = 'mt-4 p-4 rounded-lg border-2 bg-red-50 border-red-300';
+            feedbackEl.innerHTML = '<div class="text-red-700"><i class="fas fa-exclamation-circle mr-2"></i>Connection error. Please try again.</div>';
+        });
+    }
+    
     document.querySelectorAll('label[class*="cursor-pointer"]').forEach(label => {
         const radio = label.querySelector('input[type="radio"]');
         if (radio) {
@@ -220,15 +415,16 @@
         }
     });
     
-    document.getElementById('quizForm').addEventListener('submit', function(e) {
-        if (!confirm('Are you sure you want to submit your quiz? You cannot change your answers after submission.')) {
-            e.preventDefault();
-        }
-    });
-    
-    window.addEventListener('beforeunload', function(e) {
+    function beforeUnloadHandler(e) {
         e.preventDefault();
         e.returnValue = 'Are you sure you want to leave? Your progress will be lost.';
+    }
+    
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+    
+    document.getElementById('quizForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showSubmitModal();
     });
     </script>
 </body>
