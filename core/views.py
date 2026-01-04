@@ -2045,6 +2045,40 @@ def admin_student_subscribers(request):
     return render(request, 'core/admin/student_subscribers.html', context)
 
 @require_admin
+def admin_change_student_subscription(request, subscription_id):
+    """Change student subscription status"""
+    from .models import StudentSubscription, StudentProfile
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        subscription = get_object_or_404(StudentSubscription, id=subscription_id)
+        new_status = request.POST.get('status')
+        
+        if new_status in ['active', 'free', 'expired', 'cancelled']:
+            old_status = subscription.status
+            subscription.status = new_status
+            
+            # If activating, set expiry to 30 days from now
+            if new_status == 'active' and old_status != 'active':
+                subscription.started_at = timezone.now()
+                subscription.expires_at = timezone.now() + timedelta(days=30)
+                # Also update student profile
+                subscription.student.subscription = 'pro'
+                subscription.student.save()
+            elif new_status in ['free', 'expired', 'cancelled']:
+                # Downgrade student profile
+                subscription.student.subscription = 'free'
+                subscription.student.save()
+            
+            subscription.save()
+            messages.success(request, f'Subscription status changed from {old_status} to {new_status}')
+        else:
+            messages.error(request, 'Invalid status')
+    
+    return redirect('admin_student_subscribers')
+
+@require_admin
 def admin_users(request):
     """User management interface"""
     

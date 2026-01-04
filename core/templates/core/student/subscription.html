@@ -197,22 +197,60 @@
                     <i class="fas fa-question-circle mr-2 text-blue-500"></i>
                     Frequently Asked Questions
                 </h3>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">How does per-subject pricing work?</h4>
-                        <p class="text-gray-600 text-sm">For 1-3 subjects, you pay R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0 }}{% else %}100{% endif %} per subject. For example, 2 subjects would cost R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0|add:pricing.per_subject.price|floatformat:0 }}{% else %}200{% endif %}/month.</p>
+                <div class="space-y-3" x-data="{ openFaq: null }">
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 1 ? null : 1" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">How does per-subject pricing work?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 1 }"></i>
+                        </button>
+                        <div x-show="openFaq === 1" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            For 1-3 subjects, you pay R{% if pricing.per_subject %}{{ pricing.per_subject.price|floatformat:0 }}{% else %}100{% endif %} per subject per month. For example, 2 subjects would cost R200/month. This plan gives you full access to quizzes, notes, flashcards, and exam papers for your chosen subjects.
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">When should I choose the bundle?</h4>
-                        <p class="text-gray-600 text-sm">If you need 4+ subjects, the bundle plans offer significant savings compared to individual pricing.</p>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 2 ? null : 2" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">When should I choose the bundle?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 2 }"></i>
+                        </button>
+                        <div x-show="openFaq === 2" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            If you need 4+ subjects, the bundle plans offer significant savings compared to individual pricing. The multi-subject bundle at R{% if pricing.bundle_medium %}{{ pricing.bundle_medium.price|floatformat:0 }}{% else %}200{% endif %} covers 4-5 subjects, and the all-access at R{% if pricing.bundle_all %}{{ pricing.bundle_all.price|floatformat:0 }}{% else %}300{% endif %} gives you unlimited subjects.
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Can I change my plan?</h4>
-                        <p class="text-gray-600 text-sm">Yes! You can upgrade or downgrade at any time. Changes take effect on your next billing date.</p>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 3 ? null : 3" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">Can I change my plan?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 3 }"></i>
+                        </button>
+                        <div x-show="openFaq === 3" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            Yes! You can upgrade or downgrade at any time. Changes take effect on your next billing date. Simply go to your subscription settings and select a different plan.
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">What's included in tutor support?</h4>
-                        <p class="text-gray-600 text-sm">The R{% if pricing.tutor_addon %}{{ pricing.tutor_addon.price|floatformat:0 }}{% else %}500{% endif %} add-on gives you access to qualified tutors for live sessions and homework help.</p>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 4 ? null : 4" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">What's included in tutor support?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 4 }"></i>
+                        </button>
+                        <div x-show="openFaq === 4" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            The R{% if pricing.tutor_addon %}{{ pricing.tutor_addon.price|floatformat:0 }}{% else %}500{% endif %} add-on gives you access to qualified tutors for live sessions and homework help. You can message tutors directly and get personalized assistance with your studies.
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 5 ? null : 5" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">How do I cancel my subscription?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 5 }"></i>
+                        </button>
+                        <div x-show="openFaq === 5" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            You can cancel anytime from your subscription page. After cancellation, you'll continue to have access until the end of your current billing period. No refunds are given for partial months.
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <button @click="openFaq = openFaq === 6 ? null : 6" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition">
+                            <span class="font-semibold text-gray-900">Is my payment information secure?</span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 6 }"></i>
+                        </button>
+                        <div x-show="openFaq === 6" x-cloak class="px-5 pb-4 text-gray-600 text-sm">
+                            Yes! We use PayFast, South Africa's trusted payment gateway. Your payment information is encrypted with 256-bit SSL and never stored on our servers. PayFast is PCI DSS compliant for maximum security.
+                        </div>
                     </div>
                 </div>
             </div>

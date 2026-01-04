@@ -58,6 +58,7 @@ urlpatterns = [
     path('panel/users/<int:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
     path('panel/subscriptions/', views.admin_subscriptions, name='admin_subscriptions'),
     path('panel/subscribers/', views.admin_student_subscribers, name='admin_student_subscribers'),
+    path('panel/subscribers/<int:subscription_id>/change/', views.admin_change_student_subscription, name='admin_change_student_subscription'),
     path('panel/api-test/', views.admin_api_test, name='admin_api_test'),
     path('panel/features/', views.admin_features, name='admin_features'),
     path('panel/features/exam-boards/', views.admin_exam_boards, name='admin_exam_boards'),
