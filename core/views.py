@@ -5446,7 +5446,7 @@ def manage_topics(request):
     """List all topics with filters by subject"""
     from .models import Topic, Subject
     
-    topics = Topic.objects.select_related('subject').all()
+    topics = Topic.objects.select_related('subject', 'grade').all()
     subjects = Subject.objects.all().order_by('name')
     
     # Filter by subject
@@ -5614,7 +5614,7 @@ def manage_subtopics(request):
         'id': t.id, 
         'name': t.name, 
         'subject_id': t.subject_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     # Filter by subject
@@ -5669,7 +5669,7 @@ def add_subtopic(request):
         'name': t.name, 
         'subject_id': t.subject_id,
         'grade_id': t.grade_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     if request.method == 'POST':
@@ -5729,7 +5729,7 @@ def edit_subtopic(request, subtopic_id):
         'name': t.name, 
         'subject_id': t.subject_id,
         'grade_id': t.grade_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     if request.method == 'POST':
@@ -5806,14 +5806,14 @@ def manage_concepts(request):
         'id': t.id, 
         'name': t.name, 
         'subject_id': t.subject_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     subtopics_json = json.dumps([{
         'id': s.id, 
         'name': s.name, 
         'topic_id': s.topic_id,
-        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
     
     # Filter by subject
@@ -5879,14 +5879,14 @@ def add_concept(request):
         'name': t.name, 
         'subject_id': t.subject_id,
         'grade_id': t.grade_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     subtopics_json = json.dumps([{
         'id': s.id, 
         'name': s.name, 
         'topic_id': s.topic_id,
-        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
     
     if request.method == 'POST':
@@ -5951,14 +5951,14 @@ def edit_concept(request, concept_id):
         'name': t.name, 
         'subject_id': t.subject_id,
         'grade_id': t.grade_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     subtopics_json = json.dumps([{
         'id': s.id, 
         'name': s.name, 
         'topic_id': s.topic_id,
-        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
     
     if request.method == 'POST':
@@ -6040,7 +6040,7 @@ def manage_video_lessons(request):
         'id': t.id, 
         'name': t.name, 
         'subject_id': t.subject_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     
     subtopics_json = json.dumps([{
@@ -6141,13 +6141,13 @@ def add_video_lesson(request):
         'id': t.id, 
         'name': t.name, 
         'subject_id': t.subject_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     subtopics_json = json.dumps([{
         'id': s.id, 
         'name': s.name, 
         'topic_id': s.topic_id,
-        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
     concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
@@ -6238,13 +6238,13 @@ def edit_video_lesson(request, video_id):
         'id': t.id, 
         'name': t.name, 
         'subject_id': t.subject_id,
-        'grade_name': t.grade.name if t.grade else 'All Grades'
+        'grade_name': str(t.grade) if t.grade else 'All Grades'
     } for t in topics])
     subtopics_json = json.dumps([{
         'id': s.id, 
         'name': s.name, 
         'topic_id': s.topic_id,
-        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
     concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
