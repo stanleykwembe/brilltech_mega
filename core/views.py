@@ -1965,6 +1965,15 @@ def admin_dashboard(request):
         status='complete'
     ).select_related('user', 'plan').order_by('-completed_at')[:10]
     
+    # Student subscription stats
+    from .models import StudentSubscription, StudentProfile
+    total_students = StudentProfile.objects.count()
+    active_student_subscriptions = StudentSubscription.objects.filter(status='active').count()
+    student_revenue = StudentSubscription.objects.filter(status='active').aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    recent_student_subscriptions = StudentSubscription.objects.filter(
+        status='active'
+    ).select_related('student__user').order_by('-created_at')[:5]
+    
     context = {
         'total_users': total_users,
         'verified_users': verified_users,
@@ -1978,9 +1987,62 @@ def admin_dashboard(request):
         'recent_signups': recent_signups,
         'latest_users': latest_users,
         'recent_payments': recent_payments,
+        'total_students': total_students,
+        'active_student_subscriptions': active_student_subscriptions,
+        'student_revenue': student_revenue,
+        'recent_student_subscriptions': recent_student_subscriptions,
     }
     
     return render(request, 'core/admin/dashboard.html', context)
+
+@require_admin
+def admin_student_subscribers(request):
+    """View all student subscribers with filtering and stats"""
+    from .models import StudentSubscription, StudentProfile
+    from django.db.models import Sum, Count
+    
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    
+    subscriptions = StudentSubscription.objects.select_related('student__user').order_by('-created_at')
+    
+    if status_filter:
+        subscriptions = subscriptions.filter(status=status_filter)
+    
+    if search_query:
+        subscriptions = subscriptions.filter(
+            Q(student__user__username__icontains=search_query) |
+            Q(student__user__email__icontains=search_query) |
+            Q(student__user__first_name__icontains=search_query) |
+            Q(student__user__last_name__icontains=search_query)
+        )
+    
+    # Stats
+    all_subscriptions = StudentSubscription.objects.all()
+    total_subscriptions = all_subscriptions.count()
+    active_subscriptions = all_subscriptions.filter(status='active').count()
+    free_subscriptions = all_subscriptions.filter(status='free').count()
+    expired_subscriptions = all_subscriptions.filter(status='expired').count()
+    cancelled_subscriptions = all_subscriptions.filter(status='cancelled').count()
+    total_revenue = all_subscriptions.filter(status='active').aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    
+    # Total students (with or without subscription records)
+    total_students = StudentProfile.objects.count()
+    
+    context = {
+        'subscriptions': subscriptions,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'total_subscriptions': total_subscriptions,
+        'active_subscriptions': active_subscriptions,
+        'free_subscriptions': free_subscriptions,
+        'expired_subscriptions': expired_subscriptions,
+        'cancelled_subscriptions': cancelled_subscriptions,
+        'total_revenue': total_revenue,
+        'total_students': total_students,
+    }
+    
+    return render(request, 'core/admin/student_subscribers.html', context)
 
 @require_admin
 def admin_users(request):

@@ -57,6 +57,7 @@ urlpatterns = [
     path('panel/users/<int:user_id>/change-subscription/', views.admin_change_subscription, name='admin_change_subscription'),
     path('panel/users/<int:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
     path('panel/subscriptions/', views.admin_subscriptions, name='admin_subscriptions'),
+    path('panel/subscribers/', views.admin_student_subscribers, name='admin_student_subscribers'),
     path('panel/api-test/', views.admin_api_test, name='admin_api_test'),
     path('panel/features/', views.admin_features, name='admin_features'),
     path('panel/features/exam-boards/', views.admin_exam_boards, name='admin_exam_boards'),
@@ -133,7 +134,6 @@ urlpatterns = [
     path('brilltech/admin/logout/', views.brilltech_admin_logout, name='brilltech_admin_logout'),
     path('brilltech/admin/submissions/', views.brilltech_admin_submissions, name='brilltech_admin_submissions'),
     path('brilltech/admin/submissions/<int:submission_id>/', views.brilltech_admin_submission_detail, name='brilltech_admin_submission_detail'),
-    path('brilltech/admin/subscribers/', views.brilltech_admin_subscribers, name='brilltech_admin_subscribers'),
     path('brilltech/admin/change-password/', views.brilltech_admin_change_password, name='brilltech_admin_change_password'),
     
     # BrillTech CRM - Tasks

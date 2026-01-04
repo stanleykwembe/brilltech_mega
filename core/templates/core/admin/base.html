@@ -51,6 +51,10 @@
                             <i class="fas fa-crown mr-3 text-lg"></i>
                             <span>Subscriptions</span>
                         </a>
+                        <a href="{% url 'admin_student_subscribers' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'admin_student_subscribers' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-100 hover:text-white transition-all">
+                            <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                            <span>Student Subscribers</span>
+                        </a>
                         <a href="{% url 'admin_api_test' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'admin_api_test' %}active{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-100 hover:text-white transition-all">
                             <i class="fas fa-code mr-3 text-lg"></i>
                             <span>API Testing</span>

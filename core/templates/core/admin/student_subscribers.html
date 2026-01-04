@@ -1,0 +1,232 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Student Subscribers - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Student Subscribers</h1>
+    <p class="mt-1 text-sm text-gray-600">View and manage student subscription payments</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Students</dt>
+                        <dd class="text-lg font-semibold text-gray-900">{{ total_students }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Active Paid</dt>
+                        <dd class="text-lg font-semibold text-green-600">{{ active_subscriptions }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Free Users</dt>
+                        <dd class="text-lg font-semibold text-gray-600">{{ free_subscriptions }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-clock text-red-600"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Expired</dt>
+                        <dd class="text-lg font-semibold text-red-600">{{ expired_subscriptions }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-green-100 truncate">Total Revenue</dt>
+                        <dd class="text-lg font-semibold text-white">R{{ total_revenue|floatformat:2 }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="bg-white shadow rounded-lg mb-6 p-6">
+    <form method="get" action="{% url 'admin_student_subscribers' %}">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="md:col-span-2">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Students</label>
+                <input type="text" 
+                       name="search" 
+                       id="search" 
+                       value="{{ search_query }}"
+                       placeholder="Username, email, name..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" 
+                        id="status" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active (Paid)</option>
+                    <option value="free" {% if status_filter == 'free' %}selected{% endif %}>Free</option>
+                    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex space-x-3">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                <i class="fas fa-search mr-2"></i> Apply Filters
+            </button>
+            <a href="{% url 'admin_student_subscribers' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                <i class="fas fa-redo mr-2"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Subscribers Table -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">All Subscribers ({{ subscriptions.count }})</h3>
+    </div>
+    
+    {% if subscriptions %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for sub in subscriptions %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                    <span class="text-white font-semibold">{{ sub.student.user.username|slice:":1"|upper }}</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ sub.student.user.username }}</div>
+                                <div class="text-sm text-gray-500">{{ sub.student.user.first_name }} {{ sub.student.user.last_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ sub.student.user.email }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {{ sub.plan|default:"Pro"|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            {% if sub.status == 'active' %}bg-green-100 text-green-800
+                            {% elif sub.status == 'free' %}bg-gray-100 text-gray-800
+                            {% elif sub.status == 'expired' %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ sub.status|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {% if sub.amount_paid %}
+                        <span class="font-semibold text-green-600">R{{ sub.amount_paid|floatformat:2 }}</span>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if sub.started_at %}
+                        {{ sub.started_at|date:"M d, Y" }}
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if sub.expires_at %}
+                        {{ sub.expires_at|date:"M d, Y" }}
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-12 text-center">
+        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-users text-2xl text-gray-400"></i>
+        </div>
+        <h3 class="text-gray-900 font-semibold mb-2">No Subscribers Found</h3>
+        <p class="text-gray-500">{% if status_filter or search_query %}No subscribers match your filters.{% else %}Student subscriptions will appear here when payments are processed.{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

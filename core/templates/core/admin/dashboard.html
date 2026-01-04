@@ -183,6 +183,92 @@
     </div>
 </div>
 
+<!-- Student Subscriptions Overview -->
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="heading-secondary">Student Subscriptions</h2>
+        <a href="{% url 'admin_student_subscribers' %}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center group">
+            View all subscribers 
+            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Student Stats Card -->
+        <div class="stat-card animate-scale-in opacity-0 delay-100">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-user-graduate text-white text-xl"></i>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">Total Students</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_students }}</p>
+                        <p class="mt-3 text-xs text-gray-500">
+                            <span class="text-green-600 font-semibold">{{ active_student_subscriptions }}</span> paid subscribers
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Student Revenue Card -->
+        <div class="stat-card animate-scale-in opacity-0 delay-200" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="stat-icon-wrapper" style="background: rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold text-green-100 uppercase tracking-wider">Student Revenue</p>
+                        <p class="mt-2 text-3xl font-bold text-white">R{{ student_revenue|floatformat:2 }}</p>
+                        <p class="mt-3 text-xs text-green-100">
+                            From active subscriptions
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Student Subscribers -->
+        <div class="stat-card animate-scale-in opacity-0 delay-300">
+            <div class="mb-4 pb-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900">Recent Subscribers</h3>
+            </div>
+            <div>
+                {% if recent_student_subscriptions %}
+                <div class="flow-root">
+                    <ul class="-my-2 divide-y divide-gray-100">
+                        {% for sub in recent_student_subscriptions %}
+                        <li class="py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                        <span class="text-white text-xs font-semibold">{{ sub.student.user.username|slice:":1"|upper }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">{{ sub.student.user.username }}</p>
+                                </div>
+                                <div class="text-sm font-semibold text-green-600">
+                                    R{{ sub.amount_paid|floatformat:0 }}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users text-gray-300 text-2xl mb-2"></i>
+                    <p class="text-sm text-gray-500">No subscribers yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Activity -->
 <div class="mb-8">
     <div class="flex items-center justify-between mb-6">

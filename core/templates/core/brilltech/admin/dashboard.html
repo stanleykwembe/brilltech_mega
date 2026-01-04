@@ -46,13 +46,6 @@
                     <span class="ml-auto bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full">{{ new_submissions }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'brilltech_admin_subscribers' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-                    <i class="fas fa-user-check w-5"></i>
-                    <span>Subscribers</span>
-                    {% if active_subscriptions > 0 %}
-                    <span class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{{ active_subscriptions }}</span>
-                    {% endif %}
-                </a>
                 
                 <p class="text-xs text-gray-500 uppercase tracking-wider mt-6 mb-2 px-4">CRM</p>
                 <a href="{% url 'crm_tasks_list' %}" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
@@ -213,60 +206,6 @@
                     <p class="text-gray-500">Contact form submissions will appear here.</p>
                 </div>
                 {% endif %}
-            </div>
-            
-            <!-- Subscription Stats & Recent Subscribers -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                <!-- Subscription Revenue Card -->
-                <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                            <i class="fas fa-chart-line text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-green-100 text-sm mb-1">Total Revenue</p>
-                    <p class="text-3xl font-bold">R{{ total_revenue|floatformat:2 }}</p>
-                    <p class="text-green-200 text-sm mt-2">{{ active_subscriptions }} active subscriber{{ active_subscriptions|pluralize }}</p>
-                </div>
-                
-                <!-- Recent Subscribers -->
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                        <h2 class="text-lg font-bold text-gray-900">Recent Subscribers</h2>
-                        <a href="{% url 'brilltech_admin_subscribers' %}" class="text-sm text-green-600 hover:text-green-700">View All</a>
-                    </div>
-                    
-                    {% if recent_subscriptions %}
-                    <div class="divide-y divide-gray-100">
-                        {% for sub in recent_subscriptions %}
-                        <div class="p-4 hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold">
-                                        {{ sub.student.user.username|slice:":1"|upper }}
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-gray-900">{{ sub.student.user.username }}</p>
-                                        <p class="text-sm text-gray-500">{{ sub.student.user.email }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold text-green-600">R{{ sub.amount_paid|floatformat:2 }}</p>
-                                    <p class="text-xs text-gray-400">{{ sub.started_at|timesince }} ago</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="p-8 text-center">
-                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-users text-gray-400"></i>
-                        </div>
-                        <p class="text-gray-500">No active subscribers yet.</p>
-                    </div>
-                    {% endif %}
-                </div>
             </div>
         </main>
     </div>
