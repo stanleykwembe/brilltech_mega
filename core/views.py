@@ -5603,10 +5603,19 @@ def delete_topic(request, topic_id):
 def manage_subtopics(request):
     """List all subtopics with filters"""
     from .models import Subtopic, Topic, Subject
+    import json
     
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all()
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all()
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    
+    # Build topics_json with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
     
     # Filter by subject
     subject_id = request.GET.get('subject')
@@ -5637,6 +5646,7 @@ def manage_subtopics(request):
         'subtopics': subtopics,
         'subjects': subjects,
         'topics': topics,
+        'topics_json': topics_json,
         'selected_subject': subject_id,
         'selected_topic': topic_id,
         'selected_status': status,
@@ -5648,9 +5658,19 @@ def manage_subtopics(request):
 def add_subtopic(request):
     """Add a new subtopic"""
     from .models import Subtopic, Topic, Subject
+    import json
     
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    
+    # Build JSON for Alpine.js with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_id': t.grade_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
     
     if request.method == 'POST':
         topic_id = request.POST.get('topic')
@@ -5664,6 +5684,7 @@ def add_subtopic(request):
             return render(request, 'core/content/subtopic_form.html', {
                 'subjects': subjects,
                 'topics': topics,
+                'topics_json': topics_json,
                 'form_data': request.POST,
             })
         
@@ -5688,6 +5709,7 @@ def add_subtopic(request):
     return render(request, 'core/content/subtopic_form.html', {
         'subjects': subjects,
         'topics': topics,
+        'topics_json': topics_json,
     })
 
 
@@ -5695,10 +5717,20 @@ def add_subtopic(request):
 def edit_subtopic(request, subtopic_id):
     """Edit an existing subtopic"""
     from .models import Subtopic, Topic, Subject
+    import json
     
     subtopic = get_object_or_404(Subtopic, id=subtopic_id)
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    
+    # Build JSON for Alpine.js with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_id': t.grade_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
     
     if request.method == 'POST':
         topic_id = request.POST.get('topic')
@@ -5712,6 +5744,7 @@ def edit_subtopic(request, subtopic_id):
             return render(request, 'core/content/subtopic_form.html', {
                 'subjects': subjects,
                 'topics': topics,
+                'topics_json': topics_json,
                 'subtopic': subtopic,
                 'is_edit': True,
             })
@@ -5736,6 +5769,7 @@ def edit_subtopic(request, subtopic_id):
     return render(request, 'core/content/subtopic_form.html', {
         'subjects': subjects,
         'topics': topics,
+        'topics_json': topics_json,
         'subtopic': subtopic,
         'is_edit': True,
     })
@@ -5760,11 +5794,27 @@ def delete_subtopic(request, subtopic_id):
 def manage_concepts(request):
     """List all concepts with filters"""
     from .models import Concept, Subtopic, Topic, Subject
+    import json
     
-    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject', 'subtopic__topic__grade').all()
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    # Build JSON with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id,
+        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+    } for s in subtopics])
     
     # Filter by subject
     subject_id = request.GET.get('subject')
@@ -5803,6 +5853,8 @@ def manage_concepts(request):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
         'selected_subject': subject_id,
         'selected_topic': topic_id,
         'selected_subtopic': subtopic_id,
@@ -5815,10 +5867,27 @@ def manage_concepts(request):
 def add_concept(request):
     """Add a new concept"""
     from .models import Concept, Subtopic, Topic, Subject
+    import json
     
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    # Build JSON for Alpine.js with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_id': t.grade_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id,
+        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+    } for s in subtopics])
     
     if request.method == 'POST':
         subtopic_id = request.POST.get('subtopic')
@@ -5833,6 +5902,8 @@ def add_concept(request):
                 'subjects': subjects,
                 'topics': topics,
                 'subtopics': subtopics,
+                'topics_json': topics_json,
+                'subtopics_json': subtopics_json,
                 'form_data': request.POST,
             })
         
@@ -5858,6 +5929,8 @@ def add_concept(request):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
     })
 
 
@@ -5865,11 +5938,28 @@ def add_concept(request):
 def edit_concept(request, concept_id):
     """Edit an existing concept"""
     from .models import Concept, Subtopic, Topic, Subject
+    import json
     
     concept = get_object_or_404(Concept, id=concept_id)
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
+    
+    # Build JSON for Alpine.js with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_id': t.grade_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id,
+        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+    } for s in subtopics])
     
     if request.method == 'POST':
         subtopic_id = request.POST.get('subtopic')
@@ -5884,6 +5974,8 @@ def edit_concept(request, concept_id):
                 'subjects': subjects,
                 'topics': topics,
                 'subtopics': subtopics,
+                'topics_json': topics_json,
+                'subtopics_json': subtopics_json,
                 'concept': concept,
                 'is_edit': True,
             })
@@ -5909,6 +6001,8 @@ def edit_concept(request, concept_id):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
         'concept': concept,
         'is_edit': True,
     })
@@ -5933,12 +6027,33 @@ def delete_concept(request, concept_id):
 def manage_video_lessons(request):
     """List all video lessons with filters"""
     from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    import json
     
-    videos = VideoLesson.objects.select_related('subject', 'topic', 'subtopic', 'concept', 'created_by').all()
+    videos = VideoLesson.objects.select_related('subject', 'topic', 'topic__grade', 'subtopic', 'concept', 'created_by').all()
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').all().order_by('topic__subject__name', 'topic__name', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
     concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
+    
+    # Build JSON for filtering with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id
+    } for s in subtopics])
+    
+    concepts_json = json.dumps([{
+        'id': c.id, 
+        'name': c.name, 
+        'subtopic_id': c.subtopic_id
+    } for c in concepts])
     
     # Filter by subject
     subject_id = request.GET.get('subject')
@@ -5992,11 +6107,14 @@ def manage_video_lessons(request):
     videos = videos.order_by('-created_at')
     
     return render(request, 'core/content/video_lessons_list.html', {
-        'videos': videos,
+        'video_lessons': videos,
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
         'concepts': concepts,
+        'topics_json': topics_json,
+        'subtopics_json': subtopics_json,
+        'concepts_json': concepts_json,
         'selected_subject': subject_id,
         'selected_topic': topic_id,
         'selected_subtopic': subtopic_id,
@@ -6014,13 +6132,23 @@ def add_video_lesson(request):
     import json
     
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').filter(is_active=True).order_by('subject__name', 'order', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').filter(is_active=True).order_by('subject__name', 'order', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
     concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
     
-    # Build JSON for Alpine.js dynamic filtering
-    topics_json = json.dumps([{'id': t.id, 'name': t.name, 'subject_id': t.subject_id} for t in topics])
-    subtopics_json = json.dumps([{'id': s.id, 'name': s.name, 'topic_id': s.topic_id} for s in subtopics])
+    # Build JSON for Alpine.js dynamic filtering with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id,
+        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+    } for s in subtopics])
     concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':
@@ -6101,13 +6229,23 @@ def edit_video_lesson(request, video_id):
     
     video = get_object_or_404(VideoLesson, id=video_id)
     subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject').filter(is_active=True).order_by('subject__name', 'order', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
+    topics = Topic.objects.select_related('subject', 'grade').filter(is_active=True).order_by('subject__name', 'order', 'name')
+    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
     concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
     
-    # Build JSON for Alpine.js dynamic filtering
-    topics_json = json.dumps([{'id': t.id, 'name': t.name, 'subject_id': t.subject_id} for t in topics])
-    subtopics_json = json.dumps([{'id': s.id, 'name': s.name, 'topic_id': s.topic_id} for s in subtopics])
+    # Build JSON for Alpine.js dynamic filtering with grade info
+    topics_json = json.dumps([{
+        'id': t.id, 
+        'name': t.name, 
+        'subject_id': t.subject_id,
+        'grade_name': t.grade.name if t.grade else 'All Grades'
+    } for t in topics])
+    subtopics_json = json.dumps([{
+        'id': s.id, 
+        'name': s.name, 
+        'topic_id': s.topic_id,
+        'grade_name': s.topic.grade.name if s.topic.grade else 'All Grades'
+    } for s in subtopics])
     concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':

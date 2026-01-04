@@ -19,11 +19,15 @@
 
 <div class="stat-card max-w-2xl" x-data="{
     subject: '{{ subtopic.topic.subject_id|default:'' }}',
-    topics: {{ topics_json|safe }},
+    topics: {{ topics_json|safe|default:'[]' }},
     selectedTopic: '{{ subtopic.topic_id|default:'' }}',
     get filteredTopics() {
         if (!this.subject) return [];
         return this.topics.filter(t => t.subject_id == this.subject);
+    },
+    get selectedTopicGrade() {
+        const topic = this.topics.find(t => t.id == this.selectedTopic);
+        return topic ? topic.grade_name : '';
     }
 }">
     <form method="POST">
@@ -46,9 +50,17 @@
                 <select name="topic" x-model="selectedTopic" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     <option value="">Select Topic</option>
                     <template x-for="topic in filteredTopics" :key="topic.id">
-                        <option :value="topic.id" x-text="topic.name"></option>
+                        <option :value="topic.id" x-text="topic.name + ' [' + topic.grade_name + ']'"></option>
                     </template>
                 </select>
+                <div x-show="selectedTopic" class="mt-2">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          :class="selectedTopicGrade === 'All Grades' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'">
+                        <i class="fas fa-graduation-cap mr-1"></i>
+                        <span x-text="selectedTopicGrade"></span>
+                    </span>
+                    <span class="ml-2 text-xs text-gray-500">This subtopic will inherit this grade</span>
+                </div>
             </div>
             
             <div>

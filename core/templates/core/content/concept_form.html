@@ -21,8 +21,8 @@
     subject: '{{ concept.subtopic.topic.subject_id|default:'' }}',
     topic: '{{ concept.subtopic.topic_id|default:'' }}',
     subtopic: '{{ concept.subtopic_id|default:'' }}',
-    topics: {{ topics_json|safe }},
-    subtopics: {{ subtopics_json|safe }},
+    topics: {{ topics_json|safe|default:'[]' }},
+    subtopics: {{ subtopics_json|safe|default:'[]' }},
     get filteredTopics() {
         if (!this.subject) return [];
         return this.topics.filter(t => t.subject_id == this.subject);
@@ -30,6 +30,10 @@
     get filteredSubtopics() {
         if (!this.topic) return [];
         return this.subtopics.filter(s => s.topic_id == this.topic);
+    },
+    get selectedTopicGrade() {
+        const t = this.topics.find(t => t.id == this.topic);
+        return t ? t.grade_name : '';
     }
 }">
     <form method="POST">
@@ -59,7 +63,7 @@
                         <select x-model="topic" @change="subtopic = ''" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                             <option value="">Select Topic</option>
                             <template x-for="t in filteredTopics" :key="t.id">
-                                <option :value="t.id" x-text="t.name"></option>
+                                <option :value="t.id" x-text="t.name + ' [' + t.grade_name + ']'"></option>
                             </template>
                         </select>
                     </div>
@@ -73,6 +77,15 @@
                             </template>
                         </select>
                     </div>
+                </div>
+                
+                <div x-show="topic" class="mt-3">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          :class="selectedTopicGrade === 'All Grades' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'">
+                        <i class="fas fa-graduation-cap mr-1"></i>
+                        <span x-text="selectedTopicGrade"></span>
+                    </span>
+                    <span class="ml-2 text-xs text-gray-500">This concept will inherit this grade from its topic</span>
                 </div>
             </div>
             
