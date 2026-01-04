@@ -1325,8 +1325,9 @@ class ContactSubmission(models.Model):
 # ============================================
 
 class Topic(models.Model):
-    """Topics belong to Subjects. Example: Mathematics → Algebra"""
+    """Topics belong to Subjects and optionally to a specific Grade. Example: Grade 10 Mathematics → Algebra"""
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
+    grade = models.ForeignKey(Grade, on_delete=models.SET_NULL, null=True, blank=True, related_name='topics', help_text="Leave blank for topics that apply to all grades")
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.IntegerField(default=0, help_text="Display order within subject")
@@ -1335,10 +1336,12 @@ class Topic(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['subject', 'order', 'name']
-        unique_together = ['subject', 'name']
+        ordering = ['subject', 'grade', 'order', 'name']
+        unique_together = ['subject', 'grade', 'name']
     
     def __str__(self):
+        if self.grade:
+            return f"Grade {self.grade.number} {self.subject.name} → {self.name}"
         return f"{self.subject.name} → {self.name}"
 
 
