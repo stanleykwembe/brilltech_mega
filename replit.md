@@ -6,6 +6,9 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (January 2026)
 
+- **Admin Subscription Control**: Admins can now manually change student subscription status (activate, set to free, mark expired, cancel) from the subscribers page at `/panel/subscribers/` using dropdown action buttons.
+- **FAQ Accordion**: Student subscription page now has a collapsible FAQ section with 6 questions using Alpine.js for better UX.
+- **Security: SECRET_KEY**: Moved to environment variable with safe fallback for development. Set `SECRET_KEY` env var in production.
 - **Dynamic Plan Pricing**: Fixed student upgrade page to correctly display and charge different prices based on plan selection (per_subject R100, multi_subject R200, all_access R300, tutor_addon R500). Each plan button now links to `/student/subscription/upgrade/<plan_type>/` and PayFast webhook stores the actual plan type.
 - **Student Subscriber Management**: Added comprehensive student subscription tracking to main admin panel at `/panel/subscribers/` with search, status filtering (active, free, expired, cancelled), revenue stats, and recent subscribers widget on dashboard.
 - **PayFast Integration Complete**: Student payment flow now creates/updates StudentSubscription records with proper validation, sends detailed confirmation emails to students and parents.
