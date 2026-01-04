@@ -4,6 +4,12 @@
 
 This project is a comprehensive freemium educational technology platform designed to serve four distinct user groups: Teachers, Admins, Students, and Content Managers. It facilitates content creation, interactive learning, and curriculum management with AI-powered features. The platform utilizes a freemium model with separate subscription tiers for teachers and students, offering extensive free access alongside premium features to enhance educational experiences.
 
+## Recent Changes (January 2026)
+
+- **Grade-Aware Topics**: Topics can now be assigned to specific grades. Students only see topics relevant to their selected grade (or topics that apply to all grades). Content managers select a grade when adding topics at `/content/topics/add/`.
+- **Topic Progress Tracking**: Students can mark topics as complete, with progress bars showing subject completion percentage and checkmarks on completed topics in the sidebar.
+- **AI Answer Checking**: Quiz essay/structured questions use AI to check answers and provide feedback via styled modal dialogs.
+
 ## Recent Changes (December 2025)
 
 - **Performance Optimization**: Added WhiteNoise for static file compression, Tailwind CSS build system, caching configuration, lazy loading for images
