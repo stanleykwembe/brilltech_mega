@@ -6,6 +6,7 @@ This project is a comprehensive freemium educational technology platform designe
 
 ## Recent Changes (January 2026)
 
+- **Teacher Portal URL Restructure**: All teacher-related URLs now live under `/teacher/` prefix (landing, login, signup, dashboard). Root URL (`/`) redirects to teacher landing page. Legacy URLs maintained for backward compatibility.
 - **Admin Subscription Control**: Admins can now manually change student subscription status (activate, set to free, mark expired, cancel) from the subscribers page at `/panel/subscribers/` using dropdown action buttons.
 - **FAQ Accordion**: Student subscription page now has a collapsible FAQ section with 6 questions using Alpine.js for better UX.
 - **Security: SECRET_KEY**: Moved to environment variable with safe fallback for development. Set `SECRET_KEY` env var in production.
@@ -60,11 +61,26 @@ Preferred communication style: Simple, everyday language.
 ## URL Structure
 
 ### Public Pages
-- `/` - Home/Dashboard (redirects to login if not authenticated)
-- `/login/` - Teacher/Admin login
-- `/signup/` - Teacher registration
-- `/welcome/teacher/` - Teacher landing page
+- `/` - Redirects to teacher landing page (`/teacher/`)
 - `/welcome/student/` - Student landing page
+
+### Teacher Portal (new /teacher/ prefix)
+- `/teacher/` - Teacher landing page (marketing page)
+- `/teacher/login/` - Teacher/Admin login
+- `/teacher/signup/` - Teacher registration
+- `/teacher/dashboard/` - Teacher dashboard (main workspace)
+- `/teacher/lesson-plans/` - Lesson plan management
+- `/teacher/assignments/` - Assignment management
+- `/teacher/documents/` - Document management
+
+**Legacy URLs (backward compatibility):**
+- `/login/`, `/signup/`, `/welcome/teacher/` - Redirect to `/teacher/` equivalents
+
+### Student Portal
+- `/student/login/` - Student login
+- `/student/signup/` - Student registration
+- `/student/dashboard/` - Student dashboard
+- `/student/study/` - Study page with collapsible navigation
 
 ### Admin Portals
 - `/panel/` - Custom admin dashboard (for platform management)
@@ -83,18 +99,6 @@ Preferred communication style: Simple, everyday language.
 - `/brilltech/admin/crm/leads/` - Lead management with sales pipeline
 - `/brilltech/admin/crm/mailing/` - Mailing lists and subscribers
 - `/brilltech/admin/crm/campaigns/` - Email campaign management
-
-### Student Portal
-- `/student/login/` - Student login
-- `/student/signup/` - Student registration
-- `/student/dashboard/` - Student dashboard
-- `/student/study/` - Study page with collapsible navigation
-
-### Teacher Portal
-- `/` - Teacher dashboard
-- `/lesson-plans/` - Lesson plan management
-- `/assignments/` - Assignment management
-- `/documents/` - Document management
 
 ### Content Manager Portal
 - `/content/` - Content manager dashboard
