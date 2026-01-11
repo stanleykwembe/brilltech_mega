@@ -54,4 +54,4 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         if hasattr(user, 'userprofile') and user.userprofile.role == 'content_manager':
             return reverse('content_dashboard')
         
-        return reverse('dashboard')
+        return reverse('teacher_dashboard')

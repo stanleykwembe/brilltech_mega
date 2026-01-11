@@ -77,14 +77,14 @@ def login_view(request):
                 return redirect('content_dashboard')
             else:
                 # Teachers go to teacher dashboard
-                return redirect('dashboard')
+                return redirect('teacher_dashboard')
         else:
             messages.error(request, 'Invalid credentials. Please check your username/email and password.')
     return render(request, 'core/login.html')
 
 def logout_view(request):
     logout(request)
-    return redirect('login')
+    return redirect('teacher_login')
 
 def require_teacher(view_func):
     """Decorator to ensure user is a teacher (not admin, content manager, or student)"""

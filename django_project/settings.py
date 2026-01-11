@@ -284,9 +284,9 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication URLs
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/teacher/login/'
+LOGIN_REDIRECT_URL = '/teacher/dashboard/'
+LOGOUT_REDIRECT_URL = '/teacher/login/'
 
 # PayFast Payment Configuration
 # Get these credentials from https://www.payfast.co.za after signing up

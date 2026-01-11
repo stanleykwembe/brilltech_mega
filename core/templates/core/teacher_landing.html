@@ -75,8 +75,8 @@
                     <a href="#testimonials" class="text-gray-700 hover:text-purple-600 transition">Testimonials</a>
                     <a href="#faq" class="text-gray-700 hover:text-purple-600 transition">FAQ</a>
                     <a href="{% url 'public_papers_browse' %}" class="text-gray-700 hover:text-purple-600 transition"><i class="fas fa-file-alt mr-1"></i>Papers</a>
-                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-purple-600 transition">Login</a>
-                    <a href="{% url 'register' %}" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition">Get Started</a>
+                    <a href="{% url 'teacher_login' %}" class="text-gray-700 hover:text-purple-600 transition">Login</a>
+                    <a href="{% url 'teacher_signup' %}" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition">Get Started</a>
                 </div>
                 <button class="md:hidden text-gray-700">
                     <i class="fas fa-bars text-2xl"></i>
@@ -97,7 +97,7 @@
                     Generate lesson plans, assignments, and quizzes in seconds. Upload past papers and let AI do the heavy lifting.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="{% url 'register' %}" class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold text-lg hover:shadow-xl transition transform hover:scale-105">
+                    <a href="{% url 'teacher_signup' %}" class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold text-lg hover:shadow-xl transition transform hover:scale-105">
                         Start Free Trial
                         <i class="fas fa-arrow-right ml-2"></i>
                     </a>
@@ -249,7 +249,7 @@
                             <span class="text-gray-400">No AI Features</span>
                         </li>
                     </ul>
-                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition">
+                    <a href="{% url 'teacher_signup' %}" class="block w-full text-center px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition">
                         Get Started
                     </a>
                 </div>
@@ -272,7 +272,7 @@
                             <span class="text-gray-400">No AI Features</span>
                         </li>
                     </ul>
-                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">
+                    <a href="{% url 'teacher_signup' %}" class="block w-full text-center px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">
                         Choose Plan
                     </a>
                 </div>
@@ -298,7 +298,7 @@
                             <span class="text-gray-700">GPT-3.5 AI</span>
                         </li>
                     </ul>
-                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
+                    <a href="{% url 'teacher_signup' %}" class="block w-full text-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
                         Choose Plan
                     </a>
                 </div>
@@ -325,7 +325,7 @@
                             <span>Priority Support</span>
                         </li>
                     </ul>
-                    <a href="{% url 'register' %}" class="block w-full text-center px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                    <a href="{% url 'teacher_signup' %}" class="block w-full text-center px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition">
                         Choose Plan
                     </a>
                 </div>
@@ -493,7 +493,7 @@
             <p class="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
                 Join thousands of teachers using AI to create better lessons and save time
             </p>
-            <a href="{% url 'register' %}" class="inline-block px-10 py-5 bg-white text-purple-600 rounded-xl font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+            <a href="{% url 'teacher_signup' %}" class="inline-block px-10 py-5 bg-white text-purple-600 rounded-xl font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
                 Start Your Free Trial Today
                 <i class="fas fa-arrow-right ml-2"></i>
             </a>
@@ -518,7 +518,7 @@
                     <ul class="space-y-2 text-gray-400 text-sm">
                         <li><a href="#features" class="hover:text-white transition">Features</a></li>
                         <li><a href="#pricing" class="hover:text-white transition">Pricing</a></li>
-                        <li><a href="{% url 'login' %}" class="hover:text-white transition">Login</a></li>
+                        <li><a href="{% url 'teacher_login' %}" class="hover:text-white transition">Login</a></li>
                     </ul>
                 </div>
                 <div>

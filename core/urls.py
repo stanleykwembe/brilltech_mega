@@ -1,22 +1,30 @@
 from django.urls import path
+from django.shortcuts import redirect
 from . import views
 
+def home_redirect(request):
+    """Redirect root to teacher landing page"""
+    return redirect('teacher_landing')
+
 urlpatterns = [
-    # Landing pages
-    path('welcome/teacher/', views.teacher_landing, name='teacher_landing'),
+    # Root redirects to teacher landing
+    path('', home_redirect, name='home'),
+    
+    # Old URLs kept for backward compatibility (redirect to new teacher URLs)
+    path('welcome/teacher/', lambda r: redirect('teacher_landing'), name='old_teacher_landing'),
     path('welcome/student/', views.student_landing, name='student_landing'),
     
-    # Authentication
+    # Old auth URLs - kept for backward compatibility
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('signup/', views.signup_view, name='signup'),
-    path('register/', views.signup_view, name='register'),  # Alias for landing page links
+    path('register/', views.signup_view, name='register'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
     path('resend-verification/', views.resend_verification, name='resend_verification'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('reset-password/<str:token>/', views.reset_password, name='reset_password'),
     path('account/settings/', views.account_settings, name='account_settings'),
-    path('', views.dashboard_view, name='dashboard'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     path('lesson-plans/', views.lesson_plans_view, name='lesson_plans'),
     path('classwork/', views.classwork_view, name='classwork'),
     path('homework/', views.homework_view, name='homework'),
