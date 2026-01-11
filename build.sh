@@ -5,37 +5,63 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
 
-# Create demo accounts
+# Create demo accounts and seed data
 python manage.py shell << EOF
 from django.contrib.auth.models import User
-from core.models import UserProfile, StudentProfile
+from core.models import UserProfile, StudentProfile, ExamBoard, Subject, Grade
 
-# Admin accounts (superuser + staff for full access)
+# Admin accounts
 for name in ['admin1', 'admin2']:
-    if not User.objects.filter(username=name).exists():
-        u = User.objects.create_superuser(name, f'{name}@demo.com', 'Demo123!')
-        UserProfile.objects.get_or_create(user=u, defaults={'role': 'admin'})
-        print(f'Created admin: {name}')
-    else:
-        u = User.objects.get(username=name)
-        u.is_superuser = True
-        u.is_staff = True
-        u.save()
-        print(f'Updated admin: {name}')
+    u, created = User.objects.get_or_create(username=name, defaults={'email': f'{name}@demo.com'})
+    if created:
+        u.set_password('Demo123!')
+    u.is_superuser = True
+    u.is_staff = True
+    u.save()
+    UserProfile.objects.get_or_create(user=u, defaults={'role': 'admin'})
+    print(f'Admin ready: {name}')
 
 # Content Manager accounts
 for name in ['content1', 'content2']:
-    if not User.objects.filter(username=name).exists():
-        u = User.objects.create_user(name, f'{name}@demo.com', 'Demo123!')
-        UserProfile.objects.get_or_create(user=u, defaults={'role': 'content_manager'})
-        print(f'Created content manager: {name}')
+    u, created = User.objects.get_or_create(username=name, defaults={'email': f'{name}@demo.com'})
+    if created:
+        u.set_password('Demo123!')
+        u.save()
+    UserProfile.objects.get_or_create(user=u, defaults={'role': 'content_manager'})
+    print(f'Content manager ready: {name}')
 
 # Student accounts
 for name in ['student1', 'student2']:
-    if not User.objects.filter(username=name).exists():
-        u = User.objects.create_user(name, f'{name}@demo.com', 'Demo123!')
-        StudentProfile.objects.get_or_create(user=u)
-        print(f'Created student: {name}')
+    u, created = User.objects.get_or_create(username=name, defaults={'email': f'{name}@demo.com'})
+    if created:
+        u.set_password('Demo123!')
+        u.save()
+    StudentProfile.objects.get_or_create(user=u)
+    print(f'Student ready: {name}')
 
-print('Demo accounts ready!')
+# Exam Boards
+boards_data = [
+    ('Cambridge International Examinations', 'CIE', 'International'),
+    ('Edexcel', 'EDEXCEL', 'UK'),
+    ('CAPS (Curriculum and Assessment Policy Statement)', 'CAPS', 'South Africa'),
+    ('ZIMSEC', 'ZIMSEC', 'Zimbabwe'),
+    ('IEB (Independent Examinations Board)', 'IEB', 'South Africa'),
+    ('AQA', 'AQA', 'UK'),
+]
+for name_full, abbrev, region in boards_data:
+    board, created = ExamBoard.objects.get_or_create(abbreviation=abbrev, defaults={'name_full': name_full, 'region': region})
+    print(f"{'Created' if created else 'Exists'}: {abbrev}")
+
+# Subjects
+subjects_data = ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'Geography', 'History', 'Accounting', 'Business Studies', 'Computer Science']
+for subj_name in subjects_data:
+    subj, created = Subject.objects.get_or_create(name=subj_name)
+    print(f"{'Created' if created else 'Exists'}: {subj_name}")
+
+# Grades
+for i in range(8, 13):
+    grade, created = Grade.objects.get_or_create(name=f'Grade {i}', defaults={'order': i})
+    print(f"{'Created' if created else 'Exists'}: Grade {i}")
+
+print('All demo data ready!')
 EOF
