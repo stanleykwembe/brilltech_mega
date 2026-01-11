@@ -58,9 +58,9 @@ for subj_name in subjects_data:
     subj, created = Subject.objects.get_or_create(name=subj_name)
     print(f"{'Created' if created else 'Exists'}: {subj_name}")
 
-# Grades
+# Grades (uses 'number' field, not 'name')
 for i in range(8, 13):
-    grade, created = Grade.objects.get_or_create(name=f'Grade {i}', defaults={'order': i})
+    grade, created = Grade.objects.get_or_create(number=i)
     print(f"{'Created' if created else 'Exists'}: Grade {i}")
 
 print('All demo data ready!')
