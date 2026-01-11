@@ -7,7 +7,16 @@ import json
 from openai import OpenAI
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Only initialize client if API key is available (prevents crash on startup)
+openai_client = None
+if OPENAI_API_KEY:
+    openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+def _check_client():
+    """Check if OpenAI client is available"""
+    if openai_client is None:
+        raise Exception("OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable.")
 
 def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes", model="gpt-3.5-turbo"):
     """Generate a detailed lesson plan using AI
@@ -43,6 +52,7 @@ def generate_lesson_plan(subject, grade, board, topic, duration="60 minutes", mo
         "homework": "homework assignment"
     }}"""
     
+    _check_client()
     try:
         response = openai_client.chat.completions.create(
             model=model,
@@ -89,6 +99,7 @@ def generate_homework(subject, grade, board, topic, question_type, num_questions
         "total_marks": "total marks for all questions"
     }}"""
     
+    _check_client()
     try:
         response = openai_client.chat.completions.create(
             model=model,
@@ -135,6 +146,7 @@ def generate_questions(subject, grade, board, topic, question_type, difficulty="
         ]
     }}"""
     
+    _check_client()
     try:
         response = openai_client.chat.completions.create(
             model=model,
@@ -236,6 +248,7 @@ Return ONLY valid JSON in this EXACT structure:
 
 NOTE: For diagrams/images, set has_diagram: true and provide a text description in diagram_description. We'll handle image extraction separately."""
     
+    _check_client()
     try:
         import PyPDF2
         

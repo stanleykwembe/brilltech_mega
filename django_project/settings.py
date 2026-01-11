@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-4ju2n@$f9d0c=h)_g0lbb%k9&@rf(xa$d$g$&5ri$uf)*gev^4')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # Allowed hosts configuration
 # Works both on Replit and external hosting
@@ -64,6 +64,13 @@ for domain in replit_domains:
 if custom_domain:
     CSRF_TRUSTED_ORIGINS.append(f"https://{custom_domain}")
     CSRF_TRUSTED_ORIGINS.append(f"https://www.{custom_domain}")
+
+# Add Render domain to CSRF (and any hosts from ALLOWED_HOSTS env)
+if allowed_hosts_env:
+    for host in allowed_hosts_env.split(','):
+        host = host.strip()
+        if host:
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
 # Application definition
 
