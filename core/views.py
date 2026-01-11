@@ -32,6 +32,9 @@ def student_landing(request):
     return render(request, 'core/student_landing.html')
 
 def login_view(request):
+    # Set session flag for social login - this tells the adapter to create UserProfile (teacher)
+    request.session['social_login_type'] = 'teacher'
+    
     if request.method == 'POST':
         username_or_email = request.POST['username']
         password = request.POST['password']

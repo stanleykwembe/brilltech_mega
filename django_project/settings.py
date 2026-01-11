@@ -358,6 +358,9 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+ACCOUNT_ADAPTER = 'core.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
+
 # =============================================================================
 # PERFORMANCE OPTIMIZATION SETTINGS
 # =============================================================================

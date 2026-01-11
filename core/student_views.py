@@ -110,6 +110,9 @@ def student_login_required(view_func):
 
 def student_register(request):
     """Student registration view"""
+    # Set session flag for social login - this tells the adapter to create StudentProfile
+    request.session['social_login_type'] = 'student'
+    
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
@@ -223,6 +226,9 @@ EduTech Team''',
 
 def student_login(request):
     """Student login view"""
+    # Set session flag for social login - this tells the adapter to create StudentProfile
+    request.session['social_login_type'] = 'student'
+    
     if request.method == 'POST':
         username_or_email = request.POST.get('username', '').strip()
         password = request.POST.get('password')
