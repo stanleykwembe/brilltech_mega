@@ -3,6 +3,7 @@
 {% block title %}Exam Boards - Feature Management{% endblock %}
 
 {% block content %}
+<div x-data="{ showAddModal: false, showEditModal: false, editingBoard: null }">
 <div class="mb-8">
     <div class="flex items-center justify-between">
         <div>
@@ -16,7 +17,7 @@
 </div>
 
 <!-- Exam Boards Table -->
-<div class="bg-white shadow rounded-lg overflow-hidden" x-data="{ showAddModal: false, showEditModal: false, editingBoard: null }">
+<div class="bg-white shadow rounded-lg overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
@@ -143,6 +144,7 @@
         </div>
     </div>
     {% endfor %}
+</div>
 </div>
 
 {% endblock %}

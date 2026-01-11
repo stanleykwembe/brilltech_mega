@@ -1940,15 +1940,18 @@ def student_subject_pathway(request, subject_id):
 def student_study_pathway(request, subject_id):
     """Study pathway - New layout with sidebar topics and tabbed content"""
     from django.shortcuts import get_object_or_404
+    from django.http import Http404
     from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz, StudentTopicProgress
     
     student_profile = StudentProfile.objects.get(user=request.user)
     
-    student_subject = get_object_or_404(
-        StudentSubject, 
+    # Use filter().first() to handle case where student has same subject with multiple exam boards
+    student_subject = StudentSubject.objects.filter(
         student=student_profile, 
         subject_id=subject_id
-    )
+    ).first()
+    if not student_subject:
+        raise Http404("Subject not found")
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
