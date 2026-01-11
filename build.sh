@@ -10,22 +10,28 @@ python manage.py shell << EOF
 from django.contrib.auth.models import User
 from core.models import UserProfile, StudentProfile
 
-# Admin accounts
-for i, name in enumerate(['admin1', 'admin2'], 1):
+# Admin accounts (superuser + staff for full access)
+for name in ['admin1', 'admin2']:
     if not User.objects.filter(username=name).exists():
-        u = User.objects.create_user(name, f'{name}@demo.com', 'Demo123!', is_staff=True)
+        u = User.objects.create_superuser(name, f'{name}@demo.com', 'Demo123!')
         UserProfile.objects.get_or_create(user=u, defaults={'role': 'admin'})
         print(f'Created admin: {name}')
+    else:
+        u = User.objects.get(username=name)
+        u.is_superuser = True
+        u.is_staff = True
+        u.save()
+        print(f'Updated admin: {name}')
 
 # Content Manager accounts
-for i, name in enumerate(['content1', 'content2'], 1):
+for name in ['content1', 'content2']:
     if not User.objects.filter(username=name).exists():
         u = User.objects.create_user(name, f'{name}@demo.com', 'Demo123!')
         UserProfile.objects.get_or_create(user=u, defaults={'role': 'content_manager'})
         print(f'Created content manager: {name}')
 
 # Student accounts
-for i, name in enumerate(['student1', 'student2'], 1):
+for name in ['student1', 'student2']:
     if not User.objects.filter(username=name).exists():
         u = User.objects.create_user(name, f'{name}@demo.com', 'Demo123!')
         StudentProfile.objects.get_or_create(user=u)
