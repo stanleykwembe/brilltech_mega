@@ -22,7 +22,18 @@
         {% csrf_token %}
         
         <div class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Exam Board *</label>
+                    <select name="exam_board" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Exam Board</option>
+                        {% for board in exam_boards %}
+                        <option value="{{ board.id }}" {% if topic.exam_board_id == board.id %}selected{% endif %}>{{ board.abbreviation }} - {{ board.name_full }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Content is board-specific</p>
+                </div>
+                
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
                     <select name="subject" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
@@ -41,7 +52,7 @@
                         <option value="{{ grade.id }}" {% if topic.grade_id == grade.id %}selected{% endif %}>Grade {{ grade.number }}</option>
                         {% endfor %}
                     </select>
-                    <p class="mt-1 text-xs text-gray-500">Leave blank if this topic applies to all grades</p>
+                    <p class="mt-1 text-xs text-gray-500">Leave blank for all grades</p>
                 </div>
             </div>
             
@@ -52,7 +63,25 @@
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                <textarea name="description" rows="4" placeholder="Brief description of this topic..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{{ topic.description|default:'' }}</textarea>
+                <textarea name="description" rows="2" placeholder="Brief description of this topic..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{{ topic.description|default:'' }}</textarea>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    Overview Text (Shown to Students)
+                </label>
+                <textarea name="overview_text" rows="4" placeholder="Write a comprehensive overview of what this topic covers. This will be displayed to students when they select this topic..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{{ topic.overview_text|default:'' }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">This overview appears in the Notes section for students</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fab fa-youtube text-red-500 mr-1"></i>
+                    YouTube Video Link (Topic Introduction)
+                </label>
+                <input type="url" name="youtube_link" value="{{ topic.youtube_link|default:'' }}" placeholder="https://www.youtube.com/watch?v=..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <p class="mt-1 text-xs text-gray-500">This video appears in the Video tab for students</p>
             </div>
             
             <div>

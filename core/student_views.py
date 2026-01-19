@@ -93,14 +93,20 @@ def student_login_required(view_func):
             messages.error(request, 'Please log in to continue.')
             return redirect('student_login')
         
-        # Check if user has a student profile
         if not hasattr(request.user, 'student_profile'):
             messages.error(request, 'Access denied. This area is for students only.')
             return redirect('student_login')
         
-        # Check if onboarding is completed
-        if not request.user.student_profile.onboarding_completed:
-            if request.path != reverse('student_onboarding'):
+        profile = request.user.student_profile
+        
+        if not profile.onboarding_completed:
+            has_subjects = StudentSubject.objects.filter(student=profile).exists()
+            has_exam_boards = StudentExamBoard.objects.filter(student=profile).exists()
+            
+            if has_subjects or has_exam_boards:
+                profile.onboarding_completed = True
+                profile.save(update_fields=['onboarding_completed'])
+            elif request.path != reverse('student_onboarding'):
                 messages.info(request, 'Please complete your profile setup.')
                 return redirect('student_onboarding')
         
@@ -1955,21 +1961,24 @@ def student_study_pathway(request, subject_id):
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
-    # Get all topics for this subject, filtered by student's grade
+    # Get all topics for this subject, filtered by exam board and student's grade
+    # Topics can be board-specific (exam_board set) or general (exam_board=None)
     # Topics can be grade-specific or apply to all grades (grade=None)
     student_grade = student_profile.grade
+    
+    topics = Topic.objects.filter(
+        subject=subject,
+        is_active=True
+    ).filter(
+        Q(exam_board=exam_board) | Q(exam_board__isnull=True)
+    )
+    
     if student_grade:
-        topics = Topic.objects.filter(
-            subject=subject,
-            is_active=True
-        ).filter(
+        topics = topics.filter(
             Q(grade=student_grade) | Q(grade__isnull=True)
-        ).order_by('order', 'name')
-    else:
-        topics = Topic.objects.filter(
-            subject=subject,
-            is_active=True
-        ).order_by('order', 'name')
+        )
+    
+    topics = topics.order_by('order', 'name')
     
     # Build topics with subtopics and content counts
     topics_with_data = []
@@ -2079,7 +2088,12 @@ def student_topic_content_ajax(request, subject_id, topic_id):
         'marking_guide': q.marking_guide,
     } for q in test_questions_qs[:20]]
     
+    topic_youtube_embed = topic.get_youtube_embed_url() if hasattr(topic, 'get_youtube_embed_url') else None
+    
     return JsonResponse({
+        'topic_overview': topic.overview_text or '',
+        'topic_youtube_embed': topic_youtube_embed,
+        'topic_youtube_link': topic.youtube_link or '',
         'notes': notes,
         'videos': videos,
         'flashcards': flashcards,

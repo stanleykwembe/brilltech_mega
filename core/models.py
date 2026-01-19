@@ -1325,24 +1325,42 @@ class ContactSubmission(models.Model):
 # ============================================
 
 class Topic(models.Model):
-    """Topics belong to Subjects and optionally to a specific Grade. Example: Grade 10 Mathematics → Algebra"""
+    """Topics belong to Subjects, ExamBoard, and optionally to a specific Grade. Example: CIE Grade 10 Mathematics → Algebra"""
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
+    exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE, related_name='topics', null=True, blank=True, help_text="Exam board for board-specific content")
     grade = models.ForeignKey(Grade, on_delete=models.SET_NULL, null=True, blank=True, related_name='topics', help_text="Leave blank for topics that apply to all grades")
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    overview_text = models.TextField(blank=True, help_text="Overview/summary of what this topic covers - shown to students")
+    youtube_link = models.URLField(max_length=500, blank=True, help_text="YouTube video URL for topic introduction")
     order = models.IntegerField(default=0, help_text="Display order within subject")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['subject', 'grade', 'order', 'name']
-        unique_together = ['subject', 'grade', 'name']
+        ordering = ['subject', 'exam_board', 'grade', 'order', 'name']
+        unique_together = ['subject', 'exam_board', 'grade', 'name']
     
     def __str__(self):
-        if self.grade:
-            return f"Grade {self.grade.number} {self.subject.name} → {self.name}"
-        return f"{self.subject.name} → {self.name}"
+        board_str = f"{self.exam_board.abbreviation} " if self.exam_board else ""
+        grade_str = f"Grade {self.grade.number} " if self.grade else ""
+        return f"{board_str}{grade_str}{self.subject.name} → {self.name}"
+    
+    def get_youtube_embed_url(self):
+        """Convert YouTube URL to embed URL"""
+        if not self.youtube_link:
+            return None
+        url = self.youtube_link
+        if 'youtube.com/watch?v=' in url:
+            video_id = url.split('v=')[1].split('&')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        elif 'youtu.be/' in url:
+            video_id = url.split('youtu.be/')[1].split('?')[0]
+            return f"https://www.youtube.com/embed/{video_id}"
+        elif 'youtube.com/embed/' in url:
+            return url
+        return None
 
 
 class Subtopic(models.Model):

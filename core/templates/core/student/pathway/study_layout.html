@@ -14,8 +14,13 @@
         .sidebar-item.active { background: rgba(16, 185, 129, 0.15); border-left: 3px solid #10b981; }
         .tab-active { border-bottom: 3px solid #10b981; color: #10b981; font-weight: 600; }
         .content-area { min-height: calc(100vh - 180px); }
-        @media (max-width: 768px) {
+        .touch-manipulation { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        @media (max-width: 1023px) {
             .sidebar-overlay { background: rgba(0,0,0,0.5); }
+            .mobile-sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+        }
+        @media (max-width: 640px) {
+            .content-area { min-height: calc(100vh - 160px); padding: 0.75rem; }
         }
     </style>
 </head>
@@ -26,12 +31,13 @@
         <header class="bg-white card-shadow sticky top-0 z-50">
             <div class="px-4 lg:px-6">
                 <div class="flex items-center justify-between h-14">
-                    <div class="flex items-center gap-3">
-                        <!-- Mobile menu button -->
-                        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-gray-600 hover:text-emerald-600">
+                    <div class="flex items-center gap-2">
+                        <button @click="sidebarOpen = !sidebarOpen" 
+                                class="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors touch-manipulation"
+                                aria-label="Toggle menu">
                             <i class="fas fa-bars text-lg"></i>
                         </button>
-                        <a href="{% url 'student_dashboard' %}" class="flex items-center gap-2 text-gray-600 hover:text-emerald-600">
+                        <a href="{% url 'student_dashboard' %}" class="flex items-center gap-2 text-gray-600 hover:text-emerald-600 p-2">
                             <i class="fas fa-arrow-left"></i>
                             <span class="hidden sm:inline">Dashboard</span>
                         </a>
@@ -72,11 +78,24 @@
             <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 sidebar-overlay z-40 lg:hidden" x-transition:enter="transition-opacity ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
 
             <!-- Left Sidebar - Topics Tree -->
-            <aside :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0', sidebarCollapsed ? 'lg:w-16' : 'lg:w-72']" class="fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-72 bg-white border-r transform transition-all duration-300 ease-in-out overflow-y-auto pt-0 lg:pt-0" style="top: 112px; height: calc(100vh - 112px);">
+            <aside :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0', sidebarCollapsed ? 'lg:w-16' : 'lg:w-72']" class="fixed lg:static left-0 z-50 lg:z-auto w-72 bg-white border-r transform transition-all duration-300 ease-in-out overflow-y-auto top-0 h-full lg:h-auto" style="height: 100vh;">
+                <!-- Mobile Header with Close Button -->
+                <div class="lg:hidden flex items-center justify-between p-4 border-b bg-emerald-50">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
+                            <i class="fas fa-book-open text-white text-sm"></i>
+                        </div>
+                        <span class="font-bold text-gray-900">Topics</span>
+                    </div>
+                    <button @click="sidebarOpen = false" class="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-gray-600 hover:text-red-500 transition-colors touch-manipulation shadow-sm">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                
                 <div class="p-4">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="hidden lg:flex items-center justify-between mb-4">
                         <h2 x-show="!sidebarCollapsed" class="text-sm font-bold text-gray-900 uppercase tracking-wide">Topics</h2>
-                        <button @click="sidebarCollapsed = !sidebarCollapsed" class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-emerald-600 transition-colors" title="Toggle Sidebar">
+                        <button @click="sidebarCollapsed = !sidebarCollapsed" class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-emerald-600 transition-colors" title="Toggle Sidebar">
                             <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
                         </button>
                     </div>
@@ -374,7 +393,6 @@
                         url += `?subtopic=${subtopicId}`;
                     }
                     
-                    // Show loading state
                     ['notes-list', 'videos-list', 'quizzes-list', 'test-questions-list'].forEach(id => {
                         const el = document.getElementById(id);
                         if (el) el.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Loading...</p></div>';
@@ -385,9 +403,10 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        this.renderNotes(data.notes || []);
-                        this.renderVideos(data.videos || []);
+                        this.renderNotes(data.notes || [], data.topic_overview || '');
+                        this.renderVideos(data.videos || [], data.topic_youtube_embed, data.topic_youtube_link);
                         this.renderQuizzes(data.quizzes || []);
+                        this.renderFlashcards(data.flashcards || []);
                         this.renderTestQuestions(data.test_questions || []);
                         this.contentLoaded = true;
                     })
@@ -400,9 +419,25 @@
                     });
                 },
                 
-                renderNotes(notes) {
+                renderNotes(notes, topicOverview = '') {
                     const container = document.getElementById('notes-list');
-                    if (notes.length === 0) {
+                    let html = '';
+                    
+                    if (topicOverview) {
+                        html += `
+                            <div class="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                                        <i class="fas fa-info-circle text-white"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900">Topic Overview</h4>
+                                </div>
+                                <div class="text-gray-700 leading-relaxed whitespace-pre-line">${topicOverview}</div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (notes.length === 0 && !topicOverview) {
                         container.innerHTML = `
                             <div class="text-center py-8">
                                 <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -413,21 +448,77 @@
                         `;
                         return;
                     }
-                    container.innerHTML = notes.map(note => `
-                        <a href="/student/note/${note.id}/" class="block p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl hover:shadow-lg transition-all">
-                            <h4 class="font-bold text-gray-900 mb-1">${note.title}</h4>
-                            <p class="text-sm text-gray-600">${note.description || 'Study notes'}</p>
-                            <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                ${note.has_full ? '<span><i class="fas fa-file-pdf mr-1"></i>Full Notes</span>' : ''}
-                                ${note.has_summary ? '<span><i class="fas fa-compress-alt mr-1"></i>Summary</span>' : ''}
-                            </div>
-                        </a>
-                    `).join('');
+                    
+                    if (notes.length > 0) {
+                        html += notes.map(note => `
+                            <a href="/student/note/${note.id}/" class="block p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl hover:shadow-lg transition-all mb-3">
+                                <h4 class="font-bold text-gray-900 mb-1">${note.title}</h4>
+                                <p class="text-sm text-gray-600">${note.description || 'Study notes'}</p>
+                                <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                    ${note.has_full ? '<span><i class="fas fa-file-pdf mr-1"></i>Full Notes</span>' : ''}
+                                    ${note.has_summary ? '<span><i class="fas fa-compress-alt mr-1"></i>Summary</span>' : ''}
+                                </div>
+                            </a>
+                        `).join('');
+                    }
+                    
+                    container.innerHTML = html || `
+                        <div class="text-center py-8">
+                            <p class="text-gray-600">No additional notes available.</p>
+                        </div>
+                    `;
                 },
                 
-                renderVideos(videos) {
+                renderVideos(videos, topicYoutubeEmbed = null, topicYoutubeLink = '') {
                     const container = document.getElementById('videos-list');
-                    if (videos.length === 0) {
+                    let html = '';
+                    
+                    if (topicYoutubeEmbed) {
+                        html += `
+                            <div class="mb-6">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
+                                        <i class="fab fa-youtube text-white"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900">Topic Introduction Video</h4>
+                                </div>
+                                <div class="relative w-full rounded-xl overflow-hidden shadow-lg" style="padding-bottom: 56.25%;">
+                                    <iframe 
+                                        src="${topicYoutubeEmbed}" 
+                                        class="absolute top-0 left-0 w-full h-full"
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+                        `;
+                    } else if (topicYoutubeLink) {
+                        html += `
+                            <div class="mb-6">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
+                                        <i class="fab fa-youtube text-white"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900">Topic Introduction Video</h4>
+                                </div>
+                                <a href="${topicYoutubeLink}" target="_blank" rel="noopener noreferrer" class="block p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl hover:shadow-lg transition-all">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-16 h-16 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fab fa-youtube text-white text-2xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-gray-900 mb-1">Watch on YouTube</h4>
+                                            <p class="text-sm text-gray-600">Click to open the topic introduction video in a new tab</p>
+                                        </div>
+                                        <i class="fas fa-external-link-alt text-gray-400"></i>
+                                    </div>
+                                </a>
+                            </div>
+                        `;
+                    }
+                    
+                    if (videos.length === 0 && !topicYoutubeEmbed && !topicYoutubeLink) {
                         container.innerHTML = `
                             <div class="text-center py-8">
                                 <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -438,19 +529,25 @@
                         `;
                         return;
                     }
-                    container.innerHTML = videos.map(video => `
-                        <a href="/student/videos/${video.id}/" class="block p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl hover:shadow-lg transition-all">
-                            <div class="flex items-start gap-4">
-                                <div class="w-24 h-16 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-play text-white text-xl"></i>
+                    
+                    if (videos.length > 0) {
+                        html += `<h4 class="font-bold text-gray-900 mb-3 ${topicYoutubeEmbed ? 'mt-6' : ''}">Additional Video Lessons</h4>`;
+                        html += videos.map(video => `
+                            <a href="/student/videos/${video.id}/" class="block p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl hover:shadow-lg transition-all mb-3">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-24 h-16 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-play text-white text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-900 mb-1">${video.title}</h4>
+                                        <p class="text-sm text-gray-600">${video.duration || ''}</p>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-gray-900 mb-1">${video.title}</h4>
-                                    <p class="text-sm text-gray-600">${video.duration || ''}</p>
-                                </div>
-                            </div>
-                        </a>
-                    `).join('');
+                            </a>
+                        `).join('');
+                    }
+                    
+                    container.innerHTML = html;
                 },
                 
                 renderQuizzes(quizzes) {

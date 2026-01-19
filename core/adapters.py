@@ -6,11 +6,27 @@ from django.urls import reverse
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """Custom adapter to handle student vs teacher social signups"""
     
+    def pre_social_login(self, request, sociallogin):
+        """Handle existing users logging in with social accounts"""
+        super().pre_social_login(request, sociallogin)
+        
+        if sociallogin.is_existing:
+            return
+        
+        email = sociallogin.account.extra_data.get('email')
+        if email:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            try:
+                existing_user = User.objects.get(email=email)
+                sociallogin.connect(request, existing_user)
+            except User.DoesNotExist:
+                pass
+    
     def save_user(self, request, sociallogin, form=None):
         """Save the user and create appropriate profile"""
         user = super().save_user(request, sociallogin, form)
         
-        # Get and immediately clear the session flag to prevent leakage
         login_type = request.session.pop('social_login_type', 'teacher')
         
         if login_type == 'student':
@@ -40,12 +56,22 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         """Redirect based on user type after login"""
         user = request.user
         
-        # Clear any remaining session flag (already cleared in save_user for new users)
         request.session.pop('social_login_type', None)
         
         if hasattr(user, 'student_profile'):
-            if not user.student_profile.onboarding_completed:
+            profile = user.student_profile
+            
+            from core.models import StudentSubject, StudentExamBoard
+            has_subjects = StudentSubject.objects.filter(student=profile).exists()
+            has_exam_boards = StudentExamBoard.objects.filter(student=profile).exists()
+            
+            if not profile.onboarding_completed:
+                if has_subjects or has_exam_boards:
+                    profile.onboarding_completed = True
+                    profile.save(update_fields=['onboarding_completed'])
+                    return reverse('student_dashboard')
                 return reverse('student_onboarding')
+            
             return reverse('student_dashboard')
         
         if user.is_superuser or user.is_staff:

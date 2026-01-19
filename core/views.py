@@ -5667,105 +5667,129 @@ def manage_topics(request):
 @require_content_manager
 def add_topic(request):
     """Add a new topic"""
-    from .models import Topic, Subject, Grade
+    from .models import Topic, Subject, Grade, ExamBoard
     
     subjects = Subject.objects.all().order_by('name')
     grades = Grade.objects.all().order_by('number')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
     if request.method == 'POST':
+        exam_board_id = request.POST.get('exam_board')
         subject_id = request.POST.get('subject')
         grade_id = request.POST.get('grade')
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
+        overview_text = request.POST.get('overview_text', '').strip()
+        youtube_link = request.POST.get('youtube_link', '').strip()
         order = request.POST.get('order', 0)
         is_active = request.POST.get('is_active') == 'on'
         
-        if not subject_id or not name:
-            messages.error(request, 'Subject and name are required.')
+        if not exam_board_id or not subject_id or not name:
+            messages.error(request, 'Exam board, subject, and name are required.')
             return render(request, 'core/content/topic_form.html', {
                 'subjects': subjects,
                 'grades': grades,
+                'exam_boards': exam_boards,
                 'form_data': request.POST,
             })
         
         try:
+            exam_board = ExamBoard.objects.get(id=exam_board_id)
             subject = Subject.objects.get(id=subject_id)
             grade = Grade.objects.get(id=grade_id) if grade_id else None
             Topic.objects.create(
+                exam_board=exam_board,
                 subject=subject,
                 grade=grade,
                 name=name,
                 description=description,
+                overview_text=overview_text,
+                youtube_link=youtube_link,
                 order=int(order) if order else 0,
                 is_active=is_active,
             )
-            messages.success(request, f'Topic "{name}" created successfully.')
+            messages.success(request, f'Topic "{name}" created successfully for {exam_board.abbreviation}.')
             return redirect('manage_topics')
+        except ExamBoard.DoesNotExist:
+            messages.error(request, 'Invalid exam board selected.')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
         except Grade.DoesNotExist:
             messages.error(request, 'Invalid grade selected.')
         except IntegrityError:
-            messages.error(request, 'A topic with this name already exists for this subject and grade.')
+            messages.error(request, 'A topic with this name already exists for this exam board, subject, and grade combination.')
         except Exception as e:
             messages.error(request, f'Error creating topic: {str(e)}')
     
     return render(request, 'core/content/topic_form.html', {
         'subjects': subjects,
         'grades': grades,
+        'exam_boards': exam_boards,
     })
 
 
 @require_content_manager
 def edit_topic(request, topic_id):
     """Edit an existing topic"""
-    from .models import Topic, Subject, Grade
+    from .models import Topic, Subject, Grade, ExamBoard
     
     topic = get_object_or_404(Topic, id=topic_id)
     subjects = Subject.objects.all().order_by('name')
     grades = Grade.objects.all().order_by('number')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
     if request.method == 'POST':
+        exam_board_id = request.POST.get('exam_board')
         subject_id = request.POST.get('subject')
         grade_id = request.POST.get('grade')
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
+        overview_text = request.POST.get('overview_text', '').strip()
+        youtube_link = request.POST.get('youtube_link', '').strip()
         order = request.POST.get('order', 0)
         is_active = request.POST.get('is_active') == 'on'
         
-        if not subject_id or not name:
-            messages.error(request, 'Subject and name are required.')
+        if not exam_board_id or not subject_id or not name:
+            messages.error(request, 'Exam board, subject, and name are required.')
             return render(request, 'core/content/topic_form.html', {
                 'subjects': subjects,
                 'grades': grades,
+                'exam_boards': exam_boards,
                 'topic': topic,
                 'is_edit': True,
             })
         
         try:
+            exam_board = ExamBoard.objects.get(id=exam_board_id)
             subject = Subject.objects.get(id=subject_id)
             grade = Grade.objects.get(id=grade_id) if grade_id else None
+            topic.exam_board = exam_board
             topic.subject = subject
             topic.grade = grade
             topic.name = name
             topic.description = description
+            topic.overview_text = overview_text
+            topic.youtube_link = youtube_link
             topic.order = int(order) if order else 0
             topic.is_active = is_active
             topic.save()
             messages.success(request, f'Topic "{name}" updated successfully.')
             return redirect('manage_topics')
+        except ExamBoard.DoesNotExist:
+            messages.error(request, 'Invalid exam board selected.')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
         except Grade.DoesNotExist:
             messages.error(request, 'Invalid grade selected.')
         except IntegrityError:
-            messages.error(request, 'A topic with this name already exists for this subject and grade.')
+            messages.error(request, 'A topic with this name already exists for this exam board, subject, and grade combination.')
         except Exception as e:
             messages.error(request, f'Error updating topic: {str(e)}')
     
     return render(request, 'core/content/topic_form.html', {
         'subjects': subjects,
         'grades': grades,
+        'exam_boards': exam_boards,
         'topic': topic,
         'is_edit': True,
     })
