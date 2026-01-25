@@ -12,7 +12,30 @@ from django.db import IntegrityError
 from functools import wraps
 import secrets
 import os
+import logging
+import threading
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
+
+
+def send_email_async(subject, message, from_email, recipient_list, log_context=""):
+    """Send email in a background thread to avoid blocking the request"""
+    def _send():
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+            logger.info(f"{log_context} - Email sent successfully to {recipient_list}")
+        except Exception as e:
+            logger.error(f"{log_context} - Failed to send email to {recipient_list}. Error: {str(e)}")
+    
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
 from django.db.models import Q, Sum
 from .models import (
     StudentProfile, Grade, ExamBoard, Subject, 
@@ -179,7 +202,9 @@ def student_register(request):
             else:
                 verification_url = request.build_absolute_uri(verification_path)
             
-            send_mail(
+            # Send verification email asynchronously (non-blocking)
+            logger.info(f"Student registration: Sending verification email to {email} for user {username}")
+            send_email_async(
                 subject='Welcome to EduTech - Verify Your Email',
                 message=f'''Hi {username},
 
@@ -197,12 +222,13 @@ Best regards,
 EduTech Team''',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=False,
+                log_context=f"Student registration ({username})"
             )
             
-            # Also notify parent if parent email provided
+            # Also notify parent if parent email provided (async)
             if parent_email:
-                send_mail(
+                logger.info(f"Student registration: Sending parent notification to {parent_email} for student {username}")
+                send_email_async(
                     subject='Your Child Joined EduTech',
                     message=f'''Hello,
 
@@ -218,10 +244,10 @@ Best regards,
 EduTech Team''',
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[parent_email],
-                    fail_silently=True,
+                    log_context=f"Parent notification for {username}"
                 )
             
-            messages.success(request, 'Registration successful! Please check your email to verify your account.')
+            messages.success(request, 'Registration successful! Please check your email to verify your account. If you don\'t receive it within a few minutes, check your spam folder or use the resend option.')
             return redirect('student_login')
             
         except IntegrityError as e:

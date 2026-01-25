@@ -18,7 +18,30 @@ import uuid
 import os
 import mimetypes
 import secrets
+import logging
+import threading
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
+
+
+def send_email_async(subject, message, from_email, recipient_list, log_context=""):
+    """Send email in a background thread to avoid blocking the request"""
+    def _send():
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+            logger.info(f"{log_context} - Email sent successfully to {recipient_list}")
+        except Exception as e:
+            logger.error(f"{log_context} - Failed to send email to {recipient_list}. Error: {str(e)}")
+    
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
 from .models import Subject, Grade, ExamBoard, UserProfile, UploadedDocument, GeneratedAssignment, UsageQuota, ClassGroup, AssignmentShare, PasswordResetToken, SubscribedSubject, SubscriptionPlan
 from .openai_service import generate_lesson_plan, generate_homework, generate_questions
 from .subscription_utils import require_premium, get_user_subscription
@@ -1010,7 +1033,9 @@ def signup_view(request):
             else:
                 verification_url = request.build_absolute_uri(verification_path)
             
-            send_mail(
+            # Send verification email asynchronously (non-blocking)
+            logger.info(f"Teacher signup: Sending verification email to {email} for user {username}")
+            send_email_async(
                 subject='Welcome to EduTech Platform - Verify Your Email',
                 message=f'''Hi {first_name},
 
@@ -1024,13 +1049,13 @@ Best regards,
 EduTech Team''',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=False,
+                log_context=f"Teacher signup ({username})"
             )
             
             # Auto-login the user
             login(request, user)
             
-            messages.success(request, 'Welcome! Please verify your email to access all features.')
+            messages.success(request, 'Welcome! Please verify your email to access all features. Check your inbox (and spam folder).')
             return redirect('dashboard')
             
         except Exception as e:
@@ -1090,7 +1115,9 @@ def resend_verification(request):
                 reverse('verify_email', kwargs={'token': verification_token})
             )
             
-            send_mail(
+            # Send verification email asynchronously
+            logger.info(f"Resend verification: Sending new verification email to {email}")
+            send_email_async(
                 subject='EduTech Platform - New Verification Link',
                 message=f'''Hi {user.first_name},
 
@@ -1104,10 +1131,10 @@ Best regards,
 EduTech Team''',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=False,
+                log_context=f"Resend verification ({user.username})"
             )
             
-            messages.success(request, 'Verification email sent! Please check your inbox.')
+            messages.success(request, 'Verification email sent! Please check your inbox (and spam folder).')
             
         except User.DoesNotExist:
             messages.error(request, 'No unverified account found with this email address.')
@@ -1143,8 +1170,9 @@ def forgot_password(request):
             else:
                 reset_url = request.build_absolute_uri(reset_path)
             
-            # Send reset email
-            send_mail(
+            # Send reset email asynchronously
+            logger.info(f"Password reset: Sending reset email to {email}")
+            send_email_async(
                 subject='Reset Your EduTech Password',
                 message=f'''Hi {user.first_name},
 
@@ -1162,7 +1190,7 @@ Best regards,
 EduTech Team''',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=False,
+                log_context=f"Password reset ({user.username})"
             )
             
         except User.DoesNotExist:
@@ -1339,7 +1367,9 @@ def account_settings(request):
                     reverse('verify_email', kwargs={'token': verification_token})
                 )
                 
-                send_mail(
+                # Send verification email asynchronously
+                logger.info(f"Email verification: Sending verification email to {request.user.email}")
+                send_email_async(
                     subject='EduTech Platform - Verify Your Email',
                     message=f'''Hi {request.user.first_name},
                     
@@ -1353,13 +1383,14 @@ Best regards,
 EduTech Team''',
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[request.user.email],
-                    fail_silently=False,
+                    log_context=f"Email verification ({request.user.username})"
                 )
                 
-                messages.success(request, 'Verification email sent! Please check your inbox.')
+                messages.success(request, 'Verification email sent! Please check your inbox (and spam folder).')
                 
             except Exception as e:
-                messages.error(request, f'Error sending verification email: {str(e)}')
+                logger.error(f"Email verification setup error for {request.user.username}: {str(e)}")
+                messages.error(request, 'Error setting up email verification. Please try again.')
         
         return redirect('account_settings')
     
