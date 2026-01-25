@@ -222,9 +222,12 @@
                 <div id="content-full" class="tab-content active">
                     <div class="prose max-w-none">
                         {% if note.full_version %}
-                            <div class="mb-4">
+                            <div class="mb-4 flex items-center gap-3">
                                 <a href="{{ note.full_version.url }}" target="_blank" class="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200">
                                     <i class="fas fa-download mr-2"></i> Download Full Version PDF
+                                </a>
+                                <a href="{{ note.full_version.url }}" target="_blank" class="inline-block px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                                    <i class="fas fa-external-link-alt mr-2"></i> Open in New Tab
                                 </a>
                             </div>
                         {% endif %}
@@ -232,8 +235,12 @@
                             <div class="bg-gray-50 rounded-lg p-6 note-content">
                                 {{ note.full_version_text|safe }}
                             </div>
+                        {% elif note.full_version %}
+                            <div class="bg-gray-50 rounded-lg overflow-hidden" style="height: 800px;">
+                                <iframe src="{{ note.full_version.url }}" class="w-full h-full border-0" title="Full Version PDF"></iframe>
+                            </div>
                         {% else %}
-                            <p class="text-gray-600">Full version content not available in text format. Please download the PDF above.</p>
+                            <p class="text-gray-600">No full version content available.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -241,9 +248,12 @@
                 <div id="content-summary" class="tab-content">
                     <div class="prose max-w-none">
                         {% if note.summary_version %}
-                            <div class="mb-4">
+                            <div class="mb-4 flex items-center gap-3">
                                 <a href="{{ note.summary_version.url }}" target="_blank" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200">
                                     <i class="fas fa-download mr-2"></i> Download Summary PDF
+                                </a>
+                                <a href="{{ note.summary_version.url }}" target="_blank" class="inline-block px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                                    <i class="fas fa-external-link-alt mr-2"></i> Open in New Tab
                                 </a>
                             </div>
                         {% endif %}
@@ -251,8 +261,12 @@
                             <div class="bg-blue-50 rounded-lg p-6 note-content">
                                 {{ note.summary_version_text|safe }}
                             </div>
+                        {% elif note.summary_version %}
+                            <div class="bg-blue-50 rounded-lg overflow-hidden" style="height: 800px;">
+                                <iframe src="{{ note.summary_version.url }}" class="w-full h-full border-0" title="Summary PDF"></iframe>
+                            </div>
                         {% else %}
-                            <p class="text-gray-600">Summary version not available in text format. Please download the PDF above.</p>
+                            <p class="text-gray-600">No summary version available.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -271,13 +285,19 @@
                                     </a>
                                 </div>
                             {% endif %}
-                            <div class="bg-gray-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
-                                {% if note.full_version_text %}
+                            {% if note.full_version_text %}
+                                <div class="bg-gray-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
                                     {{ note.full_version_text|safe }}
-                                {% else %}
-                                    <p class="text-gray-600 text-sm">Content available in PDF format only.</p>
-                                {% endif %}
-                            </div>
+                                </div>
+                            {% elif note.full_version %}
+                                <div class="bg-gray-50 rounded-lg overflow-hidden" style="height: 600px;">
+                                    <iframe src="{{ note.full_version.url }}" class="w-full h-full border-0" title="Full Version PDF"></iframe>
+                                </div>
+                            {% else %}
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <p class="text-gray-600 text-sm">No full version available.</p>
+                                </div>
+                            {% endif %}
                         </div>
                         
                         <div>
@@ -292,13 +312,19 @@
                                     </a>
                                 </div>
                             {% endif %}
-                            <div class="bg-blue-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
-                                {% if note.summary_version_text %}
+                            {% if note.summary_version_text %}
+                                <div class="bg-blue-50 rounded-lg p-4 max-h-[600px] overflow-y-auto note-content">
                                     {{ note.summary_version_text|safe }}
-                                {% else %}
-                                    <p class="text-gray-600 text-sm">Summary available in PDF format only.</p>
-                                {% endif %}
-                            </div>
+                                </div>
+                            {% elif note.summary_version %}
+                                <div class="bg-blue-50 rounded-lg overflow-hidden" style="height: 600px;">
+                                    <iframe src="{{ note.summary_version.url }}" class="w-full h-full border-0" title="Summary PDF"></iframe>
+                                </div>
+                            {% else %}
+                                <div class="bg-blue-50 rounded-lg p-4">
+                                    <p class="text-gray-600 text-sm">No summary available.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

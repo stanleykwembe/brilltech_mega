@@ -170,16 +170,14 @@ urlpatterns = [
     # Content Manager - Topics/Subtopics/Concepts/Video Lessons Management
     path('content/topics/', views.manage_topics, name='manage_topics'),
     path('content/topics/add/', views.add_topic, name='add_topic'),
+    path('content/topics/bulk-upload/', views.bulk_upload_topics, name='bulk_upload_topics'),
     path('content/topics/<int:topic_id>/edit/', views.edit_topic, name='edit_topic'),
     path('content/topics/<int:topic_id>/delete/', views.delete_topic, name='delete_topic'),
     path('content/subtopics/', views.manage_subtopics, name='manage_subtopics'),
     path('content/subtopics/add/', views.add_subtopic, name='add_subtopic'),
+    path('content/subtopics/bulk-upload/', views.bulk_upload_subtopics, name='bulk_upload_subtopics'),
     path('content/subtopics/<int:subtopic_id>/edit/', views.edit_subtopic, name='edit_subtopic'),
     path('content/subtopics/<int:subtopic_id>/delete/', views.delete_subtopic, name='delete_subtopic'),
-    path('content/concepts/', views.manage_concepts, name='manage_concepts'),
-    path('content/concepts/add/', views.add_concept, name='add_concept'),
-    path('content/concepts/<int:concept_id>/edit/', views.edit_concept, name='edit_concept'),
-    path('content/concepts/<int:concept_id>/delete/', views.delete_concept, name='delete_concept'),
     path('content/video-lessons/', views.manage_video_lessons, name='manage_video_lessons'),
     path('content/video-lessons/add/', views.add_video_lesson, name='add_video_lesson'),
     path('content/video-lessons/<int:video_id>/edit/', views.edit_video_lesson, name='edit_video_lesson'),
@@ -190,4 +188,10 @@ urlpatterns = [
     
     # Create share link (requires teacher login)
     path('api/create-share/', views.create_share_link, name='create_share_link'),
+    
+    # AJAX endpoints for dynamic dropdowns
+    path('ajax/subjects-by-board/', views.ajax_subjects_by_board, name='ajax_subjects_by_board'),
+    path('ajax/grades-by-board-subject/', views.ajax_grades_by_board_subject, name='ajax_grades_by_board_subject'),
+    path('ajax/topics-by-board-subject-grade/', views.ajax_topics_by_board_subject_grade, name='ajax_topics_by_board_subject_grade'),
+    path('ajax/subtopics-by-topic/', views.ajax_subtopics_by_topic, name='ajax_subtopics_by_topic'),
 ]

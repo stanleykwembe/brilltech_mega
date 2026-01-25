@@ -19,7 +19,8 @@ from .models import (
     StudentExamBoard, StudentSubject, StudentQuiz,
     InteractiveQuestion, StudentQuizAttempt, StudentQuizQuota,
     StudentProgress, Note, Flashcard, ExamPaper,
-    VideoLesson, Topic, Subtopic, Concept, StudentTopicProgress
+    VideoLesson, Topic, Subtopic, StudentTopicProgress,
+    PasswordResetToken
 )
 
 
@@ -350,6 +351,121 @@ EduTech Team''',
         return redirect('student_login')
 
 
+def student_forgot_password(request):
+    """Student forgot password - send reset link"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        try:
+            user = User.objects.get(email=email)
+            # Verify this user has a student profile
+            if hasattr(user, 'student_profile'):
+                # Invalidate any existing unused tokens for this user
+                PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+                
+                # Generate reset token
+                reset_token = secrets.token_urlsafe(50)
+                expires_at = timezone.now() + timedelta(hours=1)
+                
+                # Create password reset token
+                PasswordResetToken.objects.create(
+                    user=user,
+                    token=reset_token,
+                    expires_at=expires_at
+                )
+                
+                # Build reset URL
+                reset_path = reverse('student_reset_password', kwargs={'token': reset_token})
+                
+                # Get the proper domain from environment or request
+                replit_domain = os.environ.get('REPLIT_DEV_DOMAIN')
+                if replit_domain:
+                    reset_url = f"https://{replit_domain}{reset_path}"
+                else:
+                    reset_url = request.build_absolute_uri(reset_path)
+                
+                # Send reset email
+                send_mail(
+                    subject='Reset Your EduTech Student Password',
+                    message=f'''Hi {user.first_name or user.username},
+
+We received a request to reset your student account password. Click the link below to reset it:
+
+{reset_url}
+
+This link will expire in 1 hour.
+
+If you didn't request this, you can safely ignore this email.
+
+Need help? Contact us at support@edutech.com
+
+Best regards,
+EduTech Team''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                
+        except User.DoesNotExist:
+            pass
+        
+        # Always show success message for security
+        messages.success(request, 'If an account with that email exists, we have sent password reset instructions.')
+        return redirect('student_login')
+    
+    return render(request, 'core/student/forgot_password.html')
+
+
+def student_reset_password(request, token):
+    """Student reset password with token"""
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+        
+        # Verify the token belongs to a student account
+        if not hasattr(reset_token.user, 'student_profile'):
+            messages.error(request, 'Invalid password reset link.')
+            return redirect('student_forgot_password')
+        
+        if not reset_token.is_valid():
+            messages.error(request, 'This password reset link has expired or has already been used. Please request a new one.')
+            return redirect('student_forgot_password')
+        
+        if request.method == 'POST':
+            password = request.POST.get('password')
+            password_confirm = request.POST.get('password_confirm')
+            
+            # Validate passwords
+            if not password or not password_confirm:
+                messages.error(request, 'Please fill in all fields.')
+                return render(request, 'core/student/reset_password.html', {'token': token})
+            
+            if password != password_confirm:
+                messages.error(request, 'Passwords do not match.')
+                return render(request, 'core/student/reset_password.html', {'token': token})
+            
+            if len(password) < 8:
+                messages.error(request, 'Password must be at least 8 characters long.')
+                return render(request, 'core/student/reset_password.html', {'token': token})
+            
+            # Update password
+            user = reset_token.user
+            user.set_password(password)
+            user.save()
+            
+            # Mark token as used
+            reset_token.used = True
+            reset_token.save()
+            
+            messages.success(request, 'Your password has been reset successfully. You can now log in.')
+            return redirect('student_login')
+        
+        return render(request, 'core/student/reset_password.html', {'token': token})
+        
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, 'Invalid password reset link.')
+        return redirect('student_forgot_password')
+
+
 @student_login_required
 def student_onboarding(request):
     """Multi-step onboarding process for students"""
@@ -519,7 +635,9 @@ def student_dashboard(request):
             'completion_percentage': round(total_completion),
             'avg_score': round(avg_subject_score, 1),
             'topics_count': Topic.objects.filter(
-                subject=student_subject.subject
+                subject=student_subject.subject,
+                exam_board=student_subject.exam_board,
+                is_active=True
             ).count()
         }
         subjects_with_progress.append(subject_data)
@@ -529,6 +647,15 @@ def student_dashboard(request):
                 'subject': student_subject.subject.name,
                 'score': round(float(avg_subject_score), 1)
             })
+    
+    # Get current subscription record for plan display (check both status and expiry)
+    from .models import StudentSubscription
+    from django.utils import timezone
+    active_subscription = StudentSubscription.objects.filter(
+        student=student_profile, 
+        status='active',
+        expires_at__gt=timezone.now()
+    ).first()
     
     context = {
         'student_profile': student_profile,
@@ -542,6 +669,7 @@ def student_dashboard(request):
         'active_subjects': active_subjects,
         'recent_attempts': recent_attempts,
         'subject_progress': subject_progress,
+        'active_subscription': active_subscription,
     }
     
     return render(request, 'core/student/dashboard.html', context)
@@ -1318,30 +1446,16 @@ def student_subscription(request):
     current_board_count = StudentExamBoard.objects.filter(student=student_profile).count()
     
     # Get pricing from admin-configurable model
-    pricing = {}
-    try:
-        from .models import StudentSubscriptionPricing
-        for tier in StudentSubscriptionPricing.objects.all():
-            pricing[tier.tier_type] = {
-                'price': tier.price,
-                'min_subjects': tier.min_subjects,
-                'max_subjects': tier.max_subjects,
-                'description': tier.description,
-            }
-    except Exception:
-        # Default pricing if not configured
-        pricing = {
-            'per_subject': {'price': 100, 'min_subjects': 1, 'max_subjects': 3, 'description': 'Pay per subject'},
-            'bundle_medium': {'price': 200, 'min_subjects': 4, 'max_subjects': 5, 'description': '4-5 subjects bundle'},
-            'bundle_all': {'price': 300, 'min_subjects': None, 'max_subjects': None, 'description': 'All subjects access'},
-            'tutor_addon': {'price': 500, 'min_subjects': None, 'max_subjects': None, 'description': 'Tutor support add-on'},
-        }
+    from .models import StudentSubscriptionPricing
+    pricing = StudentSubscriptionPricing.get_current()
     
-    # Get current student subscription if any
+    # Get current student subscription if active (check both status and expiry)
     from .models import StudentSubscription
+    from django.utils import timezone
     active_subscription = StudentSubscription.objects.filter(
         student=student_profile, 
-        status='active'
+        status='active',
+        expires_at__gt=timezone.now()
     ).first()
     
     context = {
@@ -1376,20 +1490,20 @@ def student_upgrade_to_pro(request, plan_type=None):
     
     # Determine price and plan details based on plan_type
     valid_plans = {
-        'per_subject': {
-            'price': float(pricing_config.per_subject_price),
-            'name': 'EduTech Per-Subject Plan',
-            'description': f'Monthly subscription for up to {pricing_config.per_subject_max} subjects',
+        'starter': {
+            'price': float(pricing_config.starter_price),
+            'name': 'EduTech Starter Plan',
+            'description': f'{pricing_config.starter_subjects} subjects, {pricing_config.starter_boards} exam board',
         },
-        'multi_subject': {
-            'price': float(pricing_config.multi_subject_price),
-            'name': 'EduTech Multi-Subject Bundle',
-            'description': f'Monthly subscription for {pricing_config.multi_subject_min}-{pricing_config.multi_subject_max} subjects',
+        'standard': {
+            'price': float(pricing_config.standard_price),
+            'name': 'EduTech Standard Plan',
+            'description': f'{pricing_config.standard_subjects} subjects, any exam boards',
         },
         'all_access': {
             'price': float(pricing_config.all_access_price),
-            'name': 'EduTech All Access Plan',
-            'description': 'Monthly subscription with unlimited access to all subjects',
+            'name': 'EduTech Full Access Plan',
+            'description': 'Unlimited access to all subjects and exam boards',
         },
         'tutor_addon': {
             'price': float(pricing_config.tutor_addon_price),
@@ -1398,9 +1512,9 @@ def student_upgrade_to_pro(request, plan_type=None):
         },
     }
     
-    # Default to per_subject if no plan specified or invalid plan
+    # Default to starter if no plan specified or invalid plan
     if plan_type not in valid_plans:
-        plan_type = 'per_subject'
+        plan_type = 'starter'
     
     plan = valid_plans[plan_type]
     amount = f"{plan['price']:.2f}"
@@ -1502,29 +1616,19 @@ def student_payfast_notify(request):
         logger.error(f'PayFast IPN user not found: {post_data.get("custom_str1")}')
         return HttpResponse('User not found', status=400)
     
-    # Update subscription to Pro
-    old_subscription = student_profile.subscription
-    student_profile.subscription = 'pro'
-    student_profile.save()
-    
-    logger.info(f'User {user.username} upgraded to Pro via PayFast')
-    
-    # Clear quiz quotas (Pro has unlimited)
-    StudentQuizQuota.objects.filter(student=student_profile).delete()
-    
-    # Create or update StudentSubscription record for tracking
+    # Create or update StudentSubscription record (this is the source of truth now)
     from .models import StudentSubscription
     from datetime import timedelta
     from django.utils import timezone
     
     payment_id = post_data.get('pf_payment_id', '')
     amount_paid = post_data.get('amount_gross', '100.00')
-    plan_type = post_data.get('custom_str2', 'per_subject')
+    plan_type = post_data.get('custom_str2', 'starter')
     
     # Validate plan type
-    valid_plan_types = ['per_subject', 'multi_subject', 'all_access', 'tutor_addon']
+    valid_plan_types = ['starter', 'standard', 'all_access', 'tutor_addon']
     if plan_type not in valid_plan_types:
-        plan_type = 'per_subject'
+        plan_type = 'starter'
     
     subscription, created = StudentSubscription.objects.get_or_create(
         student=student_profile,
@@ -1545,22 +1649,33 @@ def student_payfast_notify(request):
         subscription.expires_at = timezone.now() + timedelta(days=30)
         subscription.save()
     
-    logger.info(f'StudentSubscription {"created" if created else "updated"} for {user.username}, payment_id: {payment_id}')
+    logger.info(f'StudentSubscription {"created" if created else "updated"} for {user.username}, plan: {plan_type}, payment_id: {payment_id}')
+    
+    # Clear quiz quotas (paid plans have unlimited)
+    StudentQuizQuota.objects.filter(student=student_profile).delete()
     
     # Format dates for email
     start_date = subscription.started_at.strftime('%B %d, %Y')
     expiry_date = subscription.expires_at.strftime('%B %d, %Y')
     
+    # Get plan display name
+    plan_names = {
+        'starter': 'Starter (2 subjects, 1 board)',
+        'standard': 'Standard (4 subjects, any boards)',
+        'all_access': 'Full Access (unlimited)',
+    }
+    plan_display = plan_names.get(plan_type, 'Pro')
+    
     # Send confirmation email with subscription details
     try:
         send_mail(
-            subject='Welcome to EduTech Pro! - Your Subscription Details',
+            subject='Welcome to EduTech! - Your Subscription Details',
             message=f'''Hi {user.first_name or user.username},
 
-Congratulations! Your payment was successful and you are now an EduTech Pro member!
+Congratulations! Your payment was successful and your subscription is now active!
 
 === SUBSCRIPTION DETAILS ===
-Plan: EduTech Pro
+Plan: {plan_display}
 Amount Paid: R{amount_paid}
 Payment Reference: {payment_id}
 Start Date: {start_date}
@@ -1716,7 +1831,7 @@ def student_video_library(request):
     
     # Get all active videos
     videos = VideoLesson.objects.filter(is_active=True).select_related(
-        'subject', 'topic', 'subtopic', 'concept'
+        'subject', 'topic', 'subtopic'
     )
     
     # Get featured videos
@@ -1726,7 +1841,6 @@ def student_video_library(request):
     subject_filter = request.GET.get('subject')
     topic_filter = request.GET.get('topic')
     subtopic_filter = request.GET.get('subtopic')
-    concept_filter = request.GET.get('concept')
     search_query = request.GET.get('search', '').strip()
     
     # Apply filters
@@ -1736,8 +1850,6 @@ def student_video_library(request):
         videos = videos.filter(topic_id=topic_filter)
     if subtopic_filter:
         videos = videos.filter(subtopic_id=subtopic_filter)
-    if concept_filter:
-        videos = videos.filter(concept_id=concept_filter)
     if search_query:
         videos = videos.filter(
             Q(title__icontains=search_query) |
@@ -1753,10 +1865,9 @@ def student_video_library(request):
         video_lessons__is_active=True
     ).distinct().order_by('name')
     
-    # Get topics/subtopics/concepts for selected subject (for cascading dropdowns)
+    # Get topics/subtopics for selected subject (for cascading dropdowns)
     topics = []
     subtopics = []
-    concepts = []
     
     if subject_filter:
         topics = Topic.objects.filter(
@@ -1769,12 +1880,6 @@ def student_video_library(request):
                 topic_id=topic_filter,
                 is_active=True
             ).order_by('order', 'name')
-            
-            if subtopic_filter:
-                concepts = Concept.objects.filter(
-                    subtopic_id=subtopic_filter,
-                    is_active=True
-                ).order_by('order', 'name')
     
     context = {
         'student_profile': student_profile,
@@ -1783,11 +1888,9 @@ def student_video_library(request):
         'subjects': subjects_with_videos,
         'topics': topics,
         'subtopics': subtopics,
-        'concepts': concepts,
         'selected_subject': subject_filter,
         'selected_topic': topic_filter,
         'selected_subtopic': subtopic_filter,
-        'selected_concept': concept_filter,
         'search_query': search_query,
     }
     
@@ -1801,7 +1904,7 @@ def student_video_player(request, video_id):
     
     try:
         video = VideoLesson.objects.select_related(
-            'subject', 'topic', 'subtopic', 'concept'
+            'subject', 'topic', 'subtopic'
         ).get(id=video_id, is_active=True)
     except VideoLesson.DoesNotExist:
         messages.error(request, 'Video not found.')
@@ -1822,7 +1925,7 @@ def student_video_player(request, video_id):
         related_videos = related_videos.filter(subject=video.subject)
     
     related_videos = related_videos.select_related(
-        'subject', 'topic', 'subtopic', 'concept'
+        'subject', 'topic', 'subtopic'
     ).order_by('order', '-created_at')[:8]
     
     # Parse tags
@@ -1862,30 +1965,24 @@ def student_video_ajax_filters(request):
         ).order_by('order', 'name')
         data = [{'id': s.id, 'name': s.name} for s in subtopics]
     
-    elif filter_type == 'concepts' and parent_id:
-        concepts = Concept.objects.filter(
-            subtopic_id=parent_id,
-            is_active=True
-        ).order_by('order', 'name')
-        data = [{'id': c.id, 'name': c.name} for c in concepts]
-    
     return JsonResponse({'items': data})
 
 
 # ===== STUDENT PATHWAY SYSTEM =====
 
 @student_login_required
-def student_subject_pathway(request, subject_id):
+def student_subject_pathway(request, subject_id, exam_board_id):
     """Subject pathway selection - Study, Revise, or Info"""
     from .models import StudentSubject, Topic, Note, Flashcard, StudentQuiz, ExamPaper, Syllabus, StudentTopicProgress
     
     student_profile = StudentProfile.objects.get(user=request.user)
     
-    # Check if student has this subject enrolled
+    # Check if student has this subject+exam_board enrolled
     student_subject = get_object_or_404(
         StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
     )
     subject = student_subject.subject
     exam_board = student_subject.exam_board
@@ -1943,7 +2040,25 @@ def student_subject_pathway(request, subject_id):
 
 
 @student_login_required
-def student_study_pathway(request, subject_id):
+def student_study_pathway_legacy(request, subject_id):
+    """Legacy URL - redirect to new URL with exam_board_id"""
+    from django.http import Http404
+    from django.shortcuts import redirect
+    from .models import StudentSubject
+    
+    student_profile = StudentProfile.objects.get(user=request.user)
+    student_subject = StudentSubject.objects.filter(
+        student=student_profile, 
+        subject_id=subject_id
+    ).first()
+    if not student_subject:
+        raise Http404("Subject not found")
+    
+    return redirect('student_study_pathway', subject_id=subject_id, exam_board_id=student_subject.exam_board_id)
+
+
+@student_login_required
+def student_study_pathway(request, subject_id, exam_board_id):
     """Study pathway - New layout with sidebar topics and tabbed content"""
     from django.shortcuts import get_object_or_404
     from django.http import Http404
@@ -1951,26 +2066,25 @@ def student_study_pathway(request, subject_id):
     
     student_profile = StudentProfile.objects.get(user=request.user)
     
-    # Use filter().first() to handle case where student has same subject with multiple exam boards
-    student_subject = StudentSubject.objects.filter(
+    # Get specific enrollment by subject AND exam_board
+    student_subject = get_object_or_404(
+        StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
-    ).first()
-    if not student_subject:
-        raise Http404("Subject not found")
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
+    )
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
     # Get all topics for this subject, filtered by exam board and student's grade
-    # Topics can be board-specific (exam_board set) or general (exam_board=None)
+    # Topics must match the specific exam board - no cross-board content sharing
     # Topics can be grade-specific or apply to all grades (grade=None)
     student_grade = student_profile.grade
     
     topics = Topic.objects.filter(
         subject=subject,
+        exam_board=exam_board,
         is_active=True
-    ).filter(
-        Q(exam_board=exam_board) | Q(exam_board__isnull=True)
     )
     
     if student_grade:
@@ -2011,7 +2125,7 @@ def student_study_pathway(request, subject_id):
 
 
 @student_login_required
-def student_topic_content_ajax(request, subject_id, topic_id):
+def student_topic_content_ajax(request, subject_id, exam_board_id, topic_id):
     """AJAX endpoint to load topic content for the study layout"""
     from django.shortcuts import get_object_or_404
     from .models import StudentSubject, Topic, Subtopic, Note, VideoLesson, Flashcard, StudentQuiz, InteractiveQuestion
@@ -2022,13 +2136,15 @@ def student_topic_content_ajax(request, subject_id, topic_id):
     
     student_profile = StudentProfile.objects.get(user=request.user)
     
+    # Get specific enrollment by subject AND exam_board
     student_subject = get_object_or_404(
         StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
     )
     subject = student_subject.subject
-    topic = get_object_or_404(Topic, id=topic_id, subject=subject, is_active=True)
+    topic = get_object_or_404(Topic, id=topic_id, subject=subject, exam_board_id=exam_board_id, is_active=True)
     
     subtopic_id = request.GET.get('subtopic')
     subtopic = None
@@ -2103,7 +2219,7 @@ def student_topic_content_ajax(request, subject_id, topic_id):
 
 
 @student_login_required
-def student_topic_detail(request, subject_id, topic_id):
+def student_topic_detail(request, subject_id, exam_board_id, topic_id):
     """Topic detail with tabbed content - Notes, Videos, Flashcards, Quizzes"""
     from .models import StudentSubject, Topic, Note, VideoLesson, Flashcard, StudentQuiz, InteractiveQuestion, StudentTopicProgress
     
@@ -2112,12 +2228,13 @@ def student_topic_detail(request, subject_id, topic_id):
     student_subject = get_object_or_404(
         StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
     )
     subject = student_subject.subject
     exam_board = student_subject.exam_board
     
-    topic = get_object_or_404(Topic, id=topic_id, subject=subject, is_active=True)
+    topic = get_object_or_404(Topic, id=topic_id, subject=subject, exam_board_id=exam_board_id, is_active=True)
     
     # Get content for this topic
     notes = Note.objects.filter(subject=subject, topic=topic).order_by('-created_at')
@@ -2195,7 +2312,7 @@ def student_topic_detail(request, subject_id, topic_id):
 
 
 @student_login_required
-def student_info_pathway(request, subject_id):
+def student_info_pathway(request, subject_id, exam_board_id):
     """Info pathway - Syllabi, sample papers, exam guidelines"""
     from .models import StudentSubject, Syllabus, OfficialExamPaper, ExamPaper
     
@@ -2204,7 +2321,8 @@ def student_info_pathway(request, subject_id):
     student_subject = get_object_or_404(
         StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
     )
     subject = student_subject.subject
     exam_board = student_subject.exam_board
@@ -2243,7 +2361,7 @@ def student_info_pathway(request, subject_id):
 
 
 @student_login_required
-def student_revise_pathway(request, subject_id):
+def student_revise_pathway(request, subject_id, exam_board_id):
     """Revise pathway - Quick flashcard review and practice quizzes"""
     from .models import StudentSubject, Topic, Flashcard, StudentQuiz, StudentTopicProgress
     
@@ -2252,7 +2370,8 @@ def student_revise_pathway(request, subject_id):
     student_subject = get_object_or_404(
         StudentSubject, 
         student=student_profile, 
-        subject_id=subject_id
+        subject_id=subject_id,
+        exam_board_id=exam_board_id
     )
     subject = student_subject.subject
     exam_board = student_subject.exam_board
@@ -2387,16 +2506,21 @@ def student_settings(request):
     student_subjects = StudentSubject.objects.filter(student=student_profile).select_related('subject', 'exam_board')
     subjects_count = student_subjects.count()
     
-    # Calculate current tier price
-    if subjects_count <= pricing.per_subject_max:
-        current_price = pricing.per_subject_price * subjects_count
-        plan_name = f"Per Subject ({subjects_count} subject{'s' if subjects_count != 1 else ''})"
-    elif subjects_count <= pricing.multi_subject_max:
-        current_price = pricing.multi_subject_price
-        plan_name = f"Multi Subject ({subjects_count} subjects)"
+    # Determine current plan based on active subscription
+    if subscription and subscription.is_active:
+        plan_type = subscription.plan_type
+        if plan_type == 'full_access':
+            current_price = pricing.full_access_price
+            plan_name = "Full Access"
+        elif plan_type == 'standard':
+            current_price = pricing.standard_price
+            plan_name = "Standard"
+        else:
+            current_price = pricing.starter_price
+            plan_name = "Starter"
     else:
-        current_price = pricing.all_access_price
-        plan_name = "All Access"
+        current_price = 0
+        plan_name = "Free"
     
     if request.method == 'POST':
         # Handle profile updates
@@ -2458,6 +2582,95 @@ def student_change_password(request):
         return redirect('student_settings')
     
     return redirect('student_settings')
+
+
+@student_login_required
+def student_manage_subjects(request):
+    """Allow students to manage their subject selections based on subscription tier"""
+    student_profile = request.user.student_profile
+    
+    if request.method == 'POST':
+        selected_boards = request.POST.getlist('exam_boards[]')
+        
+        # Validate exam boards
+        board_limit = student_profile.get_exam_board_limit()
+        if len(selected_boards) == 0:
+            messages.error(request, 'Please select at least one exam board.')
+            return redirect('student_manage_subjects')
+        
+        if len(selected_boards) > board_limit:
+            messages.error(request, f'You can select up to {board_limit} exam boards. Upgrade your subscription for more!')
+            return redirect('student_manage_subjects')
+        
+        # Clear existing boards and subjects
+        StudentExamBoard.objects.filter(student=student_profile).delete()
+        StudentSubject.objects.filter(student=student_profile).delete()
+        
+        # Save selected exam boards
+        for board_id in selected_boards:
+            try:
+                exam_board = ExamBoard.objects.get(id=board_id)
+                StudentExamBoard.objects.create(
+                    student=student_profile,
+                    exam_board=exam_board
+                )
+            except ExamBoard.DoesNotExist:
+                continue
+        
+        # Process subjects for each board
+        subject_limit = student_profile.get_subject_limit_per_board()
+        for board_id in selected_boards:
+            subject_ids = request.POST.getlist(f'subjects_board_{board_id}[]')
+            
+            if len(subject_ids) > subject_limit:
+                messages.warning(request, f'You can select up to {subject_limit} subjects per exam board. Some selections were limited.')
+                subject_ids = subject_ids[:subject_limit]
+            
+            for subject_id in subject_ids:
+                try:
+                    subject = Subject.objects.get(id=subject_id)
+                    exam_board = ExamBoard.objects.get(id=board_id)
+                    StudentSubject.objects.create(
+                        student=student_profile,
+                        subject=subject,
+                        exam_board=exam_board
+                    )
+                except (Subject.DoesNotExist, ExamBoard.DoesNotExist):
+                    continue
+        
+        messages.success(request, 'Your subjects have been updated successfully!')
+        return redirect('student_settings')
+    
+    # GET request - show subject management form
+    grades = Grade.objects.all().order_by('number')
+    exam_boards = ExamBoard.objects.all().order_by('name_full')
+    subjects = Subject.objects.all().order_by('name')
+    
+    # Get currently selected boards and subjects
+    current_boards = StudentExamBoard.objects.filter(student=student_profile).values_list('exam_board_id', flat=True)
+    current_subjects = StudentSubject.objects.filter(student=student_profile)
+    
+    # Build a dict of current subjects by board
+    subjects_by_board = {}
+    for ss in current_subjects:
+        board_id = ss.exam_board_id
+        if board_id not in subjects_by_board:
+            subjects_by_board[board_id] = []
+        subjects_by_board[board_id].append(ss.subject_id)
+    
+    context = {
+        'student_profile': student_profile,
+        'grades': grades,
+        'exam_boards': exam_boards,
+        'subjects': subjects,
+        'board_limit': student_profile.get_exam_board_limit(),
+        'subject_limit': student_profile.get_subject_limit_per_board(),
+        'current_boards': list(current_boards),
+        'subjects_by_board': subjects_by_board,
+        'is_pro': student_profile.subscription == 'pro',
+    }
+    
+    return render(request, 'core/student/manage_subjects.html', context)
 
 
 @student_login_required
@@ -2663,8 +2876,8 @@ Respond in this exact JSON format:
 
 
 @student_login_required
-def student_topic_progress_api(request, subject_id):
-    """API endpoint to get student progress for all topics in a subject"""
+def student_topic_progress_api(request, subject_id, exam_board_id):
+    """API endpoint to get student progress for all topics in a subject for a specific exam board"""
     import json
     from django.utils import timezone
     
@@ -2672,20 +2885,32 @@ def student_topic_progress_api(request, subject_id):
     
     try:
         subject = Subject.objects.get(id=subject_id)
+        exam_board = ExamBoard.objects.get(id=exam_board_id)
     except Subject.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Subject not found'}, status=404)
+    except ExamBoard.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Exam board not found'}, status=404)
     
-    # Get all topics for this subject, filtered by student's grade
+    # Verify student is enrolled in this subject with this exam board
+    if not StudentSubject.objects.filter(
+        student=student_profile, 
+        subject=subject, 
+        exam_board=exam_board
+    ).exists():
+        return JsonResponse({'success': False, 'error': 'Not enrolled in this subject'}, status=403)
+    
+    # Get all topics for this subject and exam board, filtered by student's grade
     student_grade = student_profile.grade
     if student_grade:
         topics = Topic.objects.filter(
             subject=subject, 
+            exam_board=exam_board,
             is_active=True
         ).filter(
             Q(grade=student_grade) | Q(grade__isnull=True)
         ).order_by('order', 'name')
     else:
-        topics = Topic.objects.filter(subject=subject, is_active=True).order_by('order', 'name')
+        topics = Topic.objects.filter(subject=subject, exam_board=exam_board, is_active=True).order_by('order', 'name')
     
     # Get progress for each topic
     progress_data = {}
@@ -2757,6 +2982,15 @@ def student_mark_topic_complete_api(request):
         
         topic = Topic.objects.get(id=topic_id)
         subject = topic.subject
+        exam_board = topic.exam_board
+        
+        # Verify student is enrolled in this subject with this exam board
+        if not StudentSubject.objects.filter(
+            student=student_profile, 
+            subject=subject, 
+            exam_board=exam_board
+        ).exists():
+            return JsonResponse({'success': False, 'error': 'Not enrolled in this subject'}, status=403)
         
         # Get or create progress
         progress, created = StudentTopicProgress.objects.get_or_create(
@@ -2776,17 +3010,19 @@ def student_mark_topic_complete_api(request):
         
         progress.save()
         
-        # Recalculate subject completion (filtered by student's grade)
+        # Recalculate subject completion (filtered by student's grade and exam board)
+        exam_board = topic.exam_board  # Get exam board from the topic
         student_grade = student_profile.grade
         if student_grade:
             all_topics = Topic.objects.filter(
                 subject=subject, 
+                exam_board=exam_board,
                 is_active=True
             ).filter(
                 Q(grade=student_grade) | Q(grade__isnull=True)
             )
         else:
-            all_topics = Topic.objects.filter(subject=subject, is_active=True)
+            all_topics = Topic.objects.filter(subject=subject, exam_board=exam_board, is_active=True)
         
         completed_count = 0
         for t in all_topics:
@@ -2836,6 +3072,15 @@ def student_track_content_view_api(request):
         
         topic = Topic.objects.get(id=topic_id)
         subject = topic.subject
+        exam_board = topic.exam_board
+        
+        # Verify student is enrolled in this subject with this exam board
+        if not StudentSubject.objects.filter(
+            student=student_profile, 
+            subject=subject, 
+            exam_board=exam_board
+        ).exists():
+            return JsonResponse({'success': False, 'error': 'Not enrolled in this subject'}, status=403)
         
         # Get or create progress
         progress, created = StudentTopicProgress.objects.get_or_create(

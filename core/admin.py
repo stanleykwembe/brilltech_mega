@@ -294,23 +294,23 @@ class AssignmentShareAdmin(admin.ModelAdmin):
 
 @admin.register(StudentSubscriptionPricing)
 class StudentSubscriptionPricingAdmin(admin.ModelAdmin):
-    list_display = ['per_subject_price', 'multi_subject_price', 'all_access_price', 'tutor_addon_price', 'is_active', 'updated_at']
+    list_display = ['starter_price', 'standard_price', 'all_access_price', 'tutor_addon_price', 'is_active', 'updated_at']
     fieldsets = (
-        ('Per-Subject Pricing (1-3 subjects)', {
-            'fields': ('per_subject_price', 'per_subject_max'),
-            'description': 'Students pay this amount for each subject they select (1-3 subjects)'
+        ('Starter Plan (R100)', {
+            'fields': ('starter_price', 'starter_subjects', 'starter_boards'),
+            'description': '2 subjects, 1 exam board'
         }),
-        ('Multi-Subject Pricing (4-5 subjects)', {
-            'fields': ('multi_subject_price', 'multi_subject_min', 'multi_subject_max'),
-            'description': 'Flat rate for students selecting 4-5 subjects'
+        ('Standard Plan (R200)', {
+            'fields': ('standard_price', 'standard_subjects', 'standard_boards'),
+            'description': '4 subjects, any exam boards'
         }),
-        ('All Access Pricing', {
+        ('Full Access Plan (R500)', {
             'fields': ('all_access_price',),
-            'description': 'Flat rate for unlimited subject access'
+            'description': 'Unlimited subjects and exam boards'
         }),
         ('Tutor Add-on', {
             'fields': ('tutor_addon_price',),
-            'description': 'Additional fee for tutor email support'
+            'description': 'Additional fee for tutor support'
         }),
         ('Status', {
             'fields': ('is_active',)

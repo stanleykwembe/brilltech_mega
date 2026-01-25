@@ -331,7 +331,7 @@
                 },
                 
                 fetchProgress() {
-                    fetch('/student/api/subject/{{ subject.id }}/progress/')
+                    fetch('/student/api/subject/{{ subject.id }}/board/{{ exam_board.id }}/progress/')
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -388,7 +388,8 @@
                 loadContent(topicId, subtopicId = null) {
                     this.contentLoaded = false;
                     const subjectId = {{ subject.id }};
-                    let url = `/student/subject/${subjectId}/content/${topicId}/`;
+                    const examBoardId = {{ exam_board.id }};
+                    let url = `/student/subject/${subjectId}/board/${examBoardId}/content/${topicId}/`;
                     if (subtopicId) {
                         url += `?subtopic=${subtopicId}`;
                     }

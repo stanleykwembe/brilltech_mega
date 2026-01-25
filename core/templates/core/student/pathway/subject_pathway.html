@@ -28,7 +28,7 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <a href="{% url 'student_study_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <a href="{% url 'student_study_pathway' subject.id exam_board.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="h-40 bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center relative overflow-hidden">
                     <div class="absolute inset-0 opacity-10">
                         <svg class="w-full h-full" viewBox="0 0 100 100">
@@ -48,7 +48,7 @@
                 </div>
             </a>
             
-            <a href="{% url 'student_revise_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <a href="{% url 'student_revise_pathway' subject.id exam_board.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center relative overflow-hidden">
                     <div class="absolute inset-0 opacity-10">
                         <svg class="w-full h-full" viewBox="0 0 100 100">
@@ -68,7 +68,7 @@
                 </div>
             </a>
             
-            <a href="{% url 'student_info_pathway' subject.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <a href="{% url 'student_info_pathway' subject.id exam_board.id %}" class="group bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="h-40 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center relative overflow-hidden">
                     <div class="absolute inset-0 opacity-10">
                         <svg class="w-full h-full" viewBox="0 0 100 100">

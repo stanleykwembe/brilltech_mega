@@ -2083,15 +2083,17 @@ def admin_change_student_subscription(request, subscription_id):
 
 @require_admin
 def admin_users(request):
-    """User management interface"""
+    """User management interface - only shows users with UserProfiles (teachers/admins)"""
     
     # Get search and filter parameters
     search_query = request.GET.get('search', '')
     subscription_filter = request.GET.get('subscription', '')
     status_filter = request.GET.get('status', '')
     
-    # Base queryset
-    users = User.objects.select_related('userprofile').order_by('-date_joined')
+    # Base queryset - only users with UserProfiles (teachers, admins, content managers)
+    users = User.objects.filter(
+        userprofile__isnull=False
+    ).select_related('userprofile').order_by('-date_joined')
     
     # Apply filters
     if search_query:
@@ -2121,41 +2123,101 @@ def admin_users(request):
 
 @require_admin
 def admin_change_subscription(request, user_id):
-    """Change user's subscription tier"""
+    """Change user's subscription tier - handles both teachers (UserProfile) and students (StudentProfile)"""
+    from .models import UserSubscription, SubscriptionPlan, StudentProfile, StudentSubscription, StudentSubscriptionPlan
     
     if request.method == 'POST':
-        from .models import UserSubscription, SubscriptionPlan
-        
         user = get_object_or_404(User, id=user_id)
         new_subscription = request.POST.get('subscription')
+        user_type = request.POST.get('user_type', 'teacher')  # Default to teacher for backwards compatibility
         
-        if new_subscription in ['free', 'starter', 'growth', 'premium']:
-            profile = UserProfile.objects.get(user=user)
-            profile.subscription = new_subscription
-            profile.save()
+        # Check if this is a teacher or student
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            is_teacher = True
+        except UserProfile.DoesNotExist:
+            is_teacher = False
+        
+        try:
+            student_profile = StudentProfile.objects.get(user=user)
+            is_student = True
+        except StudentProfile.DoesNotExist:
+            is_student = False
+        
+        if is_teacher and new_subscription in ['free', 'starter', 'growth', 'premium']:
+            # Handle teacher subscription change
+            user_profile.subscription = new_subscription
+            user_profile.save()
             
             # Update or create UserSubscription
-            plan = SubscriptionPlan.objects.get(plan_type=new_subscription)
-            subscription, created = UserSubscription.objects.get_or_create(
-                user=user,
-                defaults={
-                    'plan': plan,
-                    'status': 'active',
-                    'current_period_start': timezone.now(),
-                    'current_period_end': timezone.now() + timedelta(days=30)
-                }
-            )
+            try:
+                plan = SubscriptionPlan.objects.get(plan_type=new_subscription)
+                subscription, created = UserSubscription.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'plan': plan,
+                        'status': 'active',
+                        'current_period_start': timezone.now(),
+                        'current_period_end': timezone.now() + timedelta(days=30)
+                    }
+                )
+                
+                if not created:
+                    subscription.plan = plan
+                    subscription.status = 'active'
+                    subscription.current_period_start = timezone.now()
+                    subscription.current_period_end = timezone.now() + timedelta(days=30)
+                    subscription.save()
+            except SubscriptionPlan.DoesNotExist:
+                pass  # Plan doesn't exist, just update the profile
             
-            if not created:
-                subscription.plan = plan
-                subscription.status = 'active'
-                subscription.current_period_start = timezone.now()
-                subscription.current_period_end = timezone.now() + timedelta(days=30)
-                subscription.save()
+            messages.success(request, f'Updated {user.username} (Teacher) to {new_subscription.title()} plan.')
+        
+        elif is_student and new_subscription in ['free', 'per_subject', 'multi_subject', 'all_access']:
+            # Handle student subscription change
+            student_profile.subscription_tier = new_subscription
+            student_profile.save()
             
-            messages.success(request, f'Updated {user.username} to {new_subscription.title()} plan.')
+            # Update or create StudentSubscription
+            try:
+                plan = StudentSubscriptionPlan.objects.filter(plan_type=new_subscription).first()
+                if plan:
+                    subscription, created = StudentSubscription.objects.get_or_create(
+                        student=student_profile,
+                        defaults={
+                            'plan': plan,
+                            'status': 'active',
+                            'start_date': timezone.now().date(),
+                            'end_date': (timezone.now() + timedelta(days=30)).date()
+                        }
+                    )
+                    
+                    if not created:
+                        subscription.plan = plan
+                        subscription.status = 'active'
+                        subscription.start_date = timezone.now().date()
+                        subscription.end_date = (timezone.now() + timedelta(days=30)).date()
+                        subscription.save()
+            except Exception:
+                pass  # Plan doesn't exist, just update the profile
+            
+            messages.success(request, f'Updated {user.username} (Student) to {new_subscription.replace("_", " ").title()} plan.')
+        
+        elif is_student and new_subscription in ['free', 'starter', 'growth', 'premium']:
+            # Admin selected a teacher plan for a student - map to student equivalents
+            plan_mapping = {
+                'free': 'free',
+                'starter': 'per_subject',
+                'growth': 'multi_subject',
+                'premium': 'all_access'
+            }
+            mapped_plan = plan_mapping.get(new_subscription, 'free')
+            student_profile.subscription_tier = mapped_plan
+            student_profile.save()
+            messages.success(request, f'Updated {user.username} (Student) to {mapped_plan.replace("_", " ").title()} plan.')
+        
         else:
-            messages.error(request, 'Invalid subscription tier.')
+            messages.error(request, f'Invalid subscription tier or user type not found for user {user.username}.')
     
     return redirect('admin_users')
 
@@ -4155,15 +4217,14 @@ def delete_student_quiz(request, quiz_id):
 
 @require_content_manager
 def create_note(request):
-    """Create new study note"""
-    from .models import Note
+    """Create new study note with subtopic linking via cascading dropdowns"""
+    from .models import Note, Topic, Subtopic
+    
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
     if request.method == 'POST':
         title = request.POST.get('title')
-        subject_id = request.POST.get('subject')
-        exam_board_id = request.POST.get('exam_board')
-        grade_id = request.POST.get('grade')
-        topic = request.POST.get('topic')
+        subtopic_id = request.POST.get('subtopic')
         
         full_version_file = request.FILES.get('full_version')
         summary_version_file = request.FILES.get('summary_version')
@@ -4171,39 +4232,48 @@ def create_note(request):
         summary_version_text = request.POST.get('summary_version_text', '')
         
         # Validation
-        if not all([title, subject_id, exam_board_id, grade_id, topic]):
-            messages.error(request, 'Please fill in all required fields.')
-            return redirect('create_note')
+        if not title or not subtopic_id:
+            messages.error(request, 'Please fill in all required fields (title and subtopic).')
+            return render(request, 'core/content/note_form.html', {
+                'exam_boards': exam_boards,
+                'form_data': request.POST,
+            })
         
-        # Create note
-        note = Note.objects.create(
-            title=title,
-            subject_id=subject_id,
-            exam_board_id=exam_board_id,
-            grade_id=grade_id,
-            topic_text=topic,
-            full_version=full_version_file,
-            summary_version=summary_version_file,
-            full_version_text=full_version_text,
-            summary_version_text=summary_version_text,
-            created_by=request.user
-        )
+        try:
+            subtopic = Subtopic.objects.select_related('topic__subject', 'topic__grade', 'topic__exam_board').get(id=subtopic_id)
+            topic = subtopic.topic
+            
+            # Create note with hierarchy derived from subtopic
+            note = Note.objects.create(
+                title=title,
+                subject=topic.subject,
+                exam_board=topic.exam_board,
+                grade=topic.grade,
+                topic=topic,
+                subtopic=subtopic,
+                topic_text=topic.name,
+                full_version=full_version_file,
+                summary_version=summary_version_file,
+                full_version_text=full_version_text,
+                summary_version_text=summary_version_text,
+                created_by=request.user
+            )
+            
+            messages.success(request, f'Note "{title}" created successfully!')
+            return redirect('manage_notes')
+        except Subtopic.DoesNotExist:
+            messages.error(request, 'Invalid subtopic selected.')
+        except Exception as e:
+            messages.error(request, f'Error creating note: {str(e)}')
         
-        messages.success(request, f'Note "{title}" created successfully!')
-        return redirect('manage_notes')
+        return render(request, 'core/content/note_form.html', {
+            'exam_boards': exam_boards,
+            'form_data': request.POST,
+        })
     
-    # GET request - show form
-    subjects = Subject.objects.all()
-    grades = Grade.objects.all()
-    exam_boards = ExamBoard.objects.all()
-    
-    context = {
-        'subjects': subjects,
-        'grades': grades,
+    return render(request, 'core/content/note_form.html', {
         'exam_boards': exam_boards,
-    }
-    
-    return render(request, 'core/content/note_form.html', context)
+    })
 
 
 @require_content_manager
@@ -5625,16 +5695,22 @@ def brilltech_admin_change_password(request):
 
 
 # ============================================
-# CONTENT MANAGER - Topic/Subtopic/Concept/VideoLesson Management
+# CONTENT MANAGER - Topic/Subtopic/VideoLesson Management
 # ============================================
 
 @require_content_manager
 def manage_topics(request):
-    """List all topics with filters by subject"""
-    from .models import Topic, Subject
+    """List all topics with filters by subject and exam board"""
+    from .models import Topic, Subject, ExamBoard
     
-    topics = Topic.objects.select_related('subject', 'grade').all()
+    topics = Topic.objects.select_related('subject', 'grade', 'exam_board').all()
     subjects = Subject.objects.all().order_by('name')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    # Filter by exam board
+    board_id = request.GET.get('board')
+    if board_id:
+        topics = topics.filter(exam_board_id=board_id)
     
     # Filter by subject
     subject_id = request.GET.get('subject')
@@ -5653,11 +5729,13 @@ def manage_topics(request):
     if search:
         topics = topics.filter(Q(name__icontains=search) | Q(description__icontains=search))
     
-    topics = topics.order_by('subject__name', 'order', 'name')
+    topics = topics.order_by('exam_board__abbreviation', 'subject__name', 'order', 'name')
     
     return render(request, 'core/content/topics_list.html', {
         'topics': topics,
         'subjects': subjects,
+        'exam_boards': exam_boards,
+        'selected_board': board_id,
         'selected_subject': subject_id,
         'selected_status': status,
         'search': search,
@@ -5725,6 +5803,335 @@ def add_topic(request):
         'subjects': subjects,
         'grades': grades,
         'exam_boards': exam_boards,
+    })
+
+
+@require_content_manager
+def bulk_upload_topics(request):
+    """Bulk upload topics from JSON file"""
+    import json
+    from .models import Topic, Subject, Grade, ExamBoard
+    
+    subjects = Subject.objects.all().order_by('name')
+    grades = Grade.objects.all().order_by('number')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    if request.method == 'POST':
+        json_file = request.FILES.get('json_file')
+        json_text = request.POST.get('json_text', '').strip()
+        
+        topics_data = None
+        
+        # Parse JSON from file or text input
+        if json_file:
+            try:
+                content = json_file.read().decode('utf-8')
+                topics_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON file: {str(e)}')
+            except Exception as e:
+                messages.error(request, f'Error reading file: {str(e)}')
+        elif json_text:
+            try:
+                topics_data = json.loads(json_text)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON: {str(e)}')
+        else:
+            messages.error(request, 'Please upload a JSON file or paste JSON data.')
+        
+        if topics_data:
+            # Ensure it's a list
+            if not isinstance(topics_data, list):
+                topics_data = [topics_data]
+            
+            created_count = 0
+            errors = []
+            
+            for idx, topic_item in enumerate(topics_data, 1):
+                try:
+                    # Get required fields
+                    exam_board_abbr = topic_item.get('exam_board', '').strip()
+                    subject_name = topic_item.get('subject', '').strip()
+                    topic_name = topic_item.get('name', '').strip()
+                    
+                    if not exam_board_abbr or not subject_name or not topic_name:
+                        errors.append(f'Row {idx}: exam_board, subject, and name are required.')
+                        continue
+                    
+                    # Find exam board by abbreviation
+                    try:
+                        exam_board = ExamBoard.objects.get(abbreviation__iexact=exam_board_abbr)
+                    except ExamBoard.DoesNotExist:
+                        errors.append(f'Row {idx}: Exam board "{exam_board_abbr}" not found.')
+                        continue
+                    
+                    # Find subject by name
+                    try:
+                        subject = Subject.objects.get(name__iexact=subject_name)
+                    except Subject.DoesNotExist:
+                        errors.append(f'Row {idx}: Subject "{subject_name}" not found.')
+                        continue
+                    
+                    # Find grade if provided
+                    grade = None
+                    grade_number = topic_item.get('grade')
+                    if grade_number:
+                        try:
+                            grade = Grade.objects.get(number=int(grade_number))
+                        except (Grade.DoesNotExist, ValueError):
+                            errors.append(f'Row {idx}: Grade "{grade_number}" not found.')
+                            continue
+                    
+                    # Optional fields (allow blank/empty)
+                    description = topic_item.get('description', '') or ''
+                    overview_text = topic_item.get('overview_text', '') or ''
+                    youtube_link = topic_item.get('youtube_link', '') or ''
+                    order = topic_item.get('order', 0) or 0
+                    is_active = topic_item.get('is_active', True)
+                    if is_active is None:
+                        is_active = True
+                    
+                    # Check for duplicate
+                    if Topic.objects.filter(
+                        exam_board=exam_board,
+                        subject=subject,
+                        grade=grade,
+                        name=topic_name
+                    ).exists():
+                        errors.append(f'Row {idx}: Topic "{topic_name}" already exists for {exam_board.abbreviation} {subject.name}.')
+                        continue
+                    
+                    # Create topic
+                    Topic.objects.create(
+                        exam_board=exam_board,
+                        subject=subject,
+                        grade=grade,
+                        name=topic_name,
+                        description=description,
+                        overview_text=overview_text,
+                        youtube_link=youtube_link,
+                        order=int(order),
+                        is_active=is_active,
+                    )
+                    created_count += 1
+                    
+                except Exception as e:
+                    errors.append(f'Row {idx}: {str(e)}')
+            
+            if created_count > 0:
+                messages.success(request, f'Successfully created {created_count} topic(s).')
+            if errors:
+                for error in errors[:10]:  # Show first 10 errors
+                    messages.warning(request, error)
+                if len(errors) > 10:
+                    messages.warning(request, f'...and {len(errors) - 10} more errors.')
+            
+            if created_count > 0 and not errors:
+                return redirect('manage_topics')
+    
+    # Build sample JSON
+    sample_json = json.dumps([
+        {
+            "exam_board": "ZIMSEC",
+            "subject": "Mathematics",
+            "grade": 10,
+            "name": "Algebra",
+            "description": "Introduction to algebraic expressions",
+            "overview_text": "Learn about variables, expressions, and equations",
+            "youtube_link": "",
+            "order": 1,
+            "is_active": True
+        },
+        {
+            "exam_board": "ZIMSEC",
+            "subject": "Mathematics",
+            "grade": 10,
+            "name": "Geometry",
+            "description": "Basic geometry concepts",
+            "overview_text": "Explore shapes, angles, and spatial reasoning",
+            "youtube_link": "https://www.youtube.com/watch?v=example",
+            "order": 2,
+            "is_active": True
+        }
+    ], indent=2)
+    
+    return render(request, 'core/content/bulk_upload_topics.html', {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+        'sample_json': sample_json,
+    })
+
+
+@require_content_manager
+def bulk_upload_subtopics(request):
+    """Bulk upload subtopics from JSON file. Requires exam_board, subject, grade, topic, name."""
+    import json
+    from .models import Subtopic, Topic, Subject, Grade, ExamBoard
+    
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    if request.method == 'POST':
+        json_file = request.FILES.get('json_file')
+        json_text = request.POST.get('json_text', '').strip()
+        
+        subtopics_data = None
+        
+        # Parse JSON from file or text input
+        if json_file:
+            try:
+                content = json_file.read().decode('utf-8')
+                subtopics_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON file: {str(e)}')
+            except Exception as e:
+                messages.error(request, f'Error reading file: {str(e)}')
+        elif json_text:
+            try:
+                subtopics_data = json.loads(json_text)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON: {str(e)}')
+        else:
+            messages.error(request, 'Please upload a JSON file or paste JSON data.')
+        
+        if subtopics_data:
+            # Ensure it's a list
+            if not isinstance(subtopics_data, list):
+                subtopics_data = [subtopics_data]
+            
+            created_count = 0
+            errors = []
+            
+            for idx, item in enumerate(subtopics_data, 1):
+                try:
+                    # Get required fields
+                    exam_board_abbr = str(item.get('exam_board', '')).strip()
+                    subject_name = str(item.get('subject', '')).strip()
+                    grade_number = item.get('grade')
+                    topic_name = str(item.get('topic', '')).strip()
+                    subtopic_name = str(item.get('name', '')).strip()
+                    
+                    # Validate required fields
+                    if not exam_board_abbr:
+                        errors.append(f'Row {idx}: exam_board is required.')
+                        continue
+                    if not subject_name:
+                        errors.append(f'Row {idx}: subject is required.')
+                        continue
+                    if grade_number is None or grade_number == '':
+                        errors.append(f'Row {idx}: grade is required (must specify grade number).')
+                        continue
+                    if not topic_name:
+                        errors.append(f'Row {idx}: topic is required.')
+                        continue
+                    if not subtopic_name:
+                        errors.append(f'Row {idx}: name is required.')
+                        continue
+                    
+                    # Find exam board by abbreviation
+                    try:
+                        exam_board = ExamBoard.objects.get(abbreviation__iexact=exam_board_abbr)
+                    except ExamBoard.DoesNotExist:
+                        errors.append(f'Row {idx}: Exam board "{exam_board_abbr}" not found.')
+                        continue
+                    
+                    # Find subject by name
+                    try:
+                        subject = Subject.objects.get(name__iexact=subject_name)
+                    except Subject.DoesNotExist:
+                        errors.append(f'Row {idx}: Subject "{subject_name}" not found.')
+                        continue
+                    
+                    # Find grade by number
+                    try:
+                        grade = Grade.objects.get(number=int(grade_number))
+                    except (Grade.DoesNotExist, ValueError):
+                        errors.append(f'Row {idx}: Grade "{grade_number}" not found.')
+                        continue
+                    
+                    # Find topic by exam_board + subject + grade + name
+                    try:
+                        topic = Topic.objects.get(
+                            exam_board=exam_board,
+                            subject=subject,
+                            grade=grade,
+                            name__iexact=topic_name
+                        )
+                    except Topic.DoesNotExist:
+                        errors.append(f'Row {idx}: Topic "{topic_name}" not found for {exam_board.abbreviation} {subject.name} Grade {grade.number}.')
+                        continue
+                    except Topic.MultipleObjectsReturned:
+                        errors.append(f'Row {idx}: Multiple topics found for "{topic_name}". Please check data.')
+                        continue
+                    
+                    # Validate that topic has a grade assigned (for traceability)
+                    if topic.grade is None:
+                        errors.append(f'Row {idx}: Topic "{topic_name}" does not have a grade assigned. Cannot create subtopic.')
+                        continue
+                    
+                    # Optional fields
+                    description = str(item.get('description', '') or '')
+                    order = item.get('order', 0) or 0
+                    is_active = item.get('is_active', True)
+                    if is_active is None:
+                        is_active = True
+                    
+                    # Check for duplicate
+                    if Subtopic.objects.filter(topic=topic, name__iexact=subtopic_name).exists():
+                        errors.append(f'Row {idx}: Subtopic "{subtopic_name}" already exists for topic "{topic_name}".')
+                        continue
+                    
+                    # Create subtopic
+                    Subtopic.objects.create(
+                        topic=topic,
+                        name=subtopic_name,
+                        description=description,
+                        order=int(order),
+                        is_active=is_active,
+                    )
+                    created_count += 1
+                    
+                except Exception as e:
+                    errors.append(f'Row {idx}: {str(e)}')
+            
+            if created_count > 0:
+                messages.success(request, f'Successfully created {created_count} subtopic(s).')
+            if errors:
+                for error in errors[:10]:  # Show first 10 errors
+                    messages.warning(request, error)
+                if len(errors) > 10:
+                    messages.warning(request, f'...and {len(errors) - 10} more errors.')
+            
+            if created_count > 0 and not errors:
+                return redirect('manage_subtopics')
+    
+    # Build sample JSON
+    sample_json = json.dumps([
+        {
+            "exam_board": "ZIMSEC",
+            "subject": "Biology",
+            "grade": 10,
+            "topic": "Cell Biology",
+            "name": "Cell Structure",
+            "description": "Overview of cell components and organelles",
+            "order": 1,
+            "is_active": True
+        },
+        {
+            "exam_board": "ZIMSEC",
+            "subject": "Biology",
+            "grade": 10,
+            "topic": "Cell Biology",
+            "name": "Cell Division",
+            "description": "Mitosis and meiosis processes",
+            "order": 2,
+            "is_active": True
+        }
+    ], indent=2)
+    
+    return render(request, 'core/content/bulk_upload_subtopics.html', {
+        'exam_boards': exam_boards,
+        'sample_json': sample_json,
     })
 
 
@@ -5867,21 +6274,11 @@ def manage_subtopics(request):
 
 @require_content_manager
 def add_subtopic(request):
-    """Add a new subtopic"""
-    from .models import Subtopic, Topic, Subject
+    """Add a new subtopic with cascading dropdowns: ExamBoard -> Subject -> Grade -> Topic"""
+    from .models import Subtopic, Topic, Subject, ExamBoard, Grade
     import json
     
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    
-    # Build JSON for Alpine.js with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_id': t.grade_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
     if request.method == 'POST':
         topic_id = request.POST.get('topic')
@@ -5891,16 +6288,23 @@ def add_subtopic(request):
         is_active = request.POST.get('is_active') == 'on'
         
         if not topic_id or not name:
-            messages.error(request, 'Topic and name are required.')
+            messages.error(request, 'Topic and subtopic name are required.')
             return render(request, 'core/content/subtopic_form.html', {
-                'subjects': subjects,
-                'topics': topics,
-                'topics_json': topics_json,
+                'exam_boards': exam_boards,
                 'form_data': request.POST,
             })
         
         try:
             topic = Topic.objects.get(id=topic_id)
+            
+            # Validate that topic has a grade assigned
+            if topic.grade is None:
+                messages.error(request, 'Cannot create subtopic: The selected topic does not have a grade assigned.')
+                return render(request, 'core/content/subtopic_form.html', {
+                    'exam_boards': exam_boards,
+                    'form_data': request.POST,
+                })
+            
             Subtopic.objects.create(
                 topic=topic,
                 name=name,
@@ -5918,51 +6322,32 @@ def add_subtopic(request):
             messages.error(request, f'Error creating subtopic: {str(e)}')
     
     return render(request, 'core/content/subtopic_form.html', {
-        'subjects': subjects,
-        'topics': topics,
-        'topics_json': topics_json,
+        'exam_boards': exam_boards,
     })
 
 
 @require_content_manager
 def edit_subtopic(request, subtopic_id):
-    """Edit an existing subtopic"""
-    from .models import Subtopic, Topic, Subject
-    import json
+    """Edit an existing subtopic (topic cannot be changed, only subtopic details)"""
+    from .models import Subtopic, Topic, ExamBoard
     
-    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    
-    # Build JSON for Alpine.js with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_id': t.grade_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
+    subtopic = get_object_or_404(Subtopic.objects.select_related('topic__subject', 'topic__grade', 'topic__exam_board'), id=subtopic_id)
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
     if request.method == 'POST':
-        topic_id = request.POST.get('topic')
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         order = request.POST.get('order', 0)
         is_active = request.POST.get('is_active') == 'on'
         
-        if not topic_id or not name:
-            messages.error(request, 'Topic and name are required.')
+        if not name:
+            messages.error(request, 'Subtopic name is required.')
             return render(request, 'core/content/subtopic_form.html', {
-                'subjects': subjects,
-                'topics': topics,
-                'topics_json': topics_json,
+                'exam_boards': exam_boards,
                 'subtopic': subtopic,
-                'is_edit': True,
             })
         
         try:
-            topic = Topic.objects.get(id=topic_id)
-            subtopic.topic = topic
             subtopic.name = name
             subtopic.description = description
             subtopic.order = int(order) if order else 0
@@ -5970,19 +6355,14 @@ def edit_subtopic(request, subtopic_id):
             subtopic.save()
             messages.success(request, f'Subtopic "{name}" updated successfully.')
             return redirect('manage_subtopics')
-        except Topic.DoesNotExist:
-            messages.error(request, 'Invalid topic selected.')
         except IntegrityError:
             messages.error(request, 'A subtopic with this name already exists for this topic.')
         except Exception as e:
             messages.error(request, f'Error updating subtopic: {str(e)}')
     
     return render(request, 'core/content/subtopic_form.html', {
-        'subjects': subjects,
-        'topics': topics,
-        'topics_json': topics_json,
+        'exam_boards': exam_boards,
         'subtopic': subtopic,
-        'is_edit': True,
     })
 
 
@@ -6002,249 +6382,15 @@ def delete_subtopic(request, subtopic_id):
 
 
 @require_content_manager
-def manage_concepts(request):
-    """List all concepts with filters"""
-    from .models import Concept, Subtopic, Topic, Subject
-    import json
-    
-    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject', 'subtopic__topic__grade').all()
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
-    
-    # Build JSON with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
-    
-    subtopics_json = json.dumps([{
-        'id': s.id, 
-        'name': s.name, 
-        'topic_id': s.topic_id,
-        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
-    } for s in subtopics])
-    
-    # Filter by subject
-    subject_id = request.GET.get('subject')
-    if subject_id:
-        concepts = concepts.filter(subtopic__topic__subject_id=subject_id)
-        topics = topics.filter(subject_id=subject_id)
-        subtopics = subtopics.filter(topic__subject_id=subject_id)
-    
-    # Filter by topic
-    topic_id = request.GET.get('topic')
-    if topic_id:
-        concepts = concepts.filter(subtopic__topic_id=topic_id)
-        subtopics = subtopics.filter(topic_id=topic_id)
-    
-    # Filter by subtopic
-    subtopic_id = request.GET.get('subtopic')
-    if subtopic_id:
-        concepts = concepts.filter(subtopic_id=subtopic_id)
-    
-    # Filter by active status
-    status = request.GET.get('status')
-    if status == 'active':
-        concepts = concepts.filter(is_active=True)
-    elif status == 'inactive':
-        concepts = concepts.filter(is_active=False)
-    
-    # Search by name
-    search = request.GET.get('search', '').strip()
-    if search:
-        concepts = concepts.filter(Q(name__icontains=search) | Q(description__icontains=search))
-    
-    concepts = concepts.order_by('subtopic__topic__subject__name', 'subtopic__topic__name', 'subtopic__name', 'order', 'name')
-    
-    return render(request, 'core/content/concepts_list.html', {
-        'concepts': concepts,
-        'subjects': subjects,
-        'topics': topics,
-        'subtopics': subtopics,
-        'topics_json': topics_json,
-        'subtopics_json': subtopics_json,
-        'selected_subject': subject_id,
-        'selected_topic': topic_id,
-        'selected_subtopic': subtopic_id,
-        'selected_status': status,
-        'search': search,
-    })
-
-
-@require_content_manager
-def add_concept(request):
-    """Add a new concept"""
-    from .models import Concept, Subtopic, Topic, Subject
-    import json
-    
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
-    
-    # Build JSON for Alpine.js with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_id': t.grade_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
-    
-    subtopics_json = json.dumps([{
-        'id': s.id, 
-        'name': s.name, 
-        'topic_id': s.topic_id,
-        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
-    } for s in subtopics])
-    
-    if request.method == 'POST':
-        subtopic_id = request.POST.get('subtopic')
-        name = request.POST.get('name', '').strip()
-        description = request.POST.get('description', '').strip()
-        order = request.POST.get('order', 0)
-        is_active = request.POST.get('is_active') == 'on'
-        
-        if not subtopic_id or not name:
-            messages.error(request, 'Subtopic and name are required.')
-            return render(request, 'core/content/concept_form.html', {
-                'subjects': subjects,
-                'topics': topics,
-                'subtopics': subtopics,
-                'topics_json': topics_json,
-                'subtopics_json': subtopics_json,
-                'form_data': request.POST,
-            })
-        
-        try:
-            subtopic = Subtopic.objects.get(id=subtopic_id)
-            Concept.objects.create(
-                subtopic=subtopic,
-                name=name,
-                description=description,
-                order=int(order) if order else 0,
-                is_active=is_active,
-            )
-            messages.success(request, f'Concept "{name}" created successfully.')
-            return redirect('manage_concepts')
-        except Subtopic.DoesNotExist:
-            messages.error(request, 'Invalid subtopic selected.')
-        except IntegrityError:
-            messages.error(request, 'A concept with this name already exists for this subtopic.')
-        except Exception as e:
-            messages.error(request, f'Error creating concept: {str(e)}')
-    
-    return render(request, 'core/content/concept_form.html', {
-        'subjects': subjects,
-        'topics': topics,
-        'subtopics': subtopics,
-        'topics_json': topics_json,
-        'subtopics_json': subtopics_json,
-    })
-
-
-@require_content_manager
-def edit_concept(request, concept_id):
-    """Edit an existing concept"""
-    from .models import Concept, Subtopic, Topic, Subject
-    import json
-    
-    concept = get_object_or_404(Concept, id=concept_id)
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
-    
-    # Build JSON for Alpine.js with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_id': t.grade_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
-    
-    subtopics_json = json.dumps([{
-        'id': s.id, 
-        'name': s.name, 
-        'topic_id': s.topic_id,
-        'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
-    } for s in subtopics])
-    
-    if request.method == 'POST':
-        subtopic_id = request.POST.get('subtopic')
-        name = request.POST.get('name', '').strip()
-        description = request.POST.get('description', '').strip()
-        order = request.POST.get('order', 0)
-        is_active = request.POST.get('is_active') == 'on'
-        
-        if not subtopic_id or not name:
-            messages.error(request, 'Subtopic and name are required.')
-            return render(request, 'core/content/concept_form.html', {
-                'subjects': subjects,
-                'topics': topics,
-                'subtopics': subtopics,
-                'topics_json': topics_json,
-                'subtopics_json': subtopics_json,
-                'concept': concept,
-                'is_edit': True,
-            })
-        
-        try:
-            subtopic = Subtopic.objects.get(id=subtopic_id)
-            concept.subtopic = subtopic
-            concept.name = name
-            concept.description = description
-            concept.order = int(order) if order else 0
-            concept.is_active = is_active
-            concept.save()
-            messages.success(request, f'Concept "{name}" updated successfully.')
-            return redirect('manage_concepts')
-        except Subtopic.DoesNotExist:
-            messages.error(request, 'Invalid subtopic selected.')
-        except IntegrityError:
-            messages.error(request, 'A concept with this name already exists for this subtopic.')
-        except Exception as e:
-            messages.error(request, f'Error updating concept: {str(e)}')
-    
-    return render(request, 'core/content/concept_form.html', {
-        'subjects': subjects,
-        'topics': topics,
-        'subtopics': subtopics,
-        'topics_json': topics_json,
-        'subtopics_json': subtopics_json,
-        'concept': concept,
-        'is_edit': True,
-    })
-
-
-@require_content_manager
-def delete_concept(request, concept_id):
-    """Delete a concept"""
-    from .models import Concept
-    
-    concept = get_object_or_404(Concept, id=concept_id)
-    
-    if request.method == 'POST':
-        name = concept.name
-        concept.delete()
-        messages.success(request, f'Concept "{name}" deleted successfully.')
-    
-    return redirect('manage_concepts')
-
-
-@require_content_manager
 def manage_video_lessons(request):
     """List all video lessons with filters"""
-    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    from .models import VideoLesson, Subject, Topic, Subtopic
     import json
     
-    videos = VideoLesson.objects.select_related('subject', 'topic', 'topic__grade', 'subtopic', 'concept', 'created_by').all()
+    videos = VideoLesson.objects.select_related('subject', 'topic', 'topic__grade', 'subtopic', 'created_by').all()
     subjects = Subject.objects.all().order_by('name')
     topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
     subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
-    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
     
     # Build JSON for filtering with grade info
     topics_json = json.dumps([{
@@ -6260,37 +6406,23 @@ def manage_video_lessons(request):
         'topic_id': s.topic_id
     } for s in subtopics])
     
-    concepts_json = json.dumps([{
-        'id': c.id, 
-        'name': c.name, 
-        'subtopic_id': c.subtopic_id
-    } for c in concepts])
-    
     # Filter by subject
     subject_id = request.GET.get('subject')
     if subject_id:
         videos = videos.filter(subject_id=subject_id)
         topics = topics.filter(subject_id=subject_id)
         subtopics = subtopics.filter(topic__subject_id=subject_id)
-        concepts = concepts.filter(subtopic__topic__subject_id=subject_id)
     
     # Filter by topic
     topic_id = request.GET.get('topic')
     if topic_id:
         videos = videos.filter(topic_id=topic_id)
         subtopics = subtopics.filter(topic_id=topic_id)
-        concepts = concepts.filter(subtopic__topic_id=topic_id)
     
     # Filter by subtopic
     subtopic_id = request.GET.get('subtopic')
     if subtopic_id:
         videos = videos.filter(subtopic_id=subtopic_id)
-        concepts = concepts.filter(subtopic_id=subtopic_id)
-    
-    # Filter by concept
-    concept_id = request.GET.get('concept')
-    if concept_id:
-        videos = videos.filter(concept_id=concept_id)
     
     # Filter by active status
     status = request.GET.get('status')
@@ -6322,14 +6454,11 @@ def manage_video_lessons(request):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
-        'concepts': concepts,
         'topics_json': topics_json,
         'subtopics_json': subtopics_json,
-        'concepts_json': concepts_json,
         'selected_subject': subject_id,
         'selected_topic': topic_id,
         'selected_subtopic': subtopic_id,
-        'selected_concept': concept_id,
         'selected_status': status,
         'selected_featured': featured,
         'search': search,
@@ -6339,13 +6468,12 @@ def manage_video_lessons(request):
 @require_content_manager
 def add_video_lesson(request):
     """Add a new video lesson"""
-    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    from .models import VideoLesson, Subject, Topic, Subtopic
     import json
     
     subjects = Subject.objects.all().order_by('name')
     topics = Topic.objects.select_related('subject', 'grade').filter(is_active=True).order_by('subject__name', 'order', 'name')
     subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
-    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
     
     # Build JSON for Alpine.js dynamic filtering with grade info
     topics_json = json.dumps([{
@@ -6360,13 +6488,11 @@ def add_video_lesson(request):
         'topic_id': s.topic_id,
         'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
-    concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
         topic_id = request.POST.get('topic') or None
         subtopic_id = request.POST.get('subtopic') or None
-        concept_id = request.POST.get('concept') or None
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
         youtube_url = request.POST.get('youtube_url', '').strip()
@@ -6383,10 +6509,8 @@ def add_video_lesson(request):
                 'subjects': subjects,
                 'topics': topics,
                 'subtopics': subtopics,
-                'concepts': concepts,
                 'topics_json': topics_json,
                 'subtopics_json': subtopics_json,
-                'concepts_json': concepts_json,
                 'form_data': request.POST,
             })
         
@@ -6394,13 +6518,11 @@ def add_video_lesson(request):
             subject = Subject.objects.get(id=subject_id)
             topic = Topic.objects.get(id=topic_id) if topic_id else None
             subtopic = Subtopic.objects.get(id=subtopic_id) if subtopic_id else None
-            concept = Concept.objects.get(id=concept_id) if concept_id else None
             
             VideoLesson.objects.create(
                 subject=subject,
                 topic=topic,
                 subtopic=subtopic,
-                concept=concept,
                 title=title,
                 description=description,
                 youtube_url=youtube_url,
@@ -6416,7 +6538,7 @@ def add_video_lesson(request):
             return redirect('manage_video_lessons')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
-        except (Topic.DoesNotExist, Subtopic.DoesNotExist, Concept.DoesNotExist) as e:
+        except (Topic.DoesNotExist, Subtopic.DoesNotExist) as e:
             messages.error(request, f'Invalid hierarchy selection: {str(e)}')
         except Exception as e:
             messages.error(request, f'Error creating video lesson: {str(e)}')
@@ -6425,24 +6547,21 @@ def add_video_lesson(request):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
-        'concepts': concepts,
         'topics_json': topics_json,
         'subtopics_json': subtopics_json,
-        'concepts_json': concepts_json,
     })
 
 
 @require_content_manager
 def edit_video_lesson(request, video_id):
     """Edit an existing video lesson"""
-    from .models import VideoLesson, Subject, Topic, Subtopic, Concept
+    from .models import VideoLesson, Subject, Topic, Subtopic
     import json
     
     video = get_object_or_404(VideoLesson, id=video_id)
     subjects = Subject.objects.all().order_by('name')
     topics = Topic.objects.select_related('subject', 'grade').filter(is_active=True).order_by('subject__name', 'order', 'name')
     subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').filter(is_active=True).order_by('topic__subject__name', 'topic__name', 'order', 'name')
-    concepts = Concept.objects.select_related('subtopic', 'subtopic__topic', 'subtopic__topic__subject').all()
     
     # Build JSON for Alpine.js dynamic filtering with grade info
     topics_json = json.dumps([{
@@ -6457,13 +6576,11 @@ def edit_video_lesson(request, video_id):
         'topic_id': s.topic_id,
         'grade_name': str(s.topic.grade) if s.topic.grade else 'All Grades'
     } for s in subtopics])
-    concepts_json = json.dumps([{'id': c.id, 'name': c.name, 'subtopic_id': c.subtopic_id} for c in concepts])
     
     if request.method == 'POST':
         subject_id = request.POST.get('subject')
         topic_id = request.POST.get('topic') or None
         subtopic_id = request.POST.get('subtopic') or None
-        concept_id = request.POST.get('concept') or None
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
         youtube_url = request.POST.get('youtube_url', '').strip()
@@ -6480,10 +6597,8 @@ def edit_video_lesson(request, video_id):
                 'subjects': subjects,
                 'topics': topics,
                 'subtopics': subtopics,
-                'concepts': concepts,
                 'topics_json': topics_json,
                 'subtopics_json': subtopics_json,
-                'concepts_json': concepts_json,
                 'video_lesson': video,
             })
         
@@ -6491,12 +6606,10 @@ def edit_video_lesson(request, video_id):
             subject = Subject.objects.get(id=subject_id)
             topic = Topic.objects.get(id=topic_id) if topic_id else None
             subtopic = Subtopic.objects.get(id=subtopic_id) if subtopic_id else None
-            concept = Concept.objects.get(id=concept_id) if concept_id else None
             
             video.subject = subject
             video.topic = topic
             video.subtopic = subtopic
-            video.concept = concept
             video.title = title
             video.description = description
             video.youtube_url = youtube_url
@@ -6511,7 +6624,7 @@ def edit_video_lesson(request, video_id):
             return redirect('manage_video_lessons')
         except Subject.DoesNotExist:
             messages.error(request, 'Invalid subject selected.')
-        except (Topic.DoesNotExist, Subtopic.DoesNotExist, Concept.DoesNotExist) as e:
+        except (Topic.DoesNotExist, Subtopic.DoesNotExist) as e:
             messages.error(request, f'Invalid hierarchy selection: {str(e)}')
         except Exception as e:
             messages.error(request, f'Error updating video lesson: {str(e)}')
@@ -6520,10 +6633,8 @@ def edit_video_lesson(request, video_id):
         'subjects': subjects,
         'topics': topics,
         'subtopics': subtopics,
-        'concepts': concepts,
         'topics_json': topics_json,
         'subtopics_json': subtopics_json,
-        'concepts_json': concepts_json,
         'video_lesson': video,
     })
 
@@ -6942,4 +7053,102 @@ def crm_email_campaign_create(request):
     
     return render(request, 'core/brilltech/admin/crm/email_campaign_form.html', {
         'mailing_lists': mailing_lists,
+    })
+
+
+# =============================================================================
+# AJAX ENDPOINTS FOR DYNAMIC DROPDOWNS
+# =============================================================================
+
+@require_content_manager
+def ajax_subjects_by_board(request):
+    """Get subjects for a specific exam board"""
+    from .models import Subject, ExamBoard, Topic
+    import json
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    if not exam_board_id:
+        return JsonResponse({'subjects': []})
+    
+    # Get subjects that have topics with this exam board
+    subject_ids = Topic.objects.filter(
+        exam_board_id=exam_board_id
+    ).values_list('subject_id', flat=True).distinct()
+    
+    subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+    
+    return JsonResponse({
+        'subjects': [{'id': s.id, 'name': s.name} for s in subjects]
+    })
+
+
+@require_content_manager
+def ajax_grades_by_board_subject(request):
+    """Get grades for a specific exam board and subject"""
+    from .models import Grade, Topic
+    import json
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    subject_id = request.GET.get('subject_id')
+    
+    if not exam_board_id or not subject_id:
+        return JsonResponse({'grades': []})
+    
+    # Get grades that have topics for this exam board + subject
+    grade_ids = Topic.objects.filter(
+        exam_board_id=exam_board_id,
+        subject_id=subject_id,
+        grade__isnull=False
+    ).values_list('grade_id', flat=True).distinct()
+    
+    grades = Grade.objects.filter(id__in=grade_ids).order_by('number')
+    
+    return JsonResponse({
+        'grades': [{'id': g.id, 'number': g.number, 'name': str(g)} for g in grades]
+    })
+
+
+@require_content_manager
+def ajax_topics_by_board_subject_grade(request):
+    """Get topics for a specific exam board, subject, and grade"""
+    from .models import Topic
+    import json
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    subject_id = request.GET.get('subject_id')
+    grade_id = request.GET.get('grade_id')
+    
+    if not exam_board_id or not subject_id or not grade_id:
+        return JsonResponse({'topics': []})
+    
+    topics = Topic.objects.filter(
+        exam_board_id=exam_board_id,
+        subject_id=subject_id,
+        grade_id=grade_id,
+        is_active=True
+    ).order_by('order', 'name')
+    
+    return JsonResponse({
+        'topics': [{'id': t.id, 'name': t.name} for t in topics]
+    })
+
+
+@require_content_manager
+def ajax_subtopics_by_topic(request):
+    """Get subtopics for a specific topic"""
+    from .models import Subtopic
+    import json
+    
+    topic_id = request.GET.get('topic_id')
+    
+    if not topic_id:
+        return JsonResponse({'subtopics': []})
+    
+    subtopics = Subtopic.objects.filter(
+        topic_id=topic_id,
+        is_active=True
+    ).order_by('order', 'name')
+    
+    return JsonResponse({
+        'subtopics': [{'id': s.id, 'name': s.name} for s in subtopics]
     })

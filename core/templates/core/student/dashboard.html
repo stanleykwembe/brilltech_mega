@@ -74,7 +74,7 @@
                         {% if subjects_with_progress %}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {% for item in subjects_with_progress %}
-                                    <a href="{% url 'student_study_pathway' item.subject.id %}" 
+                                    <a href="{% url 'student_study_pathway' item.subject.id item.exam_board.id %}" 
                                        class="block subject-gradient border-2 border-transparent hover:border-emerald-300 rounded-xl p-4 transition-all duration-200 card-shadow-hover cursor-pointer">
                                         <div class="flex items-start justify-between mb-3">
                                             <div class="flex-1">
@@ -167,34 +167,40 @@
                                 <i class="fas fa-crown text-amber-500"></i>
                                 Your Plan
                             </h2>
-                            <span class="px-3 py-1 rounded-full text-xs font-bold {% if student_profile.subscription == 'pro' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ student_profile.get_subscription_display }}
+                            <span class="px-3 py-1 rounded-full text-xs font-bold {% if active_subscription %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {% if active_subscription %}{{ active_subscription.get_plan_display }}{% else %}Free{% endif %}
                             </span>
                         </div>
 
                         <div class="space-y-3 mb-4">
                             <div class="flex items-center gap-3 text-sm">
                                 <i class="fas fa-check-circle text-emerald-500 w-5"></i>
-                                <span class="text-gray-700">{{ student_profile.get_exam_board_limit }} Exam Board{{ student_profile.get_exam_board_limit|pluralize }}</span>
+                                <span class="text-gray-700">{% if active_subscription.plan == 'all_access' %}Unlimited{% else %}{{ student_profile.get_exam_board_limit }}{% endif %} Exam Board{{ student_profile.get_exam_board_limit|pluralize }}</span>
                             </div>
                             <div class="flex items-center gap-3 text-sm">
                                 <i class="fas fa-check-circle text-emerald-500 w-5"></i>
-                                <span class="text-gray-700">{{ student_profile.get_subject_limit_per_board }} Subject{{ student_profile.get_subject_limit_per_board|pluralize }} per Board</span>
+                                <span class="text-gray-700">{% if active_subscription.plan == 'all_access' %}Unlimited{% else %}{{ student_profile.get_subject_limit_per_board }}{% endif %} Subject{{ student_profile.get_subject_limit_per_board|pluralize }}</span>
                             </div>
-                            {% if student_profile.subscription == 'pro' %}
+                            {% if active_subscription %}
                                 <div class="flex items-center gap-3 text-sm">
                                     <i class="fas fa-check-circle text-emerald-500 w-5"></i>
                                     <span class="text-gray-700">Unlimited Quizzes</span>
                                 </div>
+                                {% if active_subscription.expires_at %}
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fas fa-calendar text-blue-500 w-5"></i>
+                                        <span class="text-gray-700">Expires {{ active_subscription.expires_at|date:"M d, Y" }}</span>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </div>
 
-                        {% if student_profile.subscription == 'free' %}
+                        {% if not active_subscription %}
                             <a href="{% url 'student_subscription' %}" class="block w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center rounded-xl font-semibold hover:shadow-lg transition-all">
                                 <i class="fas fa-arrow-up mr-2"></i>
-                                Upgrade to Pro
+                                Upgrade Now
                             </a>
-                            <p class="text-xs text-gray-500 text-center mt-2">R100/month • Unlimited access</p>
+                            <p class="text-xs text-gray-500 text-center mt-2">Starting from R100/month</p>
                         {% else %}
                             <a href="{% url 'student_subscription' %}" class="block w-full py-3 px-4 bg-gray-100 text-gray-700 text-center rounded-xl font-medium hover:bg-gray-200 transition-colors">
                                 <i class="fas fa-cog mr-2"></i>

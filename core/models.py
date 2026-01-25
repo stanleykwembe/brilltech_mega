@@ -714,12 +714,48 @@ class StudentProfile(models.Model):
         return f"Student: {self.user.username}"
     
     def get_exam_board_limit(self):
-        """Free: 2 boards, Pro: 5 boards"""
-        return 2 if self.subscription == 'free' else 5
+        """Returns max exam boards based on active subscription plan"""
+        try:
+            sub = self.subscription_record
+            if sub.status == 'active' and sub.is_active:
+                pricing = StudentSubscriptionPricing.get_current()
+                _, board_limit = pricing.get_plan_limits(sub.plan)
+                return board_limit
+        except:
+            pass
+        return 1  # Free plan default
     
     def get_subject_limit_per_board(self):
-        """Maximum 10 subjects per board"""
-        return 10
+        """Returns max subjects based on active subscription plan"""
+        try:
+            sub = self.subscription_record
+            if sub.status == 'active' and sub.is_active:
+                pricing = StudentSubscriptionPricing.get_current()
+                subject_limit, _ = pricing.get_plan_limits(sub.plan)
+                return subject_limit
+        except:
+            pass
+        return 2  # Free plan default
+    
+    def get_total_subject_limit(self):
+        """Returns total subject limit across all boards"""
+        try:
+            sub = self.subscription_record
+            if sub.status == 'active' and sub.is_active:
+                pricing = StudentSubscriptionPricing.get_current()
+                subject_limit, _ = pricing.get_plan_limits(sub.plan)
+                return subject_limit
+        except:
+            pass
+        return 2  # Free plan default
+    
+    def has_active_subscription(self):
+        """Check if student has an active paid subscription"""
+        try:
+            sub = self.subscription_record
+            return sub.status == 'active' and sub.is_active
+        except:
+            return False
 
 
 class StudentExamBoard(models.Model):
@@ -750,13 +786,14 @@ class StudentSubject(models.Model):
 
 
 class Note(models.Model):
-    """Study notes uploaded by content managers"""
+    """Study notes uploaded by content managers - linked to subtopics for granular organization"""
     title = models.CharField(max_length=200)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     exam_board = models.ForeignKey(ExamBoard, on_delete=models.CASCADE)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
     topic_text = models.CharField(max_length=200, blank=True, help_text="Legacy topic text field")
     topic = models.ForeignKey('Topic', on_delete=models.SET_NULL, null=True, blank=True, related_name='notes')
+    subtopic = models.ForeignKey('Subtopic', on_delete=models.SET_NULL, null=True, blank=True, related_name='notes')
     
     full_version = models.FileField(upload_to='notes/full/%Y/%m/', null=True, blank=True)
     summary_version = models.FileField(upload_to='notes/summary/%Y/%m/', null=True, blank=True)
@@ -1406,13 +1443,12 @@ class Concept(models.Model):
 
 
 class VideoLesson(models.Model):
-    """Video lessons linked to the Subject/Topic/Subtopic/Concept hierarchy"""
+    """Video lessons linked to the Subject/Topic/Subtopic hierarchy"""
     
-    # Hierarchy - can be linked at any level (Concept is most specific)
+    # Hierarchy - can be linked at subject, topic, or subtopic level
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='video_lessons')
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
     subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
-    concept = models.ForeignKey(Concept, on_delete=models.CASCADE, related_name='video_lessons', null=True, blank=True)
     
     # Video details
     title = models.CharField(max_length=300)
@@ -1434,7 +1470,7 @@ class VideoLesson(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['subject', 'topic', 'subtopic', 'concept', 'order', '-created_at']
+        ordering = ['subject', 'topic', 'subtopic', 'order', '-created_at']
     
     def __str__(self):
         return self.title
@@ -1604,14 +1640,15 @@ class StudentTopicProgress(models.Model):
 
 class StudentSubscriptionPricing(models.Model):
     """Admin-configurable pricing for student subscriptions"""
-    per_subject_price = models.DecimalField(max_digits=10, decimal_places=2, default=100.00, help_text="Price per subject (R100 default)")
-    multi_subject_price = models.DecimalField(max_digits=10, decimal_places=2, default=200.00, help_text="Price for 4-5 subjects (R200 default)")
-    all_access_price = models.DecimalField(max_digits=10, decimal_places=2, default=300.00, help_text="Price for all subjects (R300 default)")
+    starter_price = models.DecimalField(max_digits=10, decimal_places=2, default=100.00, help_text="Starter Plan: 2 subjects, 1 exam board (R100 default)")
+    standard_price = models.DecimalField(max_digits=10, decimal_places=2, default=200.00, help_text="Standard Plan: 4 subjects, any boards (R200 default)")
+    all_access_price = models.DecimalField(max_digits=10, decimal_places=2, default=500.00, help_text="Full Access: All subjects, all boards (R500 default)")
     tutor_addon_price = models.DecimalField(max_digits=10, decimal_places=2, default=500.00, help_text="Tutor email support add-on (R500 default)")
     
-    per_subject_max = models.IntegerField(default=3, help_text="Max subjects for per-subject pricing")
-    multi_subject_min = models.IntegerField(default=4, help_text="Min subjects for multi-subject tier")
-    multi_subject_max = models.IntegerField(default=5, help_text="Max subjects for multi-subject tier")
+    starter_subjects = models.IntegerField(default=2, help_text="Max subjects for Starter plan")
+    starter_boards = models.IntegerField(default=1, help_text="Max exam boards for Starter plan")
+    standard_subjects = models.IntegerField(default=4, help_text="Max subjects for Standard plan")
+    standard_boards = models.IntegerField(default=999, help_text="Max exam boards for Standard plan (999 = any boards)")
     
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1621,7 +1658,7 @@ class StudentSubscriptionPricing(models.Model):
         verbose_name_plural = "Student Subscription Pricing"
     
     def __str__(self):
-        return f"Student Pricing: R{self.per_subject_price}/subject, R{self.multi_subject_price}/4-5, R{self.all_access_price}/all"
+        return f"Student Pricing: R{self.starter_price}/starter, R{self.standard_price}/standard, R{self.all_access_price}/all"
     
     @classmethod
     def get_current(cls):
@@ -1630,19 +1667,16 @@ class StudentSubscriptionPricing(models.Model):
             pricing = cls.objects.create()
         return pricing
     
-    def calculate_price(self, num_subjects, total_subjects_available, has_tutor=False):
-        base_price = 0
-        if num_subjects <= self.per_subject_max:
-            base_price = self.per_subject_price * num_subjects
-        elif num_subjects <= self.multi_subject_max:
-            base_price = self.multi_subject_price
+    def get_plan_limits(self, plan_type):
+        """Returns (subject_limit, board_limit) for a given plan type"""
+        if plan_type == 'starter':
+            return (self.starter_subjects, self.starter_boards)
+        elif plan_type == 'standard':
+            return (self.standard_subjects, self.standard_boards)
+        elif plan_type == 'all_access':
+            return (999, 999)  # Unlimited
         else:
-            base_price = self.all_access_price
-        
-        if has_tutor:
-            base_price += self.tutor_addon_price
-        
-        return base_price
+            return (2, 1)  # Free plan defaults
 
 
 class StudentSubscription(models.Model):
@@ -1656,9 +1690,9 @@ class StudentSubscription(models.Model):
     
     PLAN_CHOICES = [
         ('free', 'Free'),
-        ('per_subject', 'Per Subject (1-3)'),
-        ('multi_subject', 'Multi Subject (4-5)'),
-        ('all_access', 'All Access'),
+        ('starter', 'Starter (2 subjects, 1 board)'),
+        ('standard', 'Standard (4 subjects, any boards)'),
+        ('all_access', 'Full Access (unlimited)'),
     ]
     
     student = models.OneToOneField('StudentProfile', on_delete=models.CASCADE, related_name='subscription_record')

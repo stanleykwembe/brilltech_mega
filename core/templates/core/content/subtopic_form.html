@@ -22,48 +22,84 @@
         {% csrf_token %}
         
         <div class="space-y-6">
+            {% if not subtopic %}
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm text-blue-700">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Select Exam Board, Subject, Grade, then Topic to create a subtopic. The parent topic must have a grade assigned.
+                </p>
+            </div>
+            
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
-                <select x-model="subject" @change="selectedTopic = ''" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                    <option value="">Select Subject</option>
-                    {% for subject in subjects %}
-                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Exam Board *</label>
+                <select x-model="examBoard" @change="onExamBoardChange()" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option value="">Select Exam Board</option>
+                    {% for board in exam_boards %}
+                    <option value="{{ board.id }}">{{ board.name }} ({{ board.abbreviation }})</option>
                     {% endfor %}
                 </select>
-                <p class="mt-1 text-xs text-gray-500">Select a subject to filter available topics</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
+                <select x-model="subject" @change="onSubjectChange()" :disabled="!examBoard || loadingSubjects" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
+                    <option value="">Select Subject</option>
+                    <template x-for="subj in subjects" :key="subj.id">
+                        <option :value="subj.id" x-text="subj.name"></option>
+                    </template>
+                </select>
+                <p x-show="loadingSubjects" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading subjects...</p>
+                <p x-show="!loadingSubjects && examBoard && subjects.length === 0" class="mt-1 text-xs text-amber-600">No subjects found for this exam board</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Grade *</label>
+                <select x-model="grade" @change="onGradeChange()" :disabled="!subject || loadingGrades" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
+                    <option value="">Select Grade</option>
+                    <template x-for="g in grades" :key="g.id">
+                        <option :value="g.id" x-text="g.name"></option>
+                    </template>
+                </select>
+                <p x-show="loadingGrades" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading grades...</p>
+                <p x-show="!loadingGrades && subject && grades.length === 0" class="mt-1 text-xs text-amber-600">No grades found with topics for this subject</p>
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Topic *</label>
-                <select name="topic" x-model="selectedTopic" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <select name="topic" x-model="topic" :disabled="!grade || loadingTopics" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
                     <option value="">Select Topic</option>
-                    <template x-for="topic in filteredTopics" :key="topic.id">
-                        <option :value="topic.id" x-text="topic.name + ' [' + topic.grade_name + ']'"></option>
+                    <template x-for="t in topics" :key="t.id">
+                        <option :value="t.id" x-text="t.name"></option>
                     </template>
                 </select>
-                <div x-show="selectedTopic" class="mt-2">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          :class="selectedTopicGrade === 'All Grades' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'">
-                        <i class="fas fa-graduation-cap mr-1"></i>
-                        <span x-text="selectedTopicGrade"></span>
-                    </span>
-                    <span class="ml-2 text-xs text-gray-500">This subtopic will inherit this grade</span>
-                </div>
+                <p x-show="loadingTopics" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading topics...</p>
+                <p x-show="!loadingTopics && grade && topics.length === 0" class="mt-1 text-xs text-amber-600">No topics found for this grade</p>
             </div>
+            {% else %}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Topic</label>
+                <div class="px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                    {{ subtopic.topic.exam_board.abbreviation }} - {{ subtopic.topic.subject.name }} - 
+                    {% if subtopic.topic.grade %}Grade {{ subtopic.topic.grade.number }}{% else %}All Grades{% endif %} - 
+                    {{ subtopic.topic.name }}
+                </div>
+                <input type="hidden" name="topic" value="{{ subtopic.topic.id }}">
+            </div>
+            {% endif %}
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Subtopic Name *</label>
-                <input type="text" name="name" required value="{{ subtopic.name|default:'' }}" placeholder="e.g., Linear Equations, Chemical Bonds" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <input type="text" name="name" required value="{% if subtopic %}{{ subtopic.name }}{% elif form_data %}{{ form_data.name }}{% endif %}" placeholder="e.g., Linear Equations, Chemical Bonds" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                <textarea name="description" rows="4" placeholder="Brief description of this subtopic..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{{ subtopic.description|default:'' }}</textarea>
+                <textarea name="description" rows="4" placeholder="Brief description of this subtopic..." class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">{% if subtopic %}{{ subtopic.description }}{% elif form_data %}{{ form_data.description }}{% endif %}</textarea>
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Display Order</label>
-                <input type="number" name="order" value="{{ subtopic.order|default:0 }}" min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <input type="number" name="order" value="{% if subtopic %}{{ subtopic.order }}{% elif form_data %}{{ form_data.order }}{% else %}0{% endif %}" min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                 <p class="mt-1 text-xs text-gray-500">Lower numbers appear first</p>
             </div>
             
@@ -91,16 +127,72 @@
 <script>
     function subtopicFormData() {
         return {
-            subject: '{{ subtopic.topic.subject_id|default:"" }}',
-            topics: {% if topics_json %}{{ topics_json|safe }}{% else %}[]{% endif %},
-            selectedTopic: '{{ subtopic.topic_id|default:"" }}',
-            get filteredTopics() {
-                if (!this.subject) return [];
-                return this.topics.filter(t => t.subject_id == this.subject);
+            examBoard: '',
+            subject: '',
+            grade: '',
+            topic: '',
+            subjects: [],
+            grades: [],
+            topics: [],
+            loadingSubjects: false,
+            loadingGrades: false,
+            loadingTopics: false,
+            
+            async onExamBoardChange() {
+                this.subject = '';
+                this.grade = '';
+                this.topic = '';
+                this.subjects = [];
+                this.grades = [];
+                this.topics = [];
+                
+                if (!this.examBoard) return;
+                
+                this.loadingSubjects = true;
+                try {
+                    const response = await fetch(`/ajax/subjects-by-board/?exam_board_id=${this.examBoard}`);
+                    const data = await response.json();
+                    this.subjects = data.subjects || [];
+                } catch (error) {
+                    console.error('Error loading subjects:', error);
+                }
+                this.loadingSubjects = false;
             },
-            get selectedTopicGrade() {
-                const topic = this.topics.find(t => t.id == this.selectedTopic);
-                return topic ? topic.grade_name : '';
+            
+            async onSubjectChange() {
+                this.grade = '';
+                this.topic = '';
+                this.grades = [];
+                this.topics = [];
+                
+                if (!this.subject) return;
+                
+                this.loadingGrades = true;
+                try {
+                    const response = await fetch(`/ajax/grades-by-board-subject/?exam_board_id=${this.examBoard}&subject_id=${this.subject}`);
+                    const data = await response.json();
+                    this.grades = data.grades || [];
+                } catch (error) {
+                    console.error('Error loading grades:', error);
+                }
+                this.loadingGrades = false;
+            },
+            
+            async onGradeChange() {
+                this.topic = '';
+                this.topics = [];
+                
+                if (!this.grade) return;
+                
+                this.loadingTopics = true;
+                try {
+                    const response = await fetch(`/ajax/topics-by-board-subject-grade/?exam_board_id=${this.examBoard}&subject_id=${this.subject}&grade_id=${this.grade}`);
+                    const data = await response.json();
+                    this.topics = data.topics || [];
+                } catch (error) {
+                    console.error('Error loading topics:', error);
+                }
+                this.loadingTopics = false;
             }
         };
     }

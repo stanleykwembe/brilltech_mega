@@ -6,6 +6,8 @@ urlpatterns = [
     path('login/', student_views.student_login, name='student_login'),
     path('logout/', student_views.student_logout, name='student_logout'),
     path('verify-email/<str:token>/', student_views.student_verify_email, name='student_verify_email'),
+    path('forgot-password/', student_views.student_forgot_password, name='student_forgot_password'),
+    path('reset-password/<str:token>/', student_views.student_reset_password, name='student_reset_password'),
     path('onboarding/', student_views.student_onboarding, name='student_onboarding'),
     path('dashboard/', student_views.student_dashboard, name='student_dashboard'),
     
@@ -35,25 +37,28 @@ urlpatterns = [
     path('videos/<int:video_id>/', student_views.student_video_player, name='student_video_player'),
     path('videos/ajax/filters/', student_views.student_video_ajax_filters, name='student_video_ajax_filters'),
     
-    # Student Pathway System
-    path('subject/<int:subject_id>/', student_views.student_subject_pathway, name='student_subject_pathway'),
-    path('subject/<int:subject_id>/study/', student_views.student_study_pathway, name='student_study_pathway'),
-    path('subject/<int:subject_id>/study/<int:topic_id>/', student_views.student_topic_detail, name='student_topic_detail'),
-    path('subject/<int:subject_id>/content/<int:topic_id>/', student_views.student_topic_content_ajax, name='student_topic_content_ajax'),
-    path('subject/<int:subject_id>/info/', student_views.student_info_pathway, name='student_info_pathway'),
-    path('subject/<int:subject_id>/revise/', student_views.student_revise_pathway, name='student_revise_pathway'),
+    # Student Pathway System - with exam_board_id for proper differentiation
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/', student_views.student_subject_pathway, name='student_subject_pathway'),
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/study/', student_views.student_study_pathway, name='student_study_pathway'),
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/study/<int:topic_id>/', student_views.student_topic_detail, name='student_topic_detail'),
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/content/<int:topic_id>/', student_views.student_topic_content_ajax, name='student_topic_content_ajax'),
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/info/', student_views.student_info_pathway, name='student_info_pathway'),
+    path('subject/<int:subject_id>/board/<int:exam_board_id>/revise/', student_views.student_revise_pathway, name='student_revise_pathway'),
+    # Legacy URLs for backward compatibility (redirect to first enrollment)
+    path('subject/<int:subject_id>/study/', student_views.student_study_pathway_legacy, name='student_study_pathway_legacy'),
     path('progress/', student_views.student_progress_dashboard, name='student_progress_dashboard'),
     
     # Settings and Support
     path('settings/', student_views.student_settings, name='student_settings'),
     path('settings/password/', student_views.student_change_password, name='student_change_password'),
+    path('settings/subjects/', student_views.student_manage_subjects, name='student_manage_subjects'),
     path('support/', student_views.student_support, name='student_support'),
     path('support/new/', student_views.student_support_new, name='student_support_new'),
     path('support/<int:enquiry_id>/', student_views.student_support_view, name='student_support_view'),
     
     # API Endpoints
     path('api/check-answer/', student_views.student_check_answer_api, name='student_check_answer_api'),
-    path('api/subject/<int:subject_id>/progress/', student_views.student_topic_progress_api, name='student_topic_progress_api'),
+    path('api/subject/<int:subject_id>/board/<int:exam_board_id>/progress/', student_views.student_topic_progress_api, name='student_topic_progress_api'),
     path('api/topic/complete/', student_views.student_mark_topic_complete_api, name='student_mark_topic_complete_api'),
     path('api/topic/track-view/', student_views.student_track_content_view_api, name='student_track_content_view_api'),
 ]

@@ -48,43 +48,87 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
-                    <input type="text" name="title" required value="{{ note.title|default:'' }}" placeholder="e.g., Algebra Basics - Complete Guide" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <input type="text" name="title" required value="{% if note %}{{ note.title }}{% elif form_data %}{{ form_data.title }}{% endif %}" placeholder="e.g., Algebra Basics - Complete Guide" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
-                    <select name="subject" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        <option value="">Select Subject</option>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
-                        {% endfor %}
-                    </select>
+                {% if not note %}
+                <div class="md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-700">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Select Exam Board, Subject, Grade, Topic, then Subtopic to organize your note. Notes are linked at the subtopic level for granular content organization.
+                    </p>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Exam Board *</label>
-                    <select name="exam_board" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        <option value="">Select Board</option>
+                    <select x-model="examBoard" @change="onExamBoardChange()" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select Exam Board</option>
                         {% for board in exam_boards %}
-                        <option value="{{ board.id }}" {% if note.exam_board_id == board.id %}selected{% endif %}>{{ board.name_full }}</option>
+                        <option value="{{ board.id }}">{{ board.name }} ({{ board.abbreviation }})</option>
                         {% endfor %}
                     </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
+                    <select x-model="subject" @change="onSubjectChange()" :disabled="!examBoard || loadingSubjects" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
+                        <option value="">Select Subject</option>
+                        <template x-for="subj in subjects" :key="subj.id">
+                            <option :value="subj.id" x-text="subj.name"></option>
+                        </template>
+                    </select>
+                    <p x-show="loadingSubjects" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading subjects...</p>
+                    <p x-show="!loadingSubjects && examBoard && subjects.length === 0" class="mt-1 text-xs text-amber-600">No subjects found for this exam board</p>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Grade *</label>
-                    <select name="grade" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <select x-model="grade" @change="onGradeChange()" :disabled="!subject || loadingGrades" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
                         <option value="">Select Grade</option>
-                        {% for grade in grades %}
-                        <option value="{{ grade.id }}" {% if note.grade_id == grade.id %}selected{% endif %}>Grade {{ grade.number }}</option>
-                        {% endfor %}
+                        <template x-for="g in grades" :key="g.id">
+                            <option :value="g.id" x-text="g.name"></option>
+                        </template>
                     </select>
+                    <p x-show="loadingGrades" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading grades...</p>
+                    <p x-show="!loadingGrades && subject && grades.length === 0" class="mt-1 text-xs text-amber-600">No grades found with topics for this subject</p>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Topic *</label>
-                    <input type="text" name="topic" required value="{{ note.topic_text|default:'' }}" placeholder="e.g., Quadratic Equations" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <select x-model="topic" @change="onTopicChange()" :disabled="!grade || loadingTopics" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
+                        <option value="">Select Topic</option>
+                        <template x-for="t in topics" :key="t.id">
+                            <option :value="t.id" x-text="t.name"></option>
+                        </template>
+                    </select>
+                    <p x-show="loadingTopics" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading topics...</p>
+                    <p x-show="!loadingTopics && grade && topics.length === 0" class="mt-1 text-xs text-amber-600">No topics found for this grade</p>
                 </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subtopic *</label>
+                    <select name="subtopic" x-model="subtopic" :disabled="!topic || loadingSubtopics" required class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100">
+                        <option value="">Select Subtopic</option>
+                        <template x-for="st in subtopics" :key="st.id">
+                            <option :value="st.id" x-text="st.name"></option>
+                        </template>
+                    </select>
+                    <p x-show="loadingSubtopics" class="mt-1 text-xs text-gray-500"><i class="fas fa-spinner fa-spin mr-1"></i>Loading subtopics...</p>
+                    <p x-show="!loadingSubtopics && topic && subtopics.length === 0" class="mt-1 text-xs text-amber-600">No subtopics found for this topic. Please create subtopics first.</p>
+                </div>
+                {% else %}
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                    <div class="px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                        {{ note.exam_board.abbreviation }} - {{ note.subject.name }} - 
+                        Grade {{ note.grade.number }} - 
+                        {% if note.subtopic %}{{ note.topic.name }} → {{ note.subtopic.name }}{% else %}{{ note.topic.name|default:note.topic_text }}{% endif %}
+                    </div>
+                    {% if note.subtopic %}
+                    <input type="hidden" name="subtopic" value="{{ note.subtopic.id }}">
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
         
@@ -121,11 +165,23 @@
                 
                 <!-- Upload Tab -->
                 <div x-show="fullVersionTab === 'upload'" x-cloak>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition">
-                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                        <input type="file" name="full_version" accept=".pdf,.doc,.docx" class="w-full">
-                        <p class="mt-2 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                        <input type="file" name="full_version" accept=".pdf,.doc,.docx" class="hidden" id="full-version-file" @change="handleFullVersionFile($event)">
+                        <label for="full-version-file" class="cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600">Click to upload or drag and drop</p>
+                            <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
+                        </label>
+                        <p x-show="fullVersionFileName" class="mt-4 text-sm text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span x-text="fullVersionFileName"></span>
+                        </p>
                     </div>
+                    {% if note.full_version %}
+                    <p class="mt-2 text-sm text-gray-600">
+                        <i class="fas fa-file mr-1"></i>Current file: <a href="{{ note.full_version.url }}" target="_blank" class="text-orange-600 hover:underline">{{ note.full_version.name|slice:"-30:" }}</a>
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -133,7 +189,7 @@
         <!-- Summary Version Content -->
         <div class="mb-8">
             <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
-                <i class="fas fa-compress-alt mr-2 text-orange-500"></i>Summary Version (Quick Review)
+                <i class="fas fa-file-lines mr-2 text-orange-500"></i>Summary Version (Optional)
             </h2>
             
             <div class="space-y-4">
@@ -157,22 +213,34 @@
                     <input type="hidden" name="summary_version_text" id="summary_version_text_input">
                     <p class="mt-2 text-xs text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Create a concise summary with key points and formulas
+                        A condensed version for quick review
                     </p>
                 </div>
                 
                 <!-- Upload Tab -->
                 <div x-show="summaryVersionTab === 'upload'" x-cloak>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition">
-                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                        <input type="file" name="summary_version" accept=".pdf,.doc,.docx" class="w-full">
-                        <p class="mt-2 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                        <input type="file" name="summary_version" accept=".pdf,.doc,.docx" class="hidden" id="summary-version-file" @change="handleSummaryVersionFile($event)">
+                        <label for="summary-version-file" class="cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600">Click to upload or drag and drop</p>
+                            <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
+                        </label>
+                        <p x-show="summaryVersionFileName" class="mt-4 text-sm text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span x-text="summaryVersionFileName"></span>
+                        </p>
                     </div>
+                    {% if note.summary_version %}
+                    <p class="mt-2 text-sm text-gray-600">
+                        <i class="fas fa-file mr-1"></i>Current file: <a href="{{ note.summary_version.url }}" target="_blank" class="text-orange-600 hover:underline">{{ note.summary_version.name|slice:"-30:" }}</a>
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
         
-        <!-- Submit Buttons -->
+        <!-- Submit -->
         <div class="flex items-center justify-end gap-4 pt-6 border-t">
             <a href="{% url 'manage_notes' %}" class="px-6 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
                 Cancel
@@ -186,168 +254,178 @@
 </div>
 
 <!-- CKEditor 5 CDN -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
-
-<!-- MathJax for LaTeX rendering -->
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-<script>
-    let fullVersionEditor = null;
-    let summaryVersionEditor = null;
-    
-    // Custom upload adapter for CKEditor
-    class CustomUploadAdapter {
-        constructor(loader) {
-            this.loader = loader;
-        }
-        
-        upload() {
-            return this.loader.file.then(file => new Promise((resolve, reject) => {
-                const data = new FormData();
-                data.append('upload', file);
-                
-                fetch('{% url "upload_content_image" %}', {
-                    method: 'POST',
-                    body: data,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.uploaded) {
-                        resolve({ default: result.url });
-                    } else {
-                        reject(result.error?.message || 'Upload failed');
-                    }
-                })
-                .catch(error => reject(error));
-            }));
-        }
-        
-        abort() {}
-    }
-    
-    function CustomUploadAdapterPlugin(editor) {
-        editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
-            return new CustomUploadAdapter(loader);
-        };
-    }
-    
-    function noteFormData() {
-        return {
-            fullVersionTab: 'editor',
-            summaryVersionTab: 'editor',
-            
-            init() {
-                // Initialize CKEditor for full version
-                this.initEditors();
-            },
-            
-            async initEditors() {
-                // Wait for CKEditor to load
-                if (typeof ClassicEditor === 'undefined') {
-                    setTimeout(() => this.initEditors(), 100);
-                    return;
-                }
-                
-                const editorConfig = {
-                    extraPlugins: [CustomUploadAdapterPlugin],
-                    toolbar: {
-                        items: [
-                            'heading', '|',
-                            'bold', 'italic', 'underline', 'strikethrough', '|',
-                            'bulletedList', 'numberedList', '|',
-                            'outdent', 'indent', '|',
-                            'blockQuote', 'insertTable', '|',
-                            'imageUpload', 'link', '|',
-                            'undo', 'redo'
-                        ]
-                    },
-                    image: {
-                        toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side']
-                    },
-                    table: {
-                        contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
-                    },
-                    placeholder: 'Start writing your notes here... Use $$ for math equations (e.g., $$x^2 + y^2$$)'
-                };
-                
-                try {
-                    // Initialize full version editor
-                    fullVersionEditor = await ClassicEditor.create(
-                        document.querySelector('#full-version-editor'),
-                        editorConfig
-                    );
-                    
-                    // Set existing content if editing
-                    const existingFullContent = `{{ note.full_version_text|escapejs|default:'' }}`;
-                    if (existingFullContent) {
-                        fullVersionEditor.setData(existingFullContent);
-                    }
-                    
-                    // Initialize summary version editor
-                    summaryVersionEditor = await ClassicEditor.create(
-                        document.querySelector('#summary-version-editor'),
-                        {...editorConfig, placeholder: 'Write a concise summary with key points...'}
-                    );
-                    
-                    // Set existing content if editing
-                    const existingSummaryContent = `{{ note.summary_version_text|escapejs|default:'' }}`;
-                    if (existingSummaryContent) {
-                        summaryVersionEditor.setData(existingSummaryContent);
-                    }
-                    
-                } catch (error) {
-                    console.error('CKEditor initialization error:', error);
-                }
-            },
-            
-            prepareSubmit() {
-                // Copy editor content to hidden inputs before form submission
-                if (fullVersionEditor) {
-                    document.getElementById('full_version_text_input').value = fullVersionEditor.getData();
-                }
-                if (summaryVersionEditor) {
-                    document.getElementById('summary_version_text_input').value = summaryVersionEditor.getData();
-                }
-                return true;
-            }
-        };
-    }
-    
-    // Initialize Alpine component on load
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('noteFormData', noteFormData);
-    });
-</script>
-
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <style>
-    /* CKEditor styling */
     .ck-editor__editable {
-        min-height: 300px !important;
+        min-height: 300px;
     }
-    
-    #full-version-editor .ck-editor__editable {
-        min-height: 400px !important;
-    }
-    
     #summary-version-editor .ck-editor__editable {
-        min-height: 250px !important;
-    }
-    
-    .ck-editor__editable:focus {
-        border-color: #f97316 !important;
-        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-    }
-    
-    /* Math equation styling in editor */
-    .ck-content .math-tex {
-        background-color: #f3f4f6;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: 'Courier New', monospace;
+        min-height: 200px;
     }
 </style>
+
+<script>
+function noteFormData() {
+    return {
+        fullVersionTab: 'editor',
+        summaryVersionTab: 'editor',
+        fullVersionFileName: '',
+        summaryVersionFileName: '',
+        fullVersionEditor: null,
+        summaryVersionEditor: null,
+        
+        examBoard: '',
+        subject: '',
+        grade: '',
+        topic: '',
+        subtopic: '',
+        
+        subjects: [],
+        grades: [],
+        topics: [],
+        subtopics: [],
+        
+        loadingSubjects: false,
+        loadingGrades: false,
+        loadingTopics: false,
+        loadingSubtopics: false,
+        
+        init() {
+            this.$nextTick(() => {
+                this.initEditors();
+            });
+        },
+        
+        initEditors() {
+            const fullEditorEl = document.querySelector('#full-version-editor');
+            const summaryEditorEl = document.querySelector('#summary-version-editor');
+            
+            if (fullEditorEl) {
+                ClassicEditor.create(fullEditorEl, {
+                    toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'blockQuote', 'insertTable', 'undo', 'redo']
+                }).then(editor => {
+                    this.fullVersionEditor = editor;
+                    {% if note.full_version_text %}
+                    editor.setData(`{{ note.full_version_text|escapejs }}`);
+                    {% endif %}
+                }).catch(error => console.error('Full editor error:', error));
+            }
+            
+            if (summaryEditorEl) {
+                ClassicEditor.create(summaryEditorEl, {
+                    toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo']
+                }).then(editor => {
+                    this.summaryVersionEditor = editor;
+                    {% if note.summary_version_text %}
+                    editor.setData(`{{ note.summary_version_text|escapejs }}`);
+                    {% endif %}
+                }).catch(error => console.error('Summary editor error:', error));
+            }
+        },
+        
+        async onExamBoardChange() {
+            this.subject = '';
+            this.grade = '';
+            this.topic = '';
+            this.subtopic = '';
+            this.subjects = [];
+            this.grades = [];
+            this.topics = [];
+            this.subtopics = [];
+            
+            if (!this.examBoard) return;
+            
+            this.loadingSubjects = true;
+            try {
+                const response = await fetch(`/ajax/subjects-by-board/?exam_board_id=${this.examBoard}`);
+                const data = await response.json();
+                this.subjects = data.subjects || [];
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+            }
+            this.loadingSubjects = false;
+        },
+        
+        async onSubjectChange() {
+            this.grade = '';
+            this.topic = '';
+            this.subtopic = '';
+            this.grades = [];
+            this.topics = [];
+            this.subtopics = [];
+            
+            if (!this.subject || !this.examBoard) return;
+            
+            this.loadingGrades = true;
+            try {
+                const response = await fetch(`/ajax/grades-by-board-subject/?exam_board_id=${this.examBoard}&subject_id=${this.subject}`);
+                const data = await response.json();
+                this.grades = data.grades || [];
+            } catch (error) {
+                console.error('Error loading grades:', error);
+            }
+            this.loadingGrades = false;
+        },
+        
+        async onGradeChange() {
+            this.topic = '';
+            this.subtopic = '';
+            this.topics = [];
+            this.subtopics = [];
+            
+            if (!this.grade || !this.subject || !this.examBoard) return;
+            
+            this.loadingTopics = true;
+            try {
+                const response = await fetch(`/ajax/topics-by-board-subject-grade/?exam_board_id=${this.examBoard}&subject_id=${this.subject}&grade_id=${this.grade}`);
+                const data = await response.json();
+                this.topics = data.topics || [];
+            } catch (error) {
+                console.error('Error loading topics:', error);
+            }
+            this.loadingTopics = false;
+        },
+        
+        async onTopicChange() {
+            this.subtopic = '';
+            this.subtopics = [];
+            
+            if (!this.topic) return;
+            
+            this.loadingSubtopics = true;
+            try {
+                const response = await fetch(`/ajax/subtopics-by-topic/?topic_id=${this.topic}`);
+                const data = await response.json();
+                this.subtopics = data.subtopics || [];
+            } catch (error) {
+                console.error('Error loading subtopics:', error);
+            }
+            this.loadingSubtopics = false;
+        },
+        
+        handleFullVersionFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.fullVersionFileName = file.name;
+            }
+        },
+        
+        handleSummaryVersionFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.summaryVersionFileName = file.name;
+            }
+        },
+        
+        prepareSubmit() {
+            if (this.fullVersionEditor) {
+                document.getElementById('full_version_text_input').value = this.fullVersionEditor.getData();
+            }
+            if (this.summaryVersionEditor) {
+                document.getElementById('summary_version_text_input').value = this.summaryVersionEditor.getData();
+            }
+        }
+    };
+}
+</script>
 {% endblock %}
