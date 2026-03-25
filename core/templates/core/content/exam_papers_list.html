@@ -36,7 +36,7 @@
                 <select name="grade" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
                     <option value="">All Grades</option>
                     {% for grade in grades %}
-                    <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>Grade {{ grade.number }}</option>
+                    <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>Grade {{ grade.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -92,7 +92,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ paper.subject.name }}<br>
-                        <span class="text-xs text-gray-500">Grade {{ paper.grade.number }}</span>
+                        <span class="text-xs text-gray-500">Grade {{ paper.grade.name }}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {% if paper.year %}{{ paper.year }}{% else %}-{% endif %}

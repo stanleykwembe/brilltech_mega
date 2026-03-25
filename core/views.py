@@ -878,7 +878,7 @@ def generate_assignment_ai(request):
             due_date = request.POST.get('due_date')
             
             ai_content = generate_homework(
-                subject.name, f"Grade {grade.number}", 
+                subject.name, grade.name, 
                 board.abbreviation, topic, question_type, num_questions, model=ai_model
             )
             
@@ -923,7 +923,7 @@ def generate_questions_ai(request):
             difficulty = request.POST.get('difficulty', 'medium')
             
             ai_content = generate_questions(
-                subject.name, f"Grade {grade.number}", 
+                subject.name, grade.name, 
                 board.abbreviation, topic, question_type, difficulty, model=ai_model
             )
             
@@ -1942,10 +1942,21 @@ def require_admin(view_func):
         if not request.user.is_authenticated:
             return redirect('login')
         if not (request.user.is_superuser or request.user.is_staff):
+            # Check if user is a student - redirect to friendly oops page
+            if hasattr(request.user, 'student_profile'):
+                return redirect('admin_access_denied')
+            # Check if user is a teacher without admin access
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'teacher':
+                return redirect('admin_access_denied')
             messages.error(request, 'Access denied. Admin privileges required.')
             return redirect('dashboard')
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def admin_access_denied(request):
+    """Friendly access denied page for non-admin users"""
+    return render(request, 'core/admin/access_denied.html')
 
 def require_content_manager(view_func):
     """Decorator to require content manager or admin privileges"""
@@ -2031,47 +2042,59 @@ def admin_dashboard(request):
 
 @require_admin
 def admin_student_subscribers(request):
-    """View all student subscribers with filtering and stats"""
+    """View all students with their subscription status"""
     from .models import StudentSubscription, StudentProfile
     from django.db.models import Sum, Count
+    from django.core.paginator import Paginator
     
     status_filter = request.GET.get('status', '')
     search_query = request.GET.get('search', '')
+    plan_filter = request.GET.get('plan', '')
     
-    subscriptions = StudentSubscription.objects.select_related('student__user').order_by('-created_at')
-    
-    if status_filter:
-        subscriptions = subscriptions.filter(status=status_filter)
+    # Query ALL students, not just those with subscriptions
+    students = StudentProfile.objects.select_related('user').prefetch_related('subscription_record').order_by('-user__date_joined')
     
     if search_query:
-        subscriptions = subscriptions.filter(
-            Q(student__user__username__icontains=search_query) |
-            Q(student__user__email__icontains=search_query) |
-            Q(student__user__first_name__icontains=search_query) |
-            Q(student__user__last_name__icontains=search_query)
+        students = students.filter(
+            Q(user__username__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query)
         )
     
-    # Stats
+    if status_filter:
+        # Filter by subscription status
+        if status_filter == 'no_subscription':
+            students = students.filter(subscription_record__isnull=True)
+        else:
+            students = students.filter(subscription_record__status=status_filter)
+    
+    if plan_filter:
+        students = students.filter(subscription_record__plan=plan_filter)
+    
+    # Stats from StudentSubscription
     all_subscriptions = StudentSubscription.objects.all()
-    total_subscriptions = all_subscriptions.count()
     active_subscriptions = all_subscriptions.filter(status='active').count()
     free_subscriptions = all_subscriptions.filter(status='free').count()
     expired_subscriptions = all_subscriptions.filter(status='expired').count()
-    cancelled_subscriptions = all_subscriptions.filter(status='cancelled').count()
     total_revenue = all_subscriptions.filter(status='active').aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
     
-    # Total students (with or without subscription records)
+    # Total students
     total_students = StudentProfile.objects.count()
     
+    # Pagination - 10 per page
+    paginator = Paginator(students, 10)
+    page_number = request.GET.get('page', 1)
+    students_page = paginator.get_page(page_number)
+    
     context = {
-        'subscriptions': subscriptions,
+        'students': students_page,
         'status_filter': status_filter,
         'search_query': search_query,
-        'total_subscriptions': total_subscriptions,
+        'plan_filter': plan_filter,
         'active_subscriptions': active_subscriptions,
         'free_subscriptions': free_subscriptions,
         'expired_subscriptions': expired_subscriptions,
-        'cancelled_subscriptions': cancelled_subscriptions,
         'total_revenue': total_revenue,
         'total_students': total_students,
     }
@@ -2112,14 +2135,105 @@ def admin_change_student_subscription(request, subscription_id):
     
     return redirect('admin_student_subscribers')
 
+
+@require_admin
+def admin_change_student_status(request, student_id):
+    """Change student subscription status - creates subscription record if needed"""
+    from .models import StudentSubscription, StudentProfile
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        student = get_object_or_404(StudentProfile, id=student_id)
+        new_status = request.POST.get('status')
+        new_plan = request.POST.get('plan', None)  # Optional plan change
+        
+        # Validate plan choice
+        valid_plans = ['free', 'starter', 'standard', 'all_access']
+        if new_plan and new_plan not in valid_plans:
+            new_plan = None
+        
+        if new_status in ['active', 'free', 'expired', 'cancelled']:
+            # Get or create subscription record
+            subscription, created = StudentSubscription.objects.get_or_create(
+                student=student,
+                defaults={
+                    'status': new_status,
+                    'plan': new_plan if new_plan else ('starter' if new_status == 'active' else 'free'),
+                    'started_at': timezone.now(),
+                    'expires_at': timezone.now() + timedelta(days=30) if new_status == 'active' else None,
+                }
+            )
+            
+            if not created:
+                old_status = subscription.status
+                subscription.status = new_status
+                
+                # Only change plan if explicitly requested - preserve existing plan otherwise
+                if new_plan:
+                    subscription.plan = new_plan
+                elif new_status in ['free', 'expired', 'cancelled']:
+                    subscription.plan = 'free'
+                # If status is 'active' and no new_plan, preserve existing plan
+                
+                if new_status == 'active' and old_status != 'active':
+                    subscription.started_at = timezone.now()
+                    subscription.expires_at = timezone.now() + timedelta(days=30)
+                
+                subscription.save()
+                messages.success(request, f'Student status changed from {old_status} to {new_status}')
+            else:
+                messages.success(request, f'Subscription record created with status: {new_status}')
+            
+            # Always sync legacy StudentProfile.subscription field
+            if new_status == 'active':
+                student.subscription = 'pro'
+            else:
+                student.subscription = 'free'
+            student.save()
+        else:
+            messages.error(request, 'Invalid status')
+    
+    return redirect('admin_student_subscribers')
+
+
+@require_admin
+def admin_promote_student(request, student_id):
+    """Promote a student to content creator by creating a UserProfile"""
+    from .models import StudentProfile, UserProfile
+    
+    if request.method == 'POST':
+        student = get_object_or_404(StudentProfile, id=student_id)
+        user = student.user
+        
+        # Check if user already has a UserProfile
+        if hasattr(user, 'userprofile'):
+            # Update role to content_manager
+            user.userprofile.role = 'content_manager'
+            user.userprofile.save()
+            messages.success(request, f'{user.username} has been promoted to Content Creator')
+        else:
+            # Create UserProfile with content_manager role
+            UserProfile.objects.create(
+                user=user,
+                role='content_manager',
+                subscription='free'
+            )
+            messages.success(request, f'{user.username} has been promoted to Content Creator')
+    
+    return redirect('admin_student_subscribers')
+
+
 @require_admin
 def admin_users(request):
-    """User management interface - only shows users with UserProfiles (teachers/admins)"""
+    """User management interface - shows users with UserProfiles (teachers/admins/content managers)"""
+    from django.core.paginator import Paginator
     
     # Get search and filter parameters
     search_query = request.GET.get('search', '')
     subscription_filter = request.GET.get('subscription', '')
     status_filter = request.GET.get('status', '')
+    role_filter = request.GET.get('role', '')
     
     # Base queryset - only users with UserProfiles (teachers, admins, content managers)
     users = User.objects.filter(
@@ -2138,19 +2252,181 @@ def admin_users(request):
     if subscription_filter:
         users = users.filter(userprofile__subscription=subscription_filter)
     
+    if role_filter:
+        users = users.filter(userprofile__role=role_filter)
+    
     if status_filter == 'active':
         users = users.filter(is_active=True)
     elif status_filter == 'inactive':
         users = users.filter(is_active=False)
     
+    # Pagination - 10 per page
+    paginator = Paginator(users, 10)
+    page_number = request.GET.get('page', 1)
+    users_page = paginator.get_page(page_number)
+    
     context = {
-        'users': users,
+        'users': users_page,
         'search_query': search_query,
         'subscription_filter': subscription_filter,
         'status_filter': status_filter,
+        'role_filter': role_filter,
     }
     
     return render(request, 'core/admin/users.html', context)
+
+
+@require_admin
+def admin_change_user_role(request, user_id):
+    """Change user's role (teacher, admin, content_manager)"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        new_role = request.POST.get('role')
+        
+        if new_role in ['teacher', 'admin', 'content_manager']:
+            try:
+                profile = UserProfile.objects.get(user=user)
+                old_role = profile.role
+                profile.role = new_role
+                profile.save()
+                messages.success(request, f'{user.username} role changed from {old_role} to {new_role}')
+            except UserProfile.DoesNotExist:
+                messages.error(request, 'User profile not found')
+        else:
+            messages.error(request, 'Invalid role')
+    
+    return redirect('admin_users')
+
+
+@require_admin
+def admin_send_password_reset(request, user_id):
+    """Admin triggers password reset email for a user"""
+    from .models import PasswordResetToken
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.utils import timezone
+    from datetime import timedelta
+    import threading
+    import secrets
+    
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        
+        # Create password reset token using existing model
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + timedelta(hours=24)
+        
+        # Invalidate any existing tokens for this user
+        PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+        
+        # Create new token
+        reset_token = PasswordResetToken.objects.create(
+            user=user,
+            token=token,
+            expires_at=expires_at
+        )
+        
+        # Build reset URL - check if student or teacher for correct path
+        is_student = hasattr(user, 'student_profile')
+        if is_student:
+            reset_path = f'/student/reset-password/{token}/'
+        else:
+            reset_path = f'/reset-password/{token}/'
+        
+        # Get domain from request
+        domain = request.get_host()
+        protocol = 'https' if request.is_secure() else 'http'
+        reset_url = f'{protocol}://{domain}{reset_path}'
+        
+        # Send email in background
+        def send_reset_email():
+            try:
+                send_mail(
+                    subject='Password Reset Request - EduTech Platform',
+                    message=f'''Hello {user.first_name or user.username},
+
+A password reset has been requested for your account by an administrator.
+
+Click the link below to reset your password:
+{reset_url}
+
+This link will expire in 24 hours.
+
+If you did not expect this, please contact support.
+
+Best regards,
+The EduTech Team''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Failed to send password reset email to {user.email}: {e}')
+        
+        thread = threading.Thread(target=send_reset_email)
+        thread.start()
+        
+        messages.success(request, f'Password reset email sent to {user.email}')
+    
+    # Redirect back to the appropriate page
+    return_to = request.POST.get('return_to', 'admin_users')
+    if return_to == 'admin_student_subscribers':
+        return redirect('admin_student_subscribers')
+    return redirect('admin_users')
+
+
+@require_admin
+def admin_change_user_email(request, user_id):
+    """Admin changes a user's email address"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        new_email = request.POST.get('new_email', '').strip()
+        
+        if not new_email:
+            messages.error(request, 'Email address is required')
+        elif User.objects.filter(email=new_email).exclude(id=user_id).exists():
+            messages.error(request, 'This email is already in use by another account')
+        else:
+            old_email = user.email
+            user.email = new_email
+            user.save()
+            messages.success(request, f'Email changed from {old_email} to {new_email}')
+    
+    return_to = request.POST.get('return_to', 'admin_users')
+    if return_to == 'admin_student_subscribers':
+        return redirect('admin_student_subscribers')
+    return redirect('admin_users')
+
+
+@require_admin
+def admin_verify_activate_user(request, user_id):
+    """Admin manually verifies and activates a locked-out user"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        
+        # Activate user account
+        user.is_active = True
+        user.save()
+        
+        # Check if student - also verify student profile
+        if hasattr(user, 'student_profile'):
+            student = user.student_profile
+            student.email_verified = True
+            student.save()
+            messages.success(request, f'Student {user.username} has been verified and activated')
+        elif hasattr(user, 'userprofile'):
+            # For teachers with UserProfile, just activate the account
+            messages.success(request, f'User {user.username} has been activated')
+        else:
+            messages.success(request, f'User {user.username} has been activated')
+    
+    return_to = request.POST.get('return_to', 'admin_users')
+    if return_to == 'admin_student_subscribers':
+        return redirect('admin_student_subscribers')
+    return redirect('admin_users')
+
 
 @require_admin
 def admin_change_subscription(request, user_id):
@@ -2522,25 +2798,25 @@ def admin_grades(request):
         action = request.POST.get('action')
         
         if action == 'create':
-            Grade.objects.create(number=request.POST.get('number'))
-            messages.success(request, 'Grade created successfully.')
+            Grade.objects.create(name=request.POST.get('name'))
+            messages.success(request, 'Level created successfully.')
         
         elif action == 'update':
             grade_id = request.POST.get('grade_id')
             grade = get_object_or_404(Grade, id=grade_id)
-            grade.number = request.POST.get('number')
+            grade.name = request.POST.get('name')
             grade.save()
-            messages.success(request, 'Grade updated successfully.')
+            messages.success(request, 'Level updated successfully.')
         
         elif action == 'delete':
             grade_id = request.POST.get('grade_id')
             grade = get_object_or_404(Grade, id=grade_id)
             grade.delete()
-            messages.success(request, 'Grade deleted successfully.')
+            messages.success(request, 'Level deleted successfully.')
         
         return redirect('admin_grades')
     
-    grades = Grade.objects.all().order_by('number')
+    grades = Grade.objects.all().order_by('name')
     
     context = {
         'grades': grades,
@@ -3086,7 +3362,7 @@ def content_reformat_paper(request, paper_id):
             result = extract_questions_from_paper(
                 file_path=file_path,
                 subject=paper.subject.name,
-                grade=paper.grade.number,
+                grade=paper.grade.name,
                 exam_board=paper.exam_board,
                 paper_type=paper.paper_type,
                 model='gpt-4'  # Use best model for accuracy
@@ -4188,44 +4464,51 @@ def create_student_quiz(request):
 
 @require_content_manager
 def manage_student_quizzes(request):
-    """List and manage student quizzes"""
-    from .models import StudentQuiz
+    """List and manage student quizzes - shows last 10 by default"""
+    from .models import StudentQuiz, ExamBoard
     
-    # Get filter parameters
-    subject_filter = request.GET.get('subject', '')
-    grade_filter = request.GET.get('grade', '')
-    status_filter = request.GET.get('status', '')  # free or pro
-    search_query = request.GET.get('search', '')
-    
-    # Filter quizzes
     quizzes = StudentQuiz.objects.all().select_related('subject', 'grade', 'exam_board').prefetch_related('questions')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
-    if subject_filter:
-        quizzes = quizzes.filter(subject_id=subject_filter)
+    # Filter by exam board
+    exam_board_filter = request.GET.get('exam_board', '')
+    if exam_board_filter:
+        quizzes = quizzes.filter(exam_board_id=exam_board_filter)
+    
+    # Filter by level/grade
+    grade_filter = request.GET.get('grade', '')
     if grade_filter:
         quizzes = quizzes.filter(grade_id=grade_filter)
+    
+    # Filter by subject
+    subject_filter = request.GET.get('subject', '')
+    if subject_filter:
+        quizzes = quizzes.filter(subject_id=subject_filter)
+    
+    # Filter by status (free or pro)
+    status_filter = request.GET.get('status', '')
     if status_filter == 'free':
         quizzes = quizzes.filter(is_pro_content=False)
     elif status_filter == 'pro':
         quizzes = quizzes.filter(is_pro_content=True)
+    
+    # Search
+    search_query = request.GET.get('search', '')
     if search_query:
         quizzes = quizzes.filter(
             Q(title__icontains=search_query) |
             Q(topic__icontains=search_query)
         )
     
-    quizzes = quizzes.order_by('-created_at')
-    
-    # Get filters for dropdowns
-    subjects = Subject.objects.all()
-    grades = Grade.objects.all()
+    # Order by most recent and limit to 10
+    quizzes = quizzes.order_by('-id')[:10]
     
     context = {
         'quizzes': quizzes,
-        'subjects': subjects,
-        'grades': grades,
-        'subject_filter': subject_filter,
+        'exam_boards': exam_boards,
+        'exam_board_filter': exam_board_filter,
         'grade_filter': grade_filter,
+        'subject_filter': subject_filter,
         'status_filter': status_filter,
         'search_query': search_query,
     }
@@ -4309,39 +4592,44 @@ def create_note(request):
 
 @require_content_manager
 def manage_notes(request):
-    """List and manage study notes"""
-    from .models import Note
+    """List and manage study notes - shows last 10 by default"""
+    from .models import Note, ExamBoard
     
-    # Get filter parameters
-    subject_filter = request.GET.get('subject', '')
+    notes = Note.objects.all().select_related('subject', 'grade', 'exam_board', 'topic')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    # Filter by exam board
+    exam_board_filter = request.GET.get('exam_board', '')
+    if exam_board_filter:
+        notes = notes.filter(exam_board_id=exam_board_filter)
+    
+    # Filter by level/grade
     grade_filter = request.GET.get('grade', '')
-    search_query = request.GET.get('search', '')
-    
-    # Filter notes
-    notes = Note.objects.all().select_related('subject', 'grade', 'exam_board')
-    
-    if subject_filter:
-        notes = notes.filter(subject_id=subject_filter)
     if grade_filter:
         notes = notes.filter(grade_id=grade_filter)
+    
+    # Filter by subject
+    subject_filter = request.GET.get('subject', '')
+    if subject_filter:
+        notes = notes.filter(subject_id=subject_filter)
+    
+    # Search
+    search_query = request.GET.get('search', '')
     if search_query:
         notes = notes.filter(
             Q(title__icontains=search_query) |
             Q(topic_text__icontains=search_query)
         )
     
-    notes = notes.order_by('-created_at')
-    
-    # Get filters for dropdowns
-    subjects = Subject.objects.all()
-    grades = Grade.objects.all()
+    # Order by most recent and limit to 10
+    notes = notes.order_by('-id')[:10]
     
     context = {
         'notes': notes,
-        'subjects': subjects,
-        'grades': grades,
-        'subject_filter': subject_filter,
+        'exam_boards': exam_boards,
+        'exam_board_filter': exam_board_filter,
         'grade_filter': grade_filter,
+        'subject_filter': subject_filter,
         'search_query': search_query,
     }
     
@@ -4359,6 +4647,43 @@ def delete_note(request, note_id):
         messages.success(request, 'Note deleted successfully!')
     
     return redirect('manage_notes')
+
+
+@require_content_manager
+def edit_note(request, note_id):
+    """Edit existing study note - text content or replace PDF"""
+    from .models import Note
+    
+    note = get_object_or_404(Note, id=note_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        full_version_text = request.POST.get('full_version_text', '')
+        summary_version_text = request.POST.get('summary_version_text', '')
+        
+        if title:
+            note.title = title
+        
+        note.full_version_text = full_version_text
+        note.summary_version_text = summary_version_text
+        
+        if 'full_version' in request.FILES:
+            if note.full_version:
+                note.full_version.delete(save=False)
+            note.full_version = request.FILES['full_version']
+        
+        if 'summary_version' in request.FILES:
+            if note.summary_version:
+                note.summary_version.delete(save=False)
+            note.summary_version = request.FILES['summary_version']
+        
+        note.save()
+        messages.success(request, 'Note updated successfully!')
+        return redirect('manage_notes')
+    
+    return render(request, 'core/content/edit_note.html', {
+        'note': note,
+    })
 
 
 @require_content_manager
@@ -4464,36 +4789,41 @@ def create_flashcard(request):
 
 @require_content_manager
 def manage_flashcards(request):
-    """List and manage flashcards"""
-    from .models import Flashcard
+    """List and manage flashcards - shows last 10 by default"""
+    from .models import Flashcard, ExamBoard
     
-    # Get filter parameters
-    subject_filter = request.GET.get('subject', '')
-    grade_filter = request.GET.get('grade', '')
-    topic_filter = request.GET.get('topic', '')
-    
-    # Filter flashcards
     flashcards = Flashcard.objects.all().select_related('subject', 'grade', 'exam_board')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
-    if subject_filter:
-        flashcards = flashcards.filter(subject_id=subject_filter)
+    # Filter by exam board
+    exam_board_filter = request.GET.get('exam_board', '')
+    if exam_board_filter:
+        flashcards = flashcards.filter(exam_board_id=exam_board_filter)
+    
+    # Filter by level/grade
+    grade_filter = request.GET.get('grade', '')
     if grade_filter:
         flashcards = flashcards.filter(grade_id=grade_filter)
+    
+    # Filter by subject
+    subject_filter = request.GET.get('subject', '')
+    if subject_filter:
+        flashcards = flashcards.filter(subject_id=subject_filter)
+    
+    # Search by topic
+    topic_filter = request.GET.get('topic', '')
     if topic_filter:
-        flashcards = flashcards.filter(topic__icontains=topic_filter)
+        flashcards = flashcards.filter(topic_text__icontains=topic_filter)
     
-    flashcards = flashcards.order_by('subject', 'topic', '-created_at')
-    
-    # Get filters for dropdowns
-    subjects = Subject.objects.all()
-    grades = Grade.objects.all()
+    # Order by most recent and limit to 10
+    flashcards = flashcards.order_by('-id')[:10]
     
     context = {
         'flashcards': flashcards,
-        'subjects': subjects,
-        'grades': grades,
-        'subject_filter': subject_filter,
+        'exam_boards': exam_boards,
+        'exam_board_filter': exam_board_filter,
         'grade_filter': grade_filter,
+        'subject_filter': subject_filter,
         'topic_filter': topic_filter,
     }
     
@@ -4511,6 +4841,153 @@ def delete_flashcard(request, flashcard_id):
         messages.success(request, 'Flashcard deleted successfully!')
     
     return redirect('manage_flashcards')
+
+
+@require_content_manager
+def bulk_upload_flashcards(request):
+    """Bulk upload flashcards from JSON file"""
+    import json
+    from .models import Flashcard, Subject, Grade, ExamBoard, Topic
+    
+    subjects = Subject.objects.all().order_by('name')
+    grades = Grade.objects.all().order_by('number')
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    if request.method == 'POST':
+        json_file = request.FILES.get('json_file')
+        json_text = request.POST.get('json_text', '').strip()
+        
+        flashcards_data = None
+        
+        if json_file:
+            try:
+                content = json_file.read().decode('utf-8')
+                flashcards_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON file: {str(e)}')
+            except Exception as e:
+                messages.error(request, f'Error reading file: {str(e)}')
+        elif json_text:
+            try:
+                flashcards_data = json.loads(json_text)
+            except json.JSONDecodeError as e:
+                messages.error(request, f'Invalid JSON: {str(e)}')
+        else:
+            messages.error(request, 'Please upload a JSON file or paste JSON data.')
+        
+        if flashcards_data:
+            if not isinstance(flashcards_data, list):
+                flashcards_data = [flashcards_data]
+            
+            created_count = 0
+            errors = []
+            
+            for idx, item in enumerate(flashcards_data, 1):
+                try:
+                    exam_board_abbr = item.get('exam_board', '').strip()
+                    subject_name = item.get('subject', '').strip()
+                    grade_number = item.get('grade')
+                    front_text = item.get('front_text', '').strip()
+                    back_text = item.get('back_text', '').strip()
+                    
+                    if not exam_board_abbr or not subject_name or not grade_number:
+                        errors.append(f'Row {idx}: exam_board, subject, and grade are required.')
+                        continue
+                    
+                    if not front_text or not back_text:
+                        errors.append(f'Row {idx}: front_text and back_text are required.')
+                        continue
+                    
+                    try:
+                        exam_board = ExamBoard.objects.get(abbreviation__iexact=exam_board_abbr)
+                    except ExamBoard.DoesNotExist:
+                        errors.append(f'Row {idx}: Exam board "{exam_board_abbr}" not found.')
+                        continue
+                    
+                    try:
+                        subject = Subject.objects.get(name__iexact=subject_name)
+                    except Subject.DoesNotExist:
+                        errors.append(f'Row {idx}: Subject "{subject_name}" not found.')
+                        continue
+                    
+                    try:
+                        grade = Grade.objects.get(number=int(grade_number))
+                    except (Grade.DoesNotExist, ValueError):
+                        errors.append(f'Row {idx}: Grade "{grade_number}" not found.')
+                        continue
+                    
+                    topic = None
+                    topic_name = item.get('topic', '').strip()
+                    if topic_name:
+                        try:
+                            topic = Topic.objects.get(
+                                name__iexact=topic_name,
+                                subject=subject,
+                                exam_board=exam_board
+                            )
+                        except Topic.DoesNotExist:
+                            errors.append(f'Row {idx}: Topic "{topic_name}" not found for {subject_name} ({exam_board_abbr}).')
+                            continue
+                        except Topic.MultipleObjectsReturned:
+                            topic = Topic.objects.filter(
+                                name__iexact=topic_name,
+                                subject=subject,
+                                exam_board=exam_board
+                            ).first()
+                    
+                    Flashcard.objects.create(
+                        exam_board=exam_board,
+                        subject=subject,
+                        grade=grade,
+                        topic=topic,
+                        topic_text=topic_name if topic_name else '',
+                        front_text=front_text,
+                        back_text=back_text,
+                        created_by=request.user
+                    )
+                    created_count += 1
+                    
+                except Exception as e:
+                    errors.append(f'Row {idx}: Error - {str(e)}')
+            
+            if created_count > 0:
+                messages.success(request, f'Successfully created {created_count} flashcard(s)!')
+            
+            if errors:
+                for error in errors[:10]:
+                    messages.error(request, error)
+                if len(errors) > 10:
+                    messages.warning(request, f'... and {len(errors) - 10} more errors.')
+            
+            if created_count > 0:
+                return redirect('manage_flashcards')
+    
+    sample_json = json.dumps([
+        {
+            "exam_board": "CIE",
+            "subject": "Mathematics",
+            "grade": 10,
+            "topic": "Algebra",
+            "front_text": "What is the formula for solving a quadratic equation?",
+            "back_text": "x = (-b ± √(b² - 4ac)) / 2a"
+        },
+        {
+            "exam_board": "ZIMSEC",
+            "subject": "Biology",
+            "grade": 11,
+            "topic": "Cell Structure",
+            "front_text": "What is the powerhouse of the cell?",
+            "back_text": "Mitochondria - responsible for cellular respiration and ATP production."
+        }
+    ], indent=2)
+    
+    context = {
+        'subjects': subjects,
+        'grades': grades,
+        'exam_boards': exam_boards,
+        'sample_json': sample_json,
+    }
+    return render(request, 'core/content/bulk_upload_flashcards.html', context)
 
 
 @require_content_manager
@@ -6089,7 +6566,7 @@ def bulk_upload_subtopics(request):
                             name__iexact=topic_name
                         )
                     except Topic.DoesNotExist:
-                        errors.append(f'Row {idx}: Topic "{topic_name}" not found for {exam_board.abbreviation} {subject.name} Grade {grade.number}.')
+                        errors.append(f'Row {idx}: Topic "{topic_name}" not found for {exam_board.abbreviation} {subject.name} {grade.name}.')
                         continue
                     except Topic.MultipleObjectsReturned:
                         errors.append(f'Row {idx}: Multiple topics found for "{topic_name}". Please check data.')
@@ -6250,27 +6727,30 @@ def delete_topic(request, topic_id):
 
 @require_content_manager
 def manage_subtopics(request):
-    """List all subtopics with filters"""
-    from .models import Subtopic, Topic, Subject
+    """List all subtopics with filters - shows last 10 by default"""
+    from .models import Subtopic, Topic, Subject, Grade, ExamBoard
     import json
     
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all()
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
+    subtopics = Subtopic.objects.select_related(
+        'topic', 'topic__subject', 'topic__grade', 'topic__exam_board'
+    ).all()
     
-    # Build topics_json with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
+    
+    # Filter by exam board
+    exam_board_id = request.GET.get('exam_board')
+    if exam_board_id:
+        subtopics = subtopics.filter(topic__exam_board_id=exam_board_id)
+    
+    # Filter by level/grade
+    grade_id = request.GET.get('grade')
+    if grade_id:
+        subtopics = subtopics.filter(topic__grade_id=grade_id)
     
     # Filter by subject
     subject_id = request.GET.get('subject')
     if subject_id:
         subtopics = subtopics.filter(topic__subject_id=subject_id)
-        topics = topics.filter(subject_id=subject_id)
     
     # Filter by topic
     topic_id = request.GET.get('topic')
@@ -6289,13 +6769,14 @@ def manage_subtopics(request):
     if search:
         subtopics = subtopics.filter(Q(name__icontains=search) | Q(description__icontains=search))
     
-    subtopics = subtopics.order_by('topic__subject__name', 'topic__name', 'order', 'name')
+    # Order by most recently added and limit to 10
+    subtopics = subtopics.order_by('-id')[:10]
     
     return render(request, 'core/content/subtopics_list.html', {
         'subtopics': subtopics,
-        'subjects': subjects,
-        'topics': topics,
-        'topics_json': topics_json,
+        'exam_boards': exam_boards,
+        'selected_exam_board': exam_board_id,
+        'selected_grade': grade_id,
         'selected_subject': subject_id,
         'selected_topic': topic_id,
         'selected_status': status,
@@ -6414,46 +6895,29 @@ def delete_subtopic(request, subtopic_id):
 
 @require_content_manager
 def manage_video_lessons(request):
-    """List all video lessons with filters"""
-    from .models import VideoLesson, Subject, Topic, Subtopic
-    import json
+    """List all video lessons with filters - shows last 10 by default"""
+    from .models import VideoLesson, ExamBoard
     
-    videos = VideoLesson.objects.select_related('subject', 'topic', 'topic__grade', 'subtopic', 'created_by').all()
-    subjects = Subject.objects.all().order_by('name')
-    topics = Topic.objects.select_related('subject', 'grade').all().order_by('subject__name', 'name')
-    subtopics = Subtopic.objects.select_related('topic', 'topic__subject', 'topic__grade').all().order_by('topic__subject__name', 'topic__name', 'name')
+    videos = VideoLesson.objects.select_related(
+        'subject', 'topic', 'topic__grade', 'topic__exam_board', 'subtopic', 'created_by'
+    ).all()
     
-    # Build JSON for filtering with grade info
-    topics_json = json.dumps([{
-        'id': t.id, 
-        'name': t.name, 
-        'subject_id': t.subject_id,
-        'grade_name': str(t.grade) if t.grade else 'All Grades'
-    } for t in topics])
+    exam_boards = ExamBoard.objects.all().order_by('abbreviation')
     
-    subtopics_json = json.dumps([{
-        'id': s.id, 
-        'name': s.name, 
-        'topic_id': s.topic_id
-    } for s in subtopics])
+    # Filter by exam board
+    exam_board_id = request.GET.get('exam_board')
+    if exam_board_id:
+        videos = videos.filter(topic__exam_board_id=exam_board_id)
+    
+    # Filter by level/grade
+    grade_id = request.GET.get('grade')
+    if grade_id:
+        videos = videos.filter(topic__grade_id=grade_id)
     
     # Filter by subject
     subject_id = request.GET.get('subject')
     if subject_id:
         videos = videos.filter(subject_id=subject_id)
-        topics = topics.filter(subject_id=subject_id)
-        subtopics = subtopics.filter(topic__subject_id=subject_id)
-    
-    # Filter by topic
-    topic_id = request.GET.get('topic')
-    if topic_id:
-        videos = videos.filter(topic_id=topic_id)
-        subtopics = subtopics.filter(topic_id=topic_id)
-    
-    # Filter by subtopic
-    subtopic_id = request.GET.get('subtopic')
-    if subtopic_id:
-        videos = videos.filter(subtopic_id=subtopic_id)
     
     # Filter by active status
     status = request.GET.get('status')
@@ -6478,18 +6942,15 @@ def manage_video_lessons(request):
             Q(tags__icontains=search)
         )
     
-    videos = videos.order_by('-created_at')
+    # Order by most recent and limit to 10
+    videos = videos.order_by('-id')[:10]
     
     return render(request, 'core/content/video_lessons_list.html', {
         'video_lessons': videos,
-        'subjects': subjects,
-        'topics': topics,
-        'subtopics': subtopics,
-        'topics_json': topics_json,
-        'subtopics_json': subtopics_json,
+        'exam_boards': exam_boards,
+        'selected_exam_board': exam_board_id,
+        'selected_grade': grade_id,
         'selected_subject': subject_id,
-        'selected_topic': topic_id,
-        'selected_subtopic': subtopic_id,
         'selected_status': status,
         'selected_featured': featured,
         'search': search,
@@ -7182,4 +7643,74 @@ def ajax_subtopics_by_topic(request):
     
     return JsonResponse({
         'subtopics': [{'id': s.id, 'name': s.name} for s in subtopics]
+    })
+
+
+@require_content_manager
+def ajax_levels_by_board(request):
+    """Get levels/grades for a specific exam board"""
+    from .models import Grade, Topic
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    
+    if not exam_board_id:
+        return JsonResponse({'levels': []})
+    
+    grade_ids = Topic.objects.filter(
+        exam_board_id=exam_board_id,
+        grade__isnull=False
+    ).values_list('grade_id', flat=True).distinct()
+    
+    grades = Grade.objects.filter(id__in=grade_ids).order_by('name')
+    
+    return JsonResponse({
+        'levels': [{'id': g.id, 'name': str(g)} for g in grades]
+    })
+
+
+@require_content_manager
+def ajax_subjects_by_board_level(request):
+    """Get subjects for a specific exam board and level"""
+    from .models import Subject, Topic
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    grade_id = request.GET.get('grade_id')
+    
+    if not exam_board_id:
+        return JsonResponse({'subjects': []})
+    
+    query = Topic.objects.filter(exam_board_id=exam_board_id)
+    if grade_id:
+        query = query.filter(grade_id=grade_id)
+    
+    subject_ids = query.values_list('subject_id', flat=True).distinct()
+    subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+    
+    return JsonResponse({
+        'subjects': [{'id': s.id, 'name': s.name} for s in subjects]
+    })
+
+
+@require_content_manager
+def ajax_topics_by_filters(request):
+    """Get topics filtered by exam board, level, and subject"""
+    from .models import Topic
+    
+    exam_board_id = request.GET.get('exam_board_id')
+    grade_id = request.GET.get('grade_id')
+    subject_id = request.GET.get('subject_id')
+    
+    if not exam_board_id:
+        return JsonResponse({'topics': []})
+    
+    query = Topic.objects.filter(exam_board_id=exam_board_id, is_active=True)
+    if grade_id:
+        query = query.filter(grade_id=grade_id)
+    if subject_id:
+        query = query.filter(subject_id=subject_id)
+    
+    topics = query.order_by('name')
+    
+    return JsonResponse({
+        'topics': [{'id': t.id, 'name': t.name} for t in topics]
     })

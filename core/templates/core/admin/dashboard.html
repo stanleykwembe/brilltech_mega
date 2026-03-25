@@ -279,8 +279,11 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Latest Users -->
         <div class="stat-card">
-            <div class="mb-4 pb-4 border-b border-gray-100">
+            <div class="mb-4 pb-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-lg font-bold text-gray-900">Latest Users</h3>
+                <a href="{% url 'admin_users' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                    See All <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
             <div>
                 {% if latest_users %}

@@ -93,7 +93,7 @@
                     <p><i class="fas fa-book text-indigo-400 w-4 mr-1"></i> {{ assessment.subject.name }}</p>
                     {% endif %}
                     {% if assessment.grade %}
-                    <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ assessment.grade.number }}</p>
+                    <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ assessment.grade.name }}</p>
                     {% endif %}
                     <p><i class="fas fa-question-circle text-blue-400 w-4 mr-1"></i> {{ assessment.get_question_count }} questions</p>
                     <p><i class="fas fa-star text-yellow-400 w-4 mr-1"></i> {{ assessment.total_marks }} marks</p>
@@ -173,7 +173,7 @@
                     <p><i class="fas fa-book text-blue-400 w-4 mr-1"></i> {{ doc.subject.name }}</p>
                     {% endif %}
                     {% if doc.grade %}
-                    <p><i class="fas fa-graduation-cap text-cyan-400 w-4 mr-1"></i> Grade {{ doc.grade.number }}</p>
+                    <p><i class="fas fa-graduation-cap text-cyan-400 w-4 mr-1"></i> Grade {{ doc.grade.name }}</p>
                     {% endif %}
                     {% if doc.board %}
                     <p><i class="fas fa-award text-purple-400 w-4 mr-1"></i> {{ doc.board.abbreviation }}</p>
@@ -264,7 +264,7 @@
                         <p><i class="fas fa-book text-indigo-400 w-4 mr-1"></i> {{ share.assessment.subject.name }}</p>
                         {% endif %}
                         {% if share.assessment.grade %}
-                        <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ share.assessment.grade.number }}</p>
+                        <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ share.assessment.grade.name }}</p>
                         {% endif %}
                         <p><i class="fas fa-eye text-green-400 w-4 mr-1"></i> {{ share.view_count }} views</p>
                     </div>
@@ -318,7 +318,7 @@
                         <p><i class="fas fa-book text-indigo-400 w-4 mr-1"></i> {{ share.document.subject.name }}</p>
                         {% endif %}
                         {% if share.document.grade %}
-                        <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ share.document.grade.number }}</p>
+                        <p><i class="fas fa-graduation-cap text-purple-400 w-4 mr-1"></i> Grade {{ share.document.grade.name }}</p>
                         {% endif %}
                         <p><i class="fas fa-eye text-green-400 w-4 mr-1"></i> {{ share.view_count }} views</p>
                     </div>
@@ -401,7 +401,7 @@
                                     <select name="grade" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                         <option value="">Select</option>
                                         {% for grade in grades %}
-                                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                        <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

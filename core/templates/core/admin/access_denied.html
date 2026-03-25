@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oops! Access Denied</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center">
+        <div class="mb-6">
+            <div class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-500"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Oops! Access Denied</h1>
+            <p class="text-gray-600">This area is for administrators only. It looks like you're trying to access the wrong portal.</p>
+        </div>
+        
+        <div class="space-y-4 mb-8">
+            <p class="text-sm text-gray-500 font-medium">Are you a...</p>
+            
+            <a href="{% url 'student_login' %}" class="block w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition transform hover:scale-105 shadow-lg">
+                <i class="fas fa-user-graduate mr-2"></i>
+                Student? Click here to login
+            </a>
+            
+            <a href="{% url 'login' %}" class="block w-full px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition transform hover:scale-105 shadow-lg">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>
+                Teacher? Click here to login
+            </a>
+        </div>
+        
+        <div class="text-sm text-gray-400">
+            <p>If you believe you should have access, please contact support.</p>
+        </div>
+    </div>
+</body>
+</html>

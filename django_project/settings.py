@@ -32,7 +32,9 @@ replit_domains = os.environ.get("REPLIT_DOMAINS", "").split(',') if os.environ.g
 custom_domain = os.environ.get("CUSTOM_DOMAIN", "")  # e.g., "yourdomain.com"
 allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "")  # Comma-separated list for external hosting
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'brilltech.pythonanywhere.com', 'www.brilltech.pythonanywhere.com','brilltech.co.za','www.brilltech.co.za']
+
 
 # Add Replit domains (if running on Replit)
 if replit_domains:
@@ -49,10 +51,10 @@ if allowed_hosts_env:
 
 # CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:5000",
-    "http://localhost:5000",
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
+    "https://brilltech.pythonanywhere.com",
+    "https://www.brilltech.pythonanywhere.com",
+    "https://brilltech.co.za",       # Add this
+    "https://www.brilltech.co.za",   # Add this
 ]
 
 # Add Replit domains to CSRF
@@ -280,7 +282,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@example.co
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Email timeout settings for production reliability
-EMAIL_TIMEOUT = 30
+# Reduced to 10 seconds since emails are sent async - prevents long hangs
+EMAIL_TIMEOUT = 10
 
 # Logging configuration for debugging email and other issues
 LOGGING = {

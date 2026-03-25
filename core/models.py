@@ -10,10 +10,17 @@ class Subject(models.Model):
         return str(self.name)
 
 class Grade(models.Model):
-    number = models.IntegerField()
+    """Level/Grade model - supports any educational level like 'Grade 10', 'ECD', 'NC', 'Diploma'"""
+    name = models.CharField(max_length=100, default='', blank=True, help_text="e.g., Grade 10, ECD A, NC, Diploma")
+    
+    # Keep 'number' for backwards compatibility during migration, will be removed later
+    number = models.IntegerField(null=True, blank=True)
     
     def __str__(self):
-        return f"Grade {self.number}"
+        return self.name if self.name else f"Grade {self.number}"
+    
+    class Meta:
+        ordering = ['name']
 
 class ExamBoard(models.Model):
     name_full = models.CharField(max_length=200)  # e.g., "Cambridge International"

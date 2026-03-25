@@ -58,7 +58,7 @@
                     <select name="grade" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
                         <option value="">All Grades</option>
                         {% for grade in grades %}
-                            <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                            <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                         {% endfor %}
                     </select>
                 </div>

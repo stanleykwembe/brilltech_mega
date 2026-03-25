@@ -33,7 +33,7 @@
                 <select name="grade" id="grade" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
                     <option value="">Select Grade</option>
                     {% for grade in grades %}
-                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                    <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                     {% endfor %}
                 </select>
             </div>

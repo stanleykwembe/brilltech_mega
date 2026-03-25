@@ -54,7 +54,7 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {% if class.grade %}Grade {{ class.grade.number }}{% else %}No Grade{% endif %}
+                        {% if class.grade %}Grade {{ class.grade.name }}{% else %}No Grade{% endif %}
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">
                         {{ class.description|default:"No description"|truncatechars:50 }}
@@ -119,7 +119,7 @@
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Select a grade (optional)</option>
                     {% for grade in grades %}
-                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                    <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -166,7 +166,7 @@
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Select a grade (optional)</option>
                     {% for grade in grades %}
-                    <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                    <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                     {% endfor %}
                 </select>
             </div>

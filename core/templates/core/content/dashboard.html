@@ -176,7 +176,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-gray-900 truncate">{{ paper.title }}</p>
-                                    <p class="text-xs text-gray-500">{{ paper.subject.name }} - Grade {{ paper.grade.number }}</p>
+                                    <p class="text-xs text-gray-500">{{ paper.subject.name }} - Grade {{ paper.grade.name }}</p>
                                 </div>
                                 <div class="text-xs text-gray-500 font-medium">
                                     {{ paper.uploaded_at|timesince }} ago
@@ -225,7 +225,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-gray-900 truncate">{{ quiz.title }}</p>
-                                    <p class="text-xs text-gray-500">{{ quiz.subject.name }} - Grade {{ quiz.grade.number }}</p>
+                                    <p class="text-xs text-gray-500">{{ quiz.subject.name }} - Grade {{ quiz.grade.name }}</p>
                                 </div>
                                 <div class="text-xs text-gray-500 font-medium">
                                     {{ quiz.created_at|timesince }} ago

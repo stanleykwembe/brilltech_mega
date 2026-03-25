@@ -36,7 +36,7 @@
             <select name="grade" class="shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md">
                 <option value="">All Grades</option>
                 {% for grade in grades %}
-                <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>Grade {{ grade.number }}</option>
+                <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>Grade {{ grade.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -67,7 +67,7 @@
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ quiz.title }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ quiz.subject.name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Grade {{ quiz.grade.number }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Grade {{ quiz.grade.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                     {% if quiz.is_premium %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">

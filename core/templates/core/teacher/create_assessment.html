@@ -224,7 +224,7 @@
                     <select x-model="assessment.grade_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">Select Grade</option>
                         {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                         {% endfor %}
                     </select>
                 </div>

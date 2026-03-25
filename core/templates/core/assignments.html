@@ -78,7 +78,7 @@
                     <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">Select grade</option>
                         {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -168,7 +168,7 @@
                     <select name="grade" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">Select grade</option>
                         {% for grade in grades %}
-                        <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                        <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -231,7 +231,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-900">{{ assignment.subject.name }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">Grade {{ assignment.grade.number }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">Grade {{ assignment.grade.name }}</td>
                         <td class="px-6 py-4 text-sm text-gray-900">{{ assignment.due_date|date:"M d, Y" }}</td>
                         <td class="px-6 py-4 text-sm font-medium">
                             <div class="flex space-x-2">
@@ -282,7 +282,7 @@
                         {% endif %}
                     </h3>
                     <p class="text-sm text-gray-600 mb-3">
-                        Grade {{ document.grade.number }} • {{ document.board.abbreviation }}
+                        Grade {{ document.grade.name }} • {{ document.board.abbreviation }}
                     </p>
                     <div class="flex justify-between items-center pt-3 border-t border-gray-100">
                         <div class="flex space-x-2">
@@ -350,7 +350,7 @@
                         <td class="px-6 py-4">
                             <div>
                                 <div class="text-sm font-medium text-gray-900">{{ share.assignment_title }}</div>
-                                <div class="text-sm text-gray-500">Grade {{ share.assignment_grade.number }}</div>
+                                <div class="text-sm text-gray-500">Grade {{ share.assignment_grade.name }}</div>
                             </div>
                         </td>
                         <td class="px-6 py-4">

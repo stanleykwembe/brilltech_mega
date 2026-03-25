@@ -153,7 +153,7 @@
                             <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Select Grade</option>
                                 {% for grade in grades %}
-                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -185,7 +185,7 @@
                             <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Select Grade</option>
                                 {% for grade in grades %}
-                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -229,7 +229,7 @@
                             <select name="grade_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Select Grade</option>
                                 {% for grade in grades %}
-                                <option value="{{ grade.id }}">Grade {{ grade.number }}</option>
+                                <option value="{{ grade.id }}">Grade {{ grade.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>

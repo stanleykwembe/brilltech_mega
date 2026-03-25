@@ -193,6 +193,16 @@ def student_register(request):
                 verification_token_created=timezone.now()
             )
             
+            # Create free subscription record for admin visibility
+            from .models import StudentSubscription
+            StudentSubscription.objects.create(
+                student=student_profile,
+                plan='free',
+                status='free',
+                subjects_count=0,
+                amount_paid=0
+            )
+            
             # Send verification email
             verification_path = reverse('student_verify_email', kwargs={'token': verification_token})
             
@@ -2040,15 +2050,17 @@ def student_subject_pathway(request, subject_id, exam_board_id):
         is_active=True
     ).count()
     
-    # Calculate overall progress
-    progress = StudentTopicProgress.objects.filter(
+    # Calculate overall progress - average across ALL topics (0% for topics without progress)
+    progress_records = StudentTopicProgress.objects.filter(
         student=student_profile,
         subject=subject
     )
     avg_progress = 0
-    if progress.exists():
-        total_completion = sum(p.get_completion_percentage() for p in progress)
-        avg_progress = int(total_completion / max(topics, 1))
+    if topics > 0:
+        # Sum progress for topics that have records
+        total_completion = sum(p.get_completion_percentage() for p in progress_records)
+        # Average across ALL topics (not just those with progress)
+        avg_progress = int(total_completion / topics)
     
     context = {
         'student_profile': student_profile,
@@ -2484,10 +2496,11 @@ def student_progress_dashboard(request):
             if scores:
                 avg_quiz_score = sum(scores) / len(scores)
         
+        # Calculate overall progress - average across ALL topics (0% for topics without progress)
         overall_progress = 0
-        if topic_progress.exists():
+        if topics_total > 0:
             total = sum(p.get_completion_percentage() for p in topic_progress)
-            overall_progress = int(total / max(topics_total, 1))
+            overall_progress = int(total / topics_total)
         
         subjects_data.append({
             'subject': ss.subject,

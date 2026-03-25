@@ -5,7 +5,7 @@
 {% block content %}
 <div class="mb-8">
     <h1 class="text-2xl font-bold text-gray-900">Student Subscribers</h1>
-    <p class="mt-1 text-sm text-gray-600">View and manage student subscription payments</p>
+    <p class="mt-1 text-sm text-gray-600">View and manage all students and their subscriptions</p>
 </div>
 
 <!-- Stats Cards -->
@@ -104,7 +104,7 @@
 <!-- Search and Filters -->
 <div class="bg-white shadow rounded-lg mb-6 p-6">
     <form method="get" action="{% url 'admin_student_subscribers' %}">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div class="md:col-span-2">
                 <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Students</label>
                 <input type="text" 
@@ -125,6 +125,20 @@
                     <option value="free" {% if status_filter == 'free' %}selected{% endif %}>Free</option>
                     <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
                     <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="no_subscription" {% if status_filter == 'no_subscription' %}selected{% endif %}>No Subscription Record</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="plan" class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                <select name="plan" 
+                        id="plan" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Plans</option>
+                    <option value="free" {% if plan_filter == 'free' %}selected{% endif %}>Free</option>
+                    <option value="starter" {% if plan_filter == 'starter' %}selected{% endif %}>Starter</option>
+                    <option value="standard" {% if plan_filter == 'standard' %}selected{% endif %}>Standard</option>
+                    <option value="all_access" {% if plan_filter == 'all_access' %}selected{% endif %}>Full Access</option>
                 </select>
             </div>
         </div>
@@ -140,125 +154,173 @@
     </form>
 </div>
 
-<!-- Subscribers Table -->
+<!-- Students Table -->
 <div class="bg-white shadow rounded-lg overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">All Subscribers ({{ subscriptions.count }})</h3>
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-lg font-medium text-gray-900">All Students ({{ students.paginator.count }})</h3>
+        <span class="text-sm text-gray-500">Page {{ students.number }} of {{ students.paginator.num_pages }}</span>
     </div>
     
-    {% if subscriptions %}
+    {% if students %}
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                {% for sub in subscriptions %}
+                {% for student in students %}
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10">
                                 <div class="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                                    <span class="text-white font-semibold">{{ sub.student.user.username|slice:":1"|upper }}</span>
+                                    <span class="text-white font-semibold">{{ student.user.username|slice:":1"|upper }}</span>
                                 </div>
                             </div>
                             <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">{{ sub.student.user.username }}</div>
-                                <div class="text-sm text-gray-500">{{ sub.student.user.first_name }} {{ sub.student.user.last_name }}</div>
+                                <div class="text-sm font-medium text-gray-900">{{ student.user.username }}</div>
+                                <div class="text-sm text-gray-500">{{ student.user.first_name }} {{ student.user.last_name }}</div>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ sub.student.user.email }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            {{ sub.plan|default:"Pro"|title }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            {% if sub.status == 'active' %}bg-green-100 text-green-800
-                            {% elif sub.status == 'free' %}bg-gray-100 text-gray-800
-                            {% elif sub.status == 'expired' %}bg-red-100 text-red-800
-                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {{ sub.status|title }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {% if sub.amount_paid %}
-                        <span class="font-semibold text-green-600">R{{ sub.amount_paid|floatformat:2 }}</span>
-                        {% else %}
-                        <span class="text-gray-400">-</span>
-                        {% endif %}
+                        {{ student.user.email }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if sub.started_at %}
-                        {{ sub.started_at|date:"M d, Y" }}
+                        {% if student.grade %}
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Grade {{ student.grade.name }}</span>
                         {% else %}
-                        <span class="text-gray-400">-</span>
+                            -
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if sub.expires_at %}
-                        {{ sub.expires_at|date:"M d, Y" }}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% with sub=student.subscription_record %}
+                        {% if sub %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {{ sub.plan|default:"Free"|title }}
+                            </span>
                         {% else %}
-                        <span class="text-gray-400">-</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                No Plan
+                            </span>
                         {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% with sub=student.subscription_record %}
+                        {% if sub %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if sub.status == 'active' %}bg-green-100 text-green-800
+                                {% elif sub.status == 'free' %}bg-gray-100 text-gray-800
+                                {% elif sub.status == 'expired' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ sub.status|title }}
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                No Record
+                            </span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ student.user.date_joined|date:"M d, Y" }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div x-data="{ open: false }" class="relative">
-                            <button @click="open = !open" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                                Change Status
-                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                            </button>
-                            <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                                <div class="py-1">
-                                    {% if sub.status != 'active' %}
-                                    <form method="post" action="{% url 'admin_change_student_subscription' sub.id %}">
+                        <div class="flex items-center space-x-2">
+                            <!-- Change Status -->
+                            <div x-data="{ open: false }" class="relative">
+                                <button @click="open = !open" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                    <i class="fas fa-edit mr-1"></i> Change Status
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                                    <form method="POST" action="{% url 'admin_change_student_status' student.id %}">
                                         {% csrf_token %}
-                                        <input type="hidden" name="status" value="active">
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">
-                                            <i class="fas fa-check-circle mr-2"></i> Activate (Pro)
+                                        <button type="submit" name="status" value="active" class="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                            <i class="fas fa-check mr-2"></i> Set Active (Paid)
+                                        </button>
+                                        <button type="submit" name="status" value="free" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fas fa-user mr-2"></i> Set Free
+                                        </button>
+                                        <button type="submit" name="status" value="expired" class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50">
+                                            <i class="fas fa-clock mr-2"></i> Set Expired
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Promote to Content Creator -->
+                            <form method="POST" action="{% url 'admin_promote_student' student.id %}" onsubmit="return confirm('Promote this student to Content Creator? They will be able to upload content.');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-purple-600 hover:text-purple-900 text-sm font-medium">
+                                    <i class="fas fa-arrow-up mr-1"></i> Promote
+                                </button>
+                            </form>
+                            
+                            <!-- More Actions Dropdown -->
+                            <div x-data="{ open: false, showEmailModal: false }" class="relative">
+                                <button @click="open = !open" class="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-lg z-10 border">
+                                    <!-- Send Password Reset -->
+                                    <form method="POST" action="{% url 'admin_send_password_reset' student.user.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="return_to" value="admin_student_subscribers">
+                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50" onclick="return confirm('Send password reset email to {{ student.user.email }}?');">
+                                            <i class="fas fa-key mr-2"></i> Send Password Reset
+                                        </button>
+                                    </form>
+                                    
+                                    <!-- Change Email -->
+                                    <button @click="showEmailModal = true; open = false" class="block w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">
+                                        <i class="fas fa-envelope mr-2"></i> Change Email
+                                    </button>
+                                    
+                                    <!-- Verify & Activate -->
+                                    {% if not student.user.is_active or not student.email_verified %}
+                                    <form method="POST" action="{% url 'admin_verify_activate_user' student.user.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="return_to" value="admin_student_subscribers">
+                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                            <i class="fas fa-user-check mr-2"></i> Verify & Activate
                                         </button>
                                     </form>
                                     {% endif %}
-                                    {% if sub.status != 'free' %}
-                                    <form method="post" action="{% url 'admin_change_student_subscription' sub.id %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="status" value="free">
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fas fa-user mr-2"></i> Set to Free
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                    {% if sub.status != 'expired' %}
-                                    <form method="post" action="{% url 'admin_change_student_subscription' sub.id %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="status" value="expired">
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50">
-                                            <i class="fas fa-clock mr-2"></i> Mark Expired
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                    {% if sub.status != 'cancelled' %}
-                                    <form method="post" action="{% url 'admin_change_student_subscription' sub.id %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="status" value="cancelled">
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
-                                            <i class="fas fa-ban mr-2"></i> Cancel
-                                        </button>
-                                    </form>
-                                    {% endif %}
+                                </div>
+                                
+                                <!-- Change Email Modal -->
+                                <div x-show="showEmailModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                                    <div class="flex items-center justify-center min-h-screen px-4">
+                                        <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showEmailModal = false"></div>
+                                        <div class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                                            <h3 class="text-lg font-medium text-gray-900 mb-4">Change Email for {{ student.user.username }}</h3>
+                                            <form method="POST" action="{% url 'admin_change_user_email' student.user.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="return_to" value="admin_student_subscribers">
+                                                <div class="mb-4">
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Email</label>
+                                                    <p class="text-sm text-gray-500">{{ student.user.email }}</p>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">New Email *</label>
+                                                    <input type="email" name="new_email" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="new@email.com">
+                                                </div>
+                                                <div class="flex justify-end space-x-3">
+                                                    <button type="button" @click="showEmailModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
+                                                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Update Email</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -268,13 +330,60 @@
             </tbody>
         </table>
     </div>
-    {% else %}
-    <div class="p-12 text-center">
-        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-users text-2xl text-gray-400"></i>
+    
+    <!-- Pagination -->
+    {% if students.has_other_pages %}
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if students.has_previous %}
+            <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+            </a>
+            {% endif %}
+            {% if students.has_next %}
+            <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+            </a>
+            {% endif %}
         </div>
-        <h3 class="text-gray-900 font-semibold mb-2">No Subscribers Found</h3>
-        <p class="text-gray-500">{% if status_filter or search_query %}No subscribers match your filters.{% else %}Student subscriptions will appear here when payments are processed.{% endif %}</p>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing <span class="font-medium">{{ students.start_index }}</span> to <span class="font-medium">{{ students.end_index }}</span> of <span class="font-medium">{{ students.paginator.count }}</span> results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if students.has_previous %}
+                    <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    {% endif %}
+                    
+                    {% for num in students.paginator.page_range %}
+                        {% if students.number == num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-indigo-500 bg-indigo-50 text-sm font-medium text-indigo-600">{{ num }}</span>
+                        {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if students.has_next %}
+                    <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="text-center py-12">
+        <i class="fas fa-users text-gray-300 text-4xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-900">No Students Found</h3>
+        <p class="mt-1 text-sm text-gray-500">No students match your current filters.</p>
     </div>
     {% endif %}
 </div>
